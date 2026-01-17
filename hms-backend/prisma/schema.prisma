@@ -1,0 +1,193 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  HMS_SUPER_ADMIN
+  CITY_ADMIN
+  COMMISSIONER
+  ACTION_OFFICER
+  EMPLOYEE
+  QC
+}
+
+model HMS {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  cities    City[]
+  createdAt DateTime @default(now())
+}
+
+model City {
+  id                  String              @id @default(uuid())
+  hmsId               String
+  name                String
+  code                String              @unique
+  modules             CityModule[]
+  users               UserCity[]
+  moduleRoles         UserModuleRole[]
+  permissions         Permission[]
+  taskforceCases      TaskforceCase[]
+  taskforceActivities TaskforceActivity[]
+  zones               GeoNode[] // top-level children of type=ZONE
+  createdAt           DateTime            @default(now())
+
+  hms HMS @relation(fields: [hmsId], references: [id], onDelete: Cascade)
+
+  @@index([hmsId])
+}
+
+model Module {
+  id                  String              @id @default(uuid())
+  name                String              @unique // Taskforce, IEC, Module3...
+  isActive            Boolean             @default(true)
+  createdAt           DateTime            @default(now())
+  cityModules         CityModule[]
+  userModuleRoles     UserModuleRole[]
+  permissions         Permission[]
+  taskforceCases      TaskforceCase[]
+  taskforceActivities TaskforceActivity[]
+}
+
+model CityModule {
+  id        String   @id @default(uuid())
+  cityId    String
+  moduleId  String
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  city   City   @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  module Module @relation(fields: [moduleId], references: [id], onDelete: Restrict)
+
+  @@unique([cityId, moduleId])
+  @@index([cityId, moduleId])
+}
+
+model User {
+  id        String           @id @default(uuid())
+  email     String           @unique
+  name      String
+  password  String
+  cities    UserCity[]
+  modules   UserModuleRole[]
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+}
+
+model UserCity {
+  id        String   @id @default(uuid())
+  userId    String
+  cityId    String
+  role      Role // City-level role (e.g., CITY_ADMIN)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  city City @relation(fields: [cityId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, cityId, role])
+  @@index([cityId, role])
+}
+
+model UserModuleRole {
+  id        String   @id @default(uuid())
+  userId    String
+  cityId    String
+  moduleId  String
+  role      Role
+  createdAt DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  city   City   @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  module Module @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, cityId, moduleId, role])
+  @@index([cityId, moduleId, role])
+}
+
+model Permission {
+  id        String   @id @default(uuid())
+  cityId    String
+  moduleId  String?
+  role      Role
+  resource  String // e.g., "taskforce.case"
+  action    String // e.g., "read","write","assign","close"
+  createdAt DateTime @default(now())
+
+  city   City    @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  module Module? @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  @@index([cityId, moduleId, role])
+  @@index([cityId, resource, action])
+}
+
+// Geo hierarchy (extensible)
+enum GeoLevel {
+  CITY
+  ZONE
+  WARD
+  KOTHI
+  SUB_KOTHI
+  GALI
+}
+
+model GeoNode {
+  id        String   @id @default(uuid())
+  cityId    String
+  parentId  String?
+  level     GeoLevel
+  name      String
+  path      String // materialized path for fast queries, e.g., /city/zone/ward
+  createdAt DateTime @default(now())
+
+  city           City            @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  parent         GeoNode?        @relation("GeoChildren", fields: [parentId], references: [id], onDelete: Cascade)
+  children       GeoNode[]       @relation("GeoChildren")
+  taskforceCases TaskforceCase[]
+
+  @@index([cityId, level])
+  @@index([cityId, path])
+}
+
+// Example Taskforce module tables
+model TaskforceCase {
+  id         String   @id @default(uuid())
+  cityId     String
+  moduleId   String // redundant for clarity; enforce module scoping
+  geoNodeId  String? // ward/gali link
+  title      String
+  status     String
+  assignedTo String? // User.id
+  createdBy  String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  city       City                @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  module     Module              @relation(fields: [moduleId], references: [id], onDelete: Restrict)
+  geoNode    GeoNode?            @relation(fields: [geoNodeId], references: [id], onDelete: SetNull)
+  activities TaskforceActivity[]
+
+  @@index([cityId, status])
+  @@index([cityId, geoNodeId])
+}
+
+model TaskforceActivity {
+  id        String   @id @default(uuid())
+  cityId    String
+  moduleId  String
+  caseId    String
+  actorId   String
+  action    String
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  city   City          @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  module Module        @relation(fields: [moduleId], references: [id], onDelete: Restrict)
+  case   TaskforceCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  @@index([cityId, caseId])
+}

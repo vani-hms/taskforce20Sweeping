@@ -1,0 +1,89 @@
+Auth
+
+POST /auth/login
+Body: { email: string, password: string }
+Returns: { token, user } with claims (userId, role(s), cityId?, modules[{moduleId, role, canWrite}]).
+HMS Super Admin APIs (role: HMS_SUPER_ADMIN)
+
+GET /hms/cities
+Returns list of cities with id, name, code, enabled, cityAdmin{name,email}?.
+POST /hms/cities
+Body: { name: string, code: string }
+Creates a city (enabled by default).
+PATCH /hms/cities/:cityId
+Body: { enabled: boolean }
+Enable/disable city.
+GET /hms/modules
+Returns available modules { id, name }.
+PATCH /hms/cities/:cityId/modules/:moduleId
+Body: { enabled: boolean }
+Toggle module for the city.
+POST /hms/cities/:cityId/admins
+Body: { name: string; email: string; password: string }
+Creates a City Admin for that city.
+City-scoped APIs (roles: CITY_ADMIN full R/W, COMMISSIONER read-only, others need module assignment; HMS bypass)
+
+GET /city/info
+Returns current city { id, name, code, enabled } from JWT cityId.
+Geo hierarchy (levels: ZONE → WARD → AREA → BEAT; AREA requires areaType)
+
+GET /city/geo?level=ZONE|WARD|AREA|BEAT (level optional)
+Returns { nodes: GeoNode[] } scoped to city.
+POST /city/geo
+Body (ZONE): { level:"ZONE", name }
+Body (WARD): { level:"WARD", name, parentId:<zoneId> }
+Body (AREA): { level:"AREA", name, areaType:"RESIDENTIAL"|"COMMERCIAL"|"SLUM", parentId:<wardId> }
+Body (BEAT): { level:"BEAT", name, parentId:<areaId> }
+Validates parent chain and area name uniqueness within ward.
+PATCH /city/geo/:id
+Body: { name?, areaType? } (areaType only for AREA).
+Renames and/or updates areaType.
+DELETE /city/geo/:id
+Deletes node if no children; else 400.
+City users (municipal users; City Admin creation is HMS-only)
+
+GET /city/users
+Returns users for the city { id, name, email, role, createdAt }.
+POST /city/users
+Body: { name, email, password, role: "COMMISSIONER"|"ACTION_OFFICER"|"QC"|"EMPLOYEE", moduleId?, canWrite? }
+Creates or assigns user to city; moduleId optional but must be enabled for city; canWrite stored on UserModuleRole.
+PATCH /city/users/:userId
+Body: { name?, role?, moduleId?, canWrite? }
+Updates municipal user mapping/module role for the city.
+DELETE /city/users/:userId
+Removes user’s city and module mappings in this city.
+Module: Taskforce (city-scoped; RBAC enforced with module assignments and canWrite)
+
+GET /modules/taskforce/cases
+Lists cases for city (Commissioner read-only allowed; others need module assignment).
+POST /modules/taskforce/cases
+Body: { title: string; status?; geoNodeId?; assignedTo? }
+Creates case; writes require canWrite or City Admin/HMS.
+PATCH /modules/taskforce/cases/:id
+Body: { status?, assignedTo? }
+Updates case; writes require canWrite or City Admin/HMS.
+POST /modules/taskforce/cases/:id/activity
+Body: { action: string; metadata? }
+Adds activity log; writes require canWrite or City Admin/HMS.
+Module: IEC (city-scoped; similar RBAC rules)
+
+POST /modules/iec/forms
+Body: { title: string; description? }
+PATCH /modules/iec/forms/:id
+Body: { title?, description?, status? }
+GET /modules/iec/forms
+Lists forms for city.
+GET /modules/iec/reports/summary
+Returns status summary.
+RBAC rules summary
+
+HMS_SUPER_ADMIN: full access everywhere.
+CITY_ADMIN: full R/W within their city.
+COMMISSIONER: city-scoped read-only; POST/PATCH/DELETE return 403.
+ACTION_OFFICER/QC/EMPLOYEE: must have module assignment; read allowed, write requires canWrite=true.
+City isolation: all /city and /modules routes take cityId from JWT only.
+Notes
+
+All requests require Authorization: Bearer <token>.
+No cityId in request bodies for city-scoped routes.
+403 errors return clear messages (e.g., “Write access not permitted for this role”).

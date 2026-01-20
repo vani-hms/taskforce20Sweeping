@@ -92,7 +92,7 @@ export const CityUserApi = {
 let moduleMap: Record<string, string> | null = null;
 async function ensureModuleMap() {
   if (moduleMap) return moduleMap;
-  const result = await ModuleApi.list();
+  const result = await  .list();
   moduleMap = Object.fromEntries(result.modules.map((m) => [m.name.toUpperCase(), m.id]));
   return moduleMap;
 }

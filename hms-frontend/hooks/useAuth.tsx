@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { clearAuthCookie, decodeToken, getTokenFromCookies, setAuthCookie } from "@lib/auth";
-import { AuthUser } from "@types/auth";
+import type { AuthUser } from "../types/auth";
 
 interface AuthContextValue {
   user: AuthUser | null;

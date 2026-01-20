@@ -1,5 +1,5 @@
 import { getTokenFromCookies } from "@lib/auth";
-import { ModuleName } from "@types/auth";
+import type { ModuleName } from "../types/auth";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000";
 
@@ -50,18 +50,49 @@ export const CityApi = {
   list: () => apiFetch("/hms/cities"),
   create: (body: { name: string; code: string }) =>
     apiFetch("/hms/cities", { method: "POST", body: JSON.stringify(body) }),
+  setEnabled: (cityId: string, enabled: boolean) =>
+    apiFetch(`/hms/cities/${cityId}`, { method: "PATCH", body: JSON.stringify({ enabled }) }),
   toggleModule: (cityId: string, moduleId: string, enabled: boolean) =>
     apiFetch(`/hms/cities/${cityId}/modules/${moduleId}`, {
       method: "PATCH",
       body: JSON.stringify({ enabled })
+    }),
+  createCityAdmin: (cityId: string, body: { email: string; password: string; name: string }) =>
+    apiFetch(`/hms/cities/${cityId}/admins`, {
+      method: "POST",
+      body: JSON.stringify({ ...body, cityId })
     })
+};
+
+export const ModuleApi = {
+  list: () => apiFetch<{ modules: { id: string; name: string }[] }>("/hms/modules")
+};
+
+export const GeoApi = {
+  list: (level?: string) => apiFetch<{ nodes: any[] }>(level ? `/city/geo?level=${level}` : "/city/geo"),
+  create: (body: any) => apiFetch<{ node: any }>("/city/geo", { method: "POST", body: JSON.stringify(body) }),
+  update: (id: string, body: any) =>
+    apiFetch<{ node: any }>(`/city/geo/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
+  remove: (id: string) => apiFetch<{ success: boolean }>(`/city/geo/${id}`, { method: "DELETE" })
+};
+
+export const CityUserApi = {
+  list: () =>
+    apiFetch<{ users: { id: string; name: string; email: string; role: string; createdAt: string }[] }>(
+      "/city/users"
+    ),
+  create: (body: { name: string; email: string; password: string; role: string; moduleId?: string; canWrite?: boolean }) =>
+    apiFetch("/city/users", { method: "POST", body: JSON.stringify(body) }),
+  update: (id: string, body: { name?: string; role?: string; moduleId?: string; canWrite?: boolean }) =>
+    apiFetch<{ success: boolean }>(`/city/users/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
+  remove: (id: string) => apiFetch<{ success: boolean }>(`/city/users/${id}`, { method: "DELETE" })
 };
 
 // Module resolution cache (expects backend to expose module listing)
 let moduleMap: Record<string, string> | null = null;
 async function ensureModuleMap() {
   if (moduleMap) return moduleMap;
-  const result = await apiFetch<{ modules: { id: string; name: string }[] }>("/modules");
+  const result = await ModuleApi.list();
   moduleMap = Object.fromEntries(result.modules.map((m) => [m.name.toUpperCase(), m.id]));
   return moduleMap;
 }
@@ -82,4 +113,13 @@ export const TaskforceApi = {
       method: "POST",
       body: JSON.stringify(body)
     })
+};
+
+export const IecApi = {
+  createForm: (body: { title: string; description?: string }) =>
+    apiFetch<{ form: any }>("/modules/iec/forms", { method: "POST", body: JSON.stringify(body) }),
+  updateForm: (id: string, body: { title?: string; description?: string; status?: string }) =>
+    apiFetch<{ form: any }>(`/modules/iec/forms/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
+  listForms: () => apiFetch<{ forms: any[] }>("/modules/iec/forms"),
+  summary: () => apiFetch<{ summary: { status: string; count: number }[] }>("/modules/iec/reports/summary")
 };

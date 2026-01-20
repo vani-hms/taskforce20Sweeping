@@ -5,7 +5,7 @@ export interface AuthClaims {
   sub: string; // userId
   cityId?: string; // active city context
   roles: Role[]; // city-level roles
-  modules: { moduleId: string; roles: Role[] }[];
+  modules: { moduleId: string; roles: Role[]; canWrite: boolean }[];
   exp?: number;
 }
 

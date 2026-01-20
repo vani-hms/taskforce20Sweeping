@@ -21,8 +21,20 @@ export default function LoginPage() {
     try {
       const { token } = await AuthApi.login({ email, password });
       setAuthCookie(token);
-      setUser(decodeToken(token));
-      router.replace("/");
+      const decoded = decodeToken(token);
+      setUser(decoded);
+
+      // Route users to their primary workspace; super admin lands on HMS area to manage cities/admins.
+      const roles = decoded?.roles || [];
+      const target =
+        roles.includes("HMS_SUPER_ADMIN")
+          ? "/hms"
+          : roles.includes("CITY_ADMIN")
+            ? "/city"
+            : roles.length === 0
+              ? "/hms" // fallback: treat no-role logins as HMS bootstrap
+              : "/";
+      router.replace(target);
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
         setError("Invalid credentials");

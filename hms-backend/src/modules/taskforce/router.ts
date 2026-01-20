@@ -2,24 +2,19 @@ import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "../../prisma";
 import { authenticate } from "../../middleware/auth";
-import { requireCityContext, requireModuleRoles } from "../../middleware/rbac";
+import { requireCityContext, requireModuleAccess } from "../../middleware/rbac";
 import { validateBody } from "../../utils/validation";
-import { Prisma, Role } from "../../../generated/prisma";
-
-const TASKFORCE_MODULE_ID = "TASKFORCE_MODULE_ID_PLACEHOLDER"; // replace with real module id or lookup
+import { Role } from "../../../generated/prisma";
+import { HttpError } from "../../utils/errors";
+import { getModuleIdByName } from "../moduleRegistry";
 
 const router = Router();
-router.use(
-  authenticate,
-  requireCityContext(),
-  requireModuleRoles(TASKFORCE_MODULE_ID, [
-    Role.EMPLOYEE,
-    Role.QC,
-    Role.ACTION_OFFICER,
-    Role.CITY_ADMIN,
-    Role.HMS_SUPER_ADMIN
-  ])
-);
+router.use(authenticate, requireCityContext());
+
+async function ensureModuleEnabled(cityId: string, moduleId: string) {
+  const cm = await prisma.cityModule.findUnique({ where: { cityId_moduleId: { cityId, moduleId } } });
+  if (!cm || !cm.enabled) throw new HttpError(400, "Module not enabled for this city");
+}
 
 const createSchema = z.object({
   title: z.string().min(1),
@@ -31,16 +26,38 @@ const createSchema = z.object({
 router.post("/cases", validateBody(createSchema), async (req, res, next) => {
   try {
     const cityId = req.auth!.cityId!;
+    const moduleId = await getModuleIdByName("TASKFORCE");
+    await requireModuleAccess(moduleId, [Role.EMPLOYEE, Role.QC, Role.ACTION_OFFICER, Role.CITY_ADMIN])(
+      req,
+      res,
+      async () => {}
+    );
+    await ensureModuleEnabled(cityId, moduleId);
+
     const { title, status, geoNodeId, assignedTo } = req.body as z.infer<typeof createSchema>;
+    if (geoNodeId) {
+      const node = await prisma.geoNode.findUnique({ where: { id: geoNodeId } });
+      if (!node || node.cityId !== cityId) throw new HttpError(400, "Invalid geo node");
+    }
     const caseRecord = await prisma.taskforceCase.create({
       data: {
         cityId,
-        moduleId: TASKFORCE_MODULE_ID,
+        moduleId,
         title,
         status,
-        geoNodeId,
+        geoNodeId: geoNodeId || null,
         assignedTo,
         createdBy: req.auth!.sub
+      }
+    });
+    await prisma.taskforceActivity.create({
+      data: {
+        cityId,
+        moduleId,
+        caseId: caseRecord.id,
+        actorId: req.auth!.sub,
+        action: "CREATE",
+        metadata: { status }
       }
     });
     res.json({ case: caseRecord });
@@ -57,13 +74,34 @@ const statusSchema = z.object({
 router.patch("/cases/:id", validateBody(statusSchema), async (req, res, next) => {
   try {
     const cityId = req.auth!.cityId!;
+    const moduleId = await getModuleIdByName("TASKFORCE");
+    await requireModuleAccess(moduleId, [Role.EMPLOYEE, Role.QC, Role.ACTION_OFFICER, Role.CITY_ADMIN])(
+      req,
+      res,
+      async () => {}
+    );
+    await ensureModuleEnabled(cityId, moduleId);
+
+    const caseRecord = await prisma.taskforceCase.findUnique({ where: { id: req.params.id } });
+    if (!caseRecord || caseRecord.cityId !== cityId) throw new HttpError(404, "Case not found");
+
     const { status, assignedTo } = req.body as z.infer<typeof statusSchema>;
     const updated = await prisma.taskforceCase.update({
       where: { id: req.params.id },
-      data: { status, assignedTo },
-      include: { activities: false }
+      data: { status, assignedTo }
     });
-    if (updated.cityId !== cityId) return res.status(403).json({ error: "Cross-city access denied" });
+
+    await prisma.taskforceActivity.create({
+      data: {
+        cityId,
+        moduleId,
+        caseId: updated.id,
+        actorId: req.auth!.sub,
+        action: "UPDATE",
+        metadata: { status, assignedTo }
+      }
+    });
+
     res.json({ case: updated });
   } catch (err) {
     next(err);
@@ -73,8 +111,17 @@ router.patch("/cases/:id", validateBody(statusSchema), async (req, res, next) =>
 router.get("/cases", async (req, res, next) => {
   try {
     const cityId = req.auth!.cityId!;
+    const moduleId = await getModuleIdByName("TASKFORCE");
+    await requireModuleAccess(moduleId, [Role.EMPLOYEE, Role.QC, Role.ACTION_OFFICER, Role.CITY_ADMIN, Role.COMMISSIONER])(
+      req,
+      res,
+      async () => {}
+    );
+    await ensureModuleEnabled(cityId, moduleId);
+
     const cases = await prisma.taskforceCase.findMany({
-      where: { cityId, moduleId: TASKFORCE_MODULE_ID }
+      where: { cityId, moduleId },
+      include: { activities: true }
     });
     res.json({ cases });
   } catch (err) {
@@ -90,13 +137,23 @@ const activitySchema = z.object({
 router.post("/cases/:id/activity", validateBody(activitySchema), async (req, res, next) => {
   try {
     const cityId = req.auth!.cityId!;
-    const caseId = req.params.id;
+    const moduleId = await getModuleIdByName("TASKFORCE");
+    await requireModuleAccess(moduleId, [Role.EMPLOYEE, Role.QC, Role.ACTION_OFFICER, Role.CITY_ADMIN])(
+      req,
+      res,
+      async () => {}
+    );
+    await ensureModuleEnabled(cityId, moduleId);
+
+    const caseRecord = await prisma.taskforceCase.findUnique({ where: { id: req.params.id } });
+    if (!caseRecord || caseRecord.cityId !== cityId) throw new HttpError(404, "Case not found");
+
     const { action, metadata } = req.body as z.infer<typeof activitySchema>;
     const activity = await prisma.taskforceActivity.create({
       data: {
         cityId,
-        moduleId: TASKFORCE_MODULE_ID,
-        caseId,
+        moduleId,
+        caseId: caseRecord.id,
         actorId: req.auth!.sub,
         action,
         metadata

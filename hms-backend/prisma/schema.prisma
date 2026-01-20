@@ -5,6 +5,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 enum Role {
@@ -28,12 +29,14 @@ model City {
   hmsId               String
   name                String
   code                String              @unique
+  enabled             Boolean             @default(true)
   modules             CityModule[]
   users               UserCity[]
   moduleRoles         UserModuleRole[]
   permissions         Permission[]
   taskforceCases      TaskforceCase[]
   taskforceActivities TaskforceActivity[]
+  iecForms            IECForm[]
   zones               GeoNode[] // top-level children of type=ZONE
   createdAt           DateTime            @default(now())
 
@@ -52,6 +55,7 @@ model Module {
   permissions         Permission[]
   taskforceCases      TaskforceCase[]
   taskforceActivities TaskforceActivity[]
+  iecForms            IECForm[]
 }
 
 model CityModule {
@@ -99,6 +103,7 @@ model UserModuleRole {
   cityId    String
   moduleId  String
   role      Role
+  canWrite  Boolean  @default(false)
   createdAt DateTime @default(now())
 
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -133,6 +138,14 @@ enum GeoLevel {
   KOTHI
   SUB_KOTHI
   GALI
+  AREA
+  BEAT
+}
+
+enum AreaType {
+  RESIDENTIAL
+  COMMERCIAL
+  SLUM
 }
 
 model GeoNode {
@@ -141,6 +154,7 @@ model GeoNode {
   parentId  String?
   level     GeoLevel
   name      String
+  areaType  AreaType?
   path      String // materialized path for fast queries, e.g., /city/zone/ward
   createdAt DateTime @default(now())
 
@@ -190,4 +204,30 @@ model TaskforceActivity {
   case   TaskforceCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
 
   @@index([cityId, caseId])
+}
+
+// IEC module
+enum IECStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  REJECTED
+}
+
+model IECForm {
+  id          String    @id @default(uuid())
+  cityId      String
+  moduleId    String
+  title       String
+  description String?
+  status      IECStatus @default(DRAFT)
+  submittedBy String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  city   City   @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  module Module @relation(fields: [moduleId], references: [id], onDelete: Restrict)
+
+  @@index([cityId, status])
+  @@index([cityId, moduleId])
 }

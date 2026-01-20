@@ -1,4 +1,4 @@
-import { AuthUser, ModuleName, Role } from "@types/auth";
+import type { AuthUser, ModuleName, Role } from "../types/auth";
 
 export function hasRole(user: AuthUser | null, roles: Role[]): boolean {
   if (!user) return false;

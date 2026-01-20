@@ -34,12 +34,16 @@ router.post("/login", validateBody(loginSchema), async (req, res, next) => {
     const typedUser: UserWithRelations = user as UserWithRelations;
     const allowedCities = typedUser.cities.map((c) => c.cityId);
     const activeCityId = cityId && allowedCities.includes(cityId) ? cityId : allowedCities[0];
+    const cityRoles = typedUser.cities.filter((c) => c.cityId === activeCityId).map((c) => c.role);
+
+    // HMS bootstrap: if the user has no city assignments, treat them as HMS super admin
+    const effectiveRoles = cityRoles.length ? cityRoles : [Role.HMS_SUPER_ADMIN];
 
     const claims = {
       sub: user.id,
       cityId: activeCityId,
-      roles: typedUser.cities.filter((c) => c.cityId === activeCityId).map((c) => c.role),
-      modules: typedUser.modules.map((m) => ({ moduleId: m.moduleId, roles: [m.role] }))
+      roles: effectiveRoles,
+      modules: typedUser.modules.map((m) => ({ moduleId: m.moduleId, roles: [m.role], canWrite: m.canWrite }))
     };
     const token = signAccessToken(claims);
     res.json({ token, user: { id: user.id, email: user.email, name: user.name, cityId: activeCityId } });

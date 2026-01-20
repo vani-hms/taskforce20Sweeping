@@ -1,76 +1,263 @@
 'use client';
 
-import { useState } from "react";
-import { apiFetch } from "@lib/apiClient";
-import { ModuleName, Role } from "@types/auth";
+import { useEffect, useMemo, useState } from "react";
+import { CityUserApi } from "@lib/apiClient";
+import type { Role } from "../../../types/auth";
+
+type CityUser = { id: string; name: string; email: string; role: Role; createdAt: string };
+
+const allowedRoles: Role[] = ["COMMISSIONER", "ACTION_OFFICER", "QC", "EMPLOYEE"];
 
 export default function CityUsersPage() {
   const [email, setEmail] = useState("");
-  const [moduleName, setModuleName] = useState<ModuleName>("TASKFORCE");
+  const [name, setName] = useState("");
+  const [password, setPassword] = useState("");
+  const [moduleId, setModuleId] = useState("");
+  const [canWrite, setCanWrite] = useState(false);
   const [role, setRole] = useState<Role>("EMPLOYEE");
   const [status, setStatus] = useState("");
+  const [users, setUsers] = useState<CityUser[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [savingUserId, setSavingUserId] = useState<string | null>(null);
+  const [editing, setEditing] = useState<Record<string, { name: string; role: Role; moduleId: string; canWrite: boolean }>>({});
+
+  const sortedUsers = useMemo(
+    () => [...users].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
+    [users]
+  );
+
+  const loadUsers = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const data = await CityUserApi.list();
+      setUsers(data.users as CityUser[]);
+      const editState: Record<string, { name: string; role: Role; moduleId: string; canWrite: boolean }> = {};
+      data.users.forEach((u) => {
+        editState[u.id] = { name: u.name, role: u.role as Role, moduleId: "", canWrite: false };
+      });
+      setEditing(editState);
+    } catch (err: any) {
+      setError(err?.message || "Failed to load users");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadUsers();
+  }, []);
 
   const createUser = async (e: React.FormEvent) => {
     e.preventDefault();
     setStatus("Saving...");
+    setError("");
     try {
-      // API placeholder: POST /city/users
-      await apiFetch("/city/users", {
-        method: "POST",
-        body: JSON.stringify({ email, module: moduleName, role })
+      await CityUserApi.create({
+        email,
+        name,
+        password,
+        role,
+        moduleId: moduleId || undefined,
+        canWrite
       });
       setStatus("User created");
       setEmail("");
-    } catch {
-      setStatus("Failed to create user");
+      setName("");
+      setPassword("");
+      setModuleId("");
+      setCanWrite(false);
+      await loadUsers();
+    } catch (err: any) {
+      setStatus("");
+      setError(err?.message || "Failed to create user");
     }
   };
 
-  const resetPassword = async () => {
-    // API placeholder: POST /city/users/:email/reset
-    await apiFetch(`/city/users/${encodeURIComponent(email)}/reset`, { method: "POST" });
-    setStatus("Password reset link sent");
+  const updateUser = async (id: string) => {
+    const payload = editing[id];
+    if (!payload) return;
+    setSavingUserId(id);
+    setError("");
+    try {
+      await CityUserApi.update(id, {
+        name: payload.name,
+        role: payload.role,
+        moduleId: payload.moduleId || undefined,
+        canWrite: payload.canWrite
+      });
+      setStatus("User updated");
+      await loadUsers();
+    } catch (err: any) {
+      setError(err?.message || "Failed to update user");
+    } finally {
+      setSavingUserId(null);
+    }
   };
 
-  const disableUser = async () => {
-    // API placeholder: PATCH /city/users/:email/disable
-    await apiFetch(`/city/users/${encodeURIComponent(email)}/disable`, { method: "PATCH" });
-    setStatus("User disabled");
+  const deleteUser = async (id: string) => {
+    if (!confirm("Delete this user from the city?")) return;
+    setSavingUserId(id);
+    setError("");
+    try {
+      await CityUserApi.remove(id);
+      setStatus("User deleted");
+      await loadUsers();
+    } catch (err: any) {
+      setError(err?.message || "Failed to delete user");
+    } finally {
+      setSavingUserId(null);
+    }
   };
 
   return (
-    <div className="card">
-      <h2>User Management</h2>
-      <form onSubmit={createUser}>
-        <input
-          style={{ padding: 8, marginRight: 8 }}
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-        <select value={moduleName} onChange={(e) => setModuleName(e.target.value as ModuleName)} style={{ marginRight: 8 }}>
-          <option value="TASKFORCE">Taskforce</option>
-          <option value="IEC">IEC</option>
-          <option value="MODULE3">Module3</option>
-          <option value="MODULE4">Module4</option>
-          <option value="MODULE5">Module5</option>
-          <option value="MODULE6">Module6</option>
-          <option value="MODULE7">Module7</option>
-          <option value="MODULE8">Module8</option>
-        </select>
-        <select value={role} onChange={(e) => setRole(e.target.value as Role)} style={{ marginRight: 8 }}>
-          <option value="EMPLOYEE">Employee</option>
-          <option value="QC">QC</option>
-          <option value="ACTION_OFFICER">Action Officer</option>
-          <option value="COMMISSIONER">Commissioner</option>
-        </select>
-        <button type="submit">Create</button>
-      </form>
-      <div style={{ marginTop: 12, display: "flex", gap: 8 }}>
-        <button onClick={resetPassword}>Reset Password</button>
-        <button onClick={disableUser}>Disable User</button>
+    <div className="space-y-6">
+      <div className="card">
+        <h2>User Management</h2>
+        <p className="muted">Creates municipal users for the active city. CityId is taken from your token.</p>
+        <form onSubmit={createUser} className="grid gap-3 md:grid-cols-2">
+          <div className="field">
+            <label>Name</label>
+            <input className="input" value={name} onChange={(e) => setName(e.target.value)} required />
+          </div>
+          <div className="field">
+            <label>Email</label>
+            <input className="input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          </div>
+          <div className="field">
+            <label>Password</label>
+            <input className="input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+          </div>
+          <div className="field">
+            <label>Role</label>
+            <select className="input" value={role} onChange={(e) => setRole(e.target.value as Role)}>
+              {allowedRoles.map((r) => (
+                <option key={r} value={r}>
+                  {r.replace("_", " ").toLowerCase().replace(/\b\w/g, (l) => l.toUpperCase())}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="field">
+            <label>Module ID (optional for module-scoped roles)</label>
+            <input
+              className="input"
+              value={moduleId}
+              onChange={(e) => setModuleId(e.target.value)}
+              placeholder="Module UUID if assigning module role"
+            />
+          </div>
+          <div className="field flex items-center gap-2">
+            <input type="checkbox" checked={canWrite} onChange={(e) => setCanWrite(e.target.checked)} />
+            <label>Allow write access for module role</label>
+          </div>
+          <div className="md:col-span-2 flex gap-3 items-center">
+            <button className="btn btn-primary" type="submit" disabled={!email || !name || !password}>
+              Create User
+            </button>
+            {status && <span className="text-sm text-green-700">{status}</span>}
+            {error && <span className="text-sm text-red-600">{error}</span>}
+          </div>
+        </form>
       </div>
-      {status && <p>{status}</p>}
+
+      <div className="card">
+        <div className="flex justify-between items-center mb-3">
+          <div>
+            <h3 className="text-lg font-semibold">Users in this city</h3>
+            <p className="muted">Edit or remove municipal users assigned to your city.</p>
+          </div>
+          {loading && <span className="muted">Loading…</span>}
+        </div>
+        {error && <div className="text-red-600 text-sm mb-3">{error}</div>}
+        {!loading && sortedUsers.length === 0 && <div className="muted">No users found for this city.</div>}
+        {!loading && sortedUsers.length > 0 && (
+          <div className="overflow-x-auto">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Role</th>
+                  <th>Module ID</th>
+                  <th>Can Write</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sortedUsers.map((u) => {
+                  const edit = editing[u.id] || { name: u.name, role: u.role, moduleId: "", canWrite: false };
+                  return (
+                    <tr key={u.id}>
+                      <td>
+                        <input
+                          className="input"
+                          value={edit.name}
+                          onChange={(e) =>
+                            setEditing((prev) => ({ ...prev, [u.id]: { ...edit, name: e.target.value } }))
+                          }
+                        />
+                      </td>
+                      <td className="text-sm text-slate-600">{u.email}</td>
+                      <td>
+                        <select
+                          className="input"
+                          value={edit.role}
+                          onChange={(e) =>
+                            setEditing((prev) => ({ ...prev, [u.id]: { ...edit, role: e.target.value as Role } }))
+                          }
+                        >
+                          {allowedRoles.map((r) => (
+                            <option key={r} value={r}>
+                              {r.replace("_", " ").toLowerCase().replace(/\b\w/g, (l) => l.toUpperCase())}
+                            </option>
+                          ))}
+                        </select>
+                      </td>
+                      <td>
+                        <input
+                          className="input"
+                          placeholder="Module UUID"
+                          value={edit.moduleId}
+                          onChange={(e) =>
+                            setEditing((prev) => ({ ...prev, [u.id]: { ...edit, moduleId: e.target.value } }))
+                          }
+                        />
+                      </td>
+                      <td className="text-center">
+                        <input
+                          type="checkbox"
+                          checked={edit.canWrite}
+                          onChange={(e) =>
+                            setEditing((prev) => ({ ...prev, [u.id]: { ...edit, canWrite: e.target.checked } }))
+                          }
+                        />
+                      </td>
+                      <td className="flex gap-2">
+                        <button
+                          className="btn btn-secondary"
+                          onClick={() => updateUser(u.id)}
+                          disabled={savingUserId === u.id}
+                        >
+                          {savingUserId === u.id ? "Saving…" : "Save"}
+                        </button>
+                        <button
+                          className="btn btn-danger"
+                          onClick={() => deleteUser(u.id)}
+                          disabled={savingUserId === u.id}
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

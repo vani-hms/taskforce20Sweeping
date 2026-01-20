@@ -4,26 +4,36 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const links = [
-  { label: "Home", href: "/" },
-  { label: "HMS Super Admin", href: "/hms" },
-  { label: "City Admin", href: "/city" },
-  { label: "Municipal", href: "/municipal" },
-  { label: "Taskforce", href: "/modules/taskforce" },
-  { label: "IEC", href: "/modules/iec" }
+  { label: "Home", href: "/", icon: "🏠" },
+  { label: "HMS Super Admin", href: "/hms", icon: "🛡️" },
+  { label: "City Admin", href: "/city", icon: "🏙️" },
+  { label: "Municipal", href: "/municipal", icon: "🏛️" },
+  { label: "Taskforce", href: "/modules/taskforce", icon: "🗂️" },
+  { label: "IEC", href: "/modules/iec", icon: "📑" }
 ];
 
-export function Sidebar() {
+export default function Sidebar() {
   const pathname = usePathname();
   return (
     <aside className="sidebar">
-      <div className="logo">HMS Admin</div>
+      <div className="logo">
+        <div className="logo-mark">H</div>
+        <div>
+          <div className="logo-title">HMS Admin</div>
+          <div className="logo-sub">Multicity Portal</div>
+        </div>
+      </div>
       <div className="nav-section">
         <div className="nav-label">Navigation</div>
-        {links.map((link) => (
-          <Link key={link.href} className={`nav-link ${pathname === link.href ? "active" : ""}`} href={link.href}>
-            {link.label}
-          </Link>
-        ))}
+        {links.map((link) => {
+          const active = pathname === link.href;
+          return (
+            <Link key={link.href} className={`nav-link ${active ? "active" : ""}`} href={link.href}>
+              <span className="nav-icon">{link.icon}</span>
+              <span>{link.label}</span>
+            </Link>
+          );
+        })}
       </div>
     </aside>
   );

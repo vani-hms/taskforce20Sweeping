@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useAuth } from "@hooks/useAuth";
 import { hasModuleRole, hasRole, isHmsSuperAdmin } from "@utils/rbac";
-import { ModuleName, Role } from "@types/auth";
+import type { ModuleName, Role } from "../types/auth";
 
 export function Protected({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();

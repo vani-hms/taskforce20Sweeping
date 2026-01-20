@@ -2,10 +2,11 @@ import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "../prisma";
 import { authenticate } from "../middleware/auth";
-import { requireRoles } from "../middleware/rbac";
+import { requireRoles, requireModuleAccess, requireCityAccess } from "../middleware/rbac";
 import { validateBody } from "../utils/validation";
-import { Prisma, Role } from "../../generated/prisma";
+import { Role } from "../../generated/prisma";
 import { HttpError } from "../utils/errors";
+import { hashPassword } from "../auth/password";
 
 const router = Router();
 router.use(authenticate, requireRoles([Role.HMS_SUPER_ADMIN]));
@@ -13,6 +14,39 @@ router.use(authenticate, requireRoles([Role.HMS_SUPER_ADMIN]));
 const citySchema = z.object({
   name: z.string().min(1),
   code: z.string().min(1)
+});
+
+router.get("/cities", async (_req, res, next) => {
+  try {
+    const cities = await prisma.city.findMany({
+      include: {
+        modules: { include: { module: true } },
+        users: { include: { user: true } }
+      },
+      orderBy: { createdAt: "desc" }
+    });
+    res.json({
+      cities: cities.map((c) => ({
+        id: c.id,
+        name: c.name,
+        code: c.code,
+        enabled: c.enabled,
+        cityAdmin: c.users.find((u) => u.role === Role.CITY_ADMIN)
+          ? {
+              name: c.users.find((u) => u.role === Role.CITY_ADMIN)?.user.name || "",
+              email: c.users.find((u) => u.role === Role.CITY_ADMIN)?.user.email || ""
+            }
+          : null,
+        modules: c.modules.map((m) => ({
+          id: m.moduleId,
+          name: (m as any).module.name,
+          enabled: m.enabled
+        }))
+      }))
+    });
+  } catch (err) {
+    next(err);
+  }
 });
 
 router.post("/cities", validateBody(citySchema), async (req, res, next) => {
@@ -24,7 +58,8 @@ router.post("/cities", validateBody(citySchema), async (req, res, next) => {
       data: {
         name,
         code,
-        hmsId: hms.id
+        hmsId: hms.id,
+        enabled: true
       }
     });
     res.json({ city });
@@ -33,15 +68,27 @@ router.post("/cities", validateBody(citySchema), async (req, res, next) => {
   }
 });
 
-const moduleToggleSchema = z.object({
-  moduleId: z.string().uuid(),
-  enabled: z.boolean()
+router.patch("/cities/:cityId", async (req, res, next) => {
+  try {
+    const cityId = req.params.cityId;
+    const enabled = req.body?.enabled;
+    if (typeof enabled !== "boolean") throw new HttpError(400, "enabled boolean required");
+    const city = await prisma.city.update({
+      where: { id: cityId },
+      data: { enabled }
+    });
+    res.json({ city });
+  } catch (err) {
+    next(err);
+  }
 });
 
 router.patch("/cities/:cityId/modules/:moduleId", async (req, res, next) => {
   try {
     const cityId = req.params.cityId;
     const moduleId = req.params.moduleId;
+    const moduleExists = await prisma.module.findUnique({ where: { id: moduleId } });
+    if (!moduleExists) throw new HttpError(404, "Module not found");
     const enabled = req.body?.enabled ?? true;
     const cityModule = await prisma.cityModule.upsert({
       where: { cityId_moduleId: { cityId, moduleId } },
@@ -57,16 +104,18 @@ router.patch("/cities/:cityId/modules/:moduleId", async (req, res, next) => {
 const adminSchema = z.object({
   email: z.string().email(),
   password: z.string().min(6),
-  name: z.string().min(1),
-  cityId: z.string().uuid()
+  name: z.string().min(1)
 });
 
 router.post("/cities/:cityId/admins", validateBody(adminSchema), async (req, res, next) => {
   try {
-    const { email, password, name, cityId } = req.body as z.infer<typeof adminSchema>;
-    if (cityId !== req.params.cityId) throw new HttpError(400, "cityId mismatch");
+    const { email, password, name } = req.body as z.infer<typeof adminSchema>;
+    const cityId = req.params.cityId;
+    const city = await prisma.city.findUnique({ where: { id: cityId } });
+    if (!city) throw new HttpError(404, "City not found");
+    const hashed = await hashPassword(password);
     const user = await prisma.user.create({
-      data: { email, password, name }
+      data: { email, password: hashed, name }
     });
     await prisma.userCity.create({
       data: {
@@ -75,7 +124,16 @@ router.post("/cities/:cityId/admins", validateBody(adminSchema), async (req, res
         role: Role.CITY_ADMIN
       }
     });
-    res.json({ user });
+    res.json({ user: { id: user.id, email: user.email, name: user.name } });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get("/modules", async (_req, res, next) => {
+  try {
+    const modules = await prisma.module.findMany({ orderBy: { name: "asc" } });
+    res.json({ modules });
   } catch (err) {
     next(err);
   }

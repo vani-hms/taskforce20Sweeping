@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from "react";
-import { apiFetch } from "@lib/apiClient";
+import { ApiError, apiFetch } from "@lib/apiClient";
 
 type Level = "KOTHI" | "SUB_KOTHI" | "GALI";
 
@@ -15,11 +15,13 @@ export default function ExtendedHierarchyPage() {
     e.preventDefault();
     setStatus("Saving...");
     try {
-      // API placeholder: POST /city/geo
       await apiFetch("/city/geo", { method: "POST", body: JSON.stringify({ level, name, parentId }) });
       setStatus(`Created ${level}`);
-    } catch {
-      setStatus("Failed to create");
+      setName("");
+      setParentId("");
+    } catch (err) {
+      const msg = err instanceof ApiError ? err.message : "Failed to create";
+      setStatus(msg);
     }
   };
 

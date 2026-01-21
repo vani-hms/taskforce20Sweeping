@@ -13,31 +13,23 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
     try {
-      const { token } = await AuthApi.login({ email, password });
+      const { token, redirectTo } = await AuthApi.login({ email, password });
       setAuthCookie(token);
       const decoded = decodeToken(token);
       setUser(decoded);
-
-      // Route users to their primary workspace; super admin lands on HMS area to manage cities/admins.
-      const roles = decoded?.roles || [];
-      const target =
-        roles.includes("HMS_SUPER_ADMIN")
-          ? "/hms"
-          : roles.includes("CITY_ADMIN")
-            ? "/city"
-            : roles.length === 0
-              ? "/hms" // fallback: treat no-role logins as HMS bootstrap
-              : "/";
-      router.replace(target);
+      router.replace(redirectTo || "/");
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
         setError("Invalid credentials");
+      } else if (err instanceof ApiError) {
+        setError(err.message || "Login failed");
       } else {
         setError("Login failed");
       }
@@ -48,7 +40,7 @@ export default function LoginPage() {
 
   return (
     <div className="page" style={{ alignItems: "center", justifyContent: "center", minHeight: "80vh" }}>
-      <div className="card" style={{ maxWidth: 420, width: "100%" }}>
+      <div className="card" style={{ maxWidth: 440, width: "100%" }}>
         <h2 style={{ marginTop: 0 }}>Sign in to HMS</h2>
         <p style={{ color: "var(--muted)" }}>Secure access for HMS administrators and municipal teams.</p>
         <form onSubmit={handleSubmit}>
@@ -56,20 +48,33 @@ export default function LoginPage() {
             <label>Email</label>
             <input
               className="input"
+              type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
+              required
             />
           </div>
           <div className="form-field">
             <label>Password</label>
-            <input
-              type="password"
-              className="input"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-            />
+            <div className="input password-input">
+              <input
+                type={showPassword ? "text" : "password"}
+                className="flex-1"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter your password"
+                required
+              />
+              <button
+                type="button"
+                className="icon-button"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                onClick={() => setShowPassword((s) => !s)}
+              >
+                <span style={{ fontSize: 12 }}>{showPassword ? "Hide" : "Show"}</span>
+              </button>
+            </div>
           </div>
           {error && <div className="alert error">{error}</div>}
           <button type="submit" className="btn btn-primary" disabled={loading} style={{ width: "100%" }}>

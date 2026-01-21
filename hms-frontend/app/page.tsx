@@ -10,33 +10,27 @@ const cards = [
   {
     title: "City Admin",
     desc: "Manage geo hierarchy, municipal staff, and module access for your city.",
-    href: "/city",
+    href: "#",
     icon: "🏙️"
   },
   {
     title: "Municipal Commissioner",
     desc: "City-wide oversight and reporting.",
-    href: "/municipal/commissioner",
+    href: "#r",
     icon: "🏛️"
   },
   {
     title: "Taskforce Module",
     desc: "Create, assign, and track operational cases.",
-    href: "/modules/taskforce",
+    href: "#",
     icon: "🗂️"
   },
   {
     title: "IEC Module",
     desc: "Capture IEC submissions and review summaries.",
-    href: "/modules/iec",
+    href: "#",
     icon: "📑"
-  },
-  {
-    title: "Login",
-    desc: "Sign in to continue to your workspace.",
-    href: "/login",
-    icon: "🔐"
-  }
+  } 
 ];
 
 export default function LandingPage() {

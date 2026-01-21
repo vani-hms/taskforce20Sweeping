@@ -22,34 +22,71 @@ router.post("/login", validateBody(loginSchema), async (req, res, next) => {
       where: { email },
       include: {
         cities: true,
-        modules: true
+        modules: { include: { module: true } }
       }
     });
     if (!user) throw new HttpError(401, "Invalid credentials");
     const ok = await verifyPassword(password, user.password);
     if (!ok) throw new HttpError(401, "Invalid credentials");
 
-    // derive city context from memberships
-    type UserWithRelations = Prisma.UserGetPayload<{ include: { cities: true; modules: true } }>;
+    type UserWithRelations = Prisma.UserGetPayload<{ include: { cities: true; modules: { include: { module: true } } } }>;
     const typedUser: UserWithRelations = user as UserWithRelations;
+
+    // Determine active city and roles
     const allowedCities = typedUser.cities.map((c) => c.cityId);
     const activeCityId = cityId && allowedCities.includes(cityId) ? cityId : allowedCities[0];
-    const cityRoles = typedUser.cities.filter((c) => c.cityId === activeCityId).map((c) => c.role);
+    const cityRoles = activeCityId
+      ? typedUser.cities.filter((c) => c.cityId === activeCityId).map((c) => c.role)
+      : [];
 
     // HMS bootstrap: if the user has no city assignments, treat them as HMS super admin
     const effectiveRoles = cityRoles.length ? cityRoles : [Role.HMS_SUPER_ADMIN];
+
+    // Validate city presence for non-HMS users
+    const isHms = effectiveRoles.includes(Role.HMS_SUPER_ADMIN);
+    if (!isHms && !activeCityId) {
+      throw new HttpError(403, "No city assignment for this user");
+    }
+
+    // Build module claims
+    const moduleClaims = typedUser.modules
+      .filter((m) => !activeCityId || m.cityId === activeCityId)
+      .map((m) => ({ moduleId: m.moduleId, roles: [m.role], canWrite: m.canWrite, name: m.module.name }));
+
+    // Redirect decision
+    let redirectTo = "/login";
+    if (isHms) {
+      redirectTo = "/hms";
+    } else if (effectiveRoles.includes(Role.CITY_ADMIN) || effectiveRoles.includes(Role.COMMISSIONER)) {
+      redirectTo = "/city";
+    } else {
+      if (moduleClaims.length === 0) {
+        throw new HttpError(403, "No module assigned for this user");
+      }
+      const first = moduleClaims[0];
+      redirectTo = `/modules/${first.name.toLowerCase()}`;
+    }
 
     const claims = {
       sub: user.id,
       cityId: activeCityId,
       roles: effectiveRoles,
-      modules: typedUser.modules.map((m) => ({ moduleId: m.moduleId, roles: [m.role], canWrite: m.canWrite }))
+      modules: moduleClaims.map((m) => ({ moduleId: m.moduleId, roles: m.roles, canWrite: m.canWrite }))
     };
     const token = signAccessToken(claims);
-    res.json({ token, user: { id: user.id, email: user.email, name: user.name, cityId: activeCityId } });
+    res.json({
+      token,
+      user: { id: user.id, email: user.email, name: user.name, cityId: activeCityId, roles: effectiveRoles },
+      redirectTo
+    });
   } catch (err) {
     next(err);
   }
+});
+
+router.post("/logout", (_req, res) => {
+  // Stateless logout; frontend clears token cookie
+  res.json({ success: true });
 });
 
 // Example signup for seeding/testing HMS super admin

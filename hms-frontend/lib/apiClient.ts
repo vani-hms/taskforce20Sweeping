@@ -40,10 +40,11 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
 
 export const AuthApi = {
   login: async (body: { email: string; password: string; cityId?: string }) =>
-    apiFetch<{ token: string; user: any }>("/auth/login", {
+    apiFetch<{ token: string; user: any; redirectTo: string }>("/auth/login", {
       method: "POST",
       body: JSON.stringify(body)
-    })
+    }),
+  logout: async () => apiFetch<{ success: boolean }>("/auth/logout", { method: "POST" })
 };
 
 export const CityApi = {
@@ -92,7 +93,7 @@ export const CityUserApi = {
 let moduleMap: Record<string, string> | null = null;
 async function ensureModuleMap() {
   if (moduleMap) return moduleMap;
-  const result = await  .list();
+  const result = await ModuleApi.list();
   moduleMap = Object.fromEntries(result.modules.map((m) => [m.name.toUpperCase(), m.id]));
   return moduleMap;
 }

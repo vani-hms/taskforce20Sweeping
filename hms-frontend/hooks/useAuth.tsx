@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { clearAuthCookie, decodeToken, getTokenFromCookies, setAuthCookie } from "@lib/auth";
+import { AuthApi } from "@lib/apiClient";
 import type { AuthUser } from "../types/auth";
 
 interface AuthContextValue {
@@ -23,7 +24,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setLoading(false);
   }, []);
 
-  const logout = () => {
+  const logout = async () => {
+    try {
+      await AuthApi.logout();
+    } catch {
+      // ignore logout errors; proceed to clear client state
+    }
     clearAuthCookie();
     setUser(null);
   };

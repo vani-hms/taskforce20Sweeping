@@ -6,6 +6,7 @@ import { useAuthContext } from "../auth/AuthProvider";
 import { fetchCityInfo } from "../api/auth";
 import { getSession } from "../auth/session";
 import { ModuleRecordsApi } from "../api/modules";
+import { listRegistrationRequests } from "../api/auth";
 
 type Props = NativeStackScreenProps<RootStackParamList, "CityLanding">;
 
@@ -17,7 +18,12 @@ export default function CityLandingScreen({ route, navigation }: Props) {
   const [loading, setLoading] = useState(!cityName);
   const [error, setError] = useState("");
   const [counts, setCounts] = useState<Record<string, number>>({});
+  const [requests, setRequests] = useState<{ id: string; name: string; status: string }[]>([]);
+  const [requestsError, setRequestsError] = useState("");
   const modules = auth.status === "authenticated" && auth.modules ? auth.modules : [];
+  const roles = auth.status === "authenticated" ? auth.roles || [] : [];
+  const isQc = roles.includes("QC");
+  const isCityAdmin = roles.includes("CITY_ADMIN");
 
   useEffect(() => {
     const session = getSession();
@@ -45,6 +51,15 @@ export default function CityLandingScreen({ route, navigation }: Props) {
           if (res) map[m.key] = res.count;
         });
         setCounts(map);
+        if (isCityAdmin) {
+          try {
+            const data = await listRegistrationRequests();
+            setRequests((data.requests || []).slice(0, 5));
+            setRequestsError("");
+          } catch {
+            setRequestsError("Failed to load registration requests");
+          }
+        }
       } catch {
         setError("Failed to load data");
       } finally {
@@ -76,11 +91,11 @@ export default function CityLandingScreen({ route, navigation }: Props) {
           <Text style={styles.welcome}>WELCOME</Text>
           <Text style={styles.city}>{cityName || "Your City"}</Text>
           {error ? <Text style={styles.error}>{error}</Text> : null}
-          {modules.length === 0 ? (
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>You are not assigned to any module yet.</Text>
-              <Text style={styles.cardSubtitle}>Please contact your city administrator.</Text>
-            </View>
+        {modules.length === 0 ? (
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>You are not assigned to any module yet.</Text>
+            <Text style={styles.cardSubtitle}>Please contact your city administrator.</Text>
+          </View>
           ) : (
             <FlatList
               data={modules}
@@ -94,6 +109,27 @@ export default function CityLandingScreen({ route, navigation }: Props) {
               contentContainerStyle={{ paddingVertical: 12 }}
             />
           )}
+          {isCityAdmin && (
+            <View style={[styles.card, { marginTop: 8 }]}>
+              <Text style={styles.cardTitle}>Recent Registration Requests</Text>
+              {requestsError ? <Text style={styles.error}>{requestsError}</Text> : null}
+              {!requestsError && requests.length === 0 ? (
+                <Text style={styles.cardSubtitle}>No registration requests.</Text>
+              ) : null}
+              {!requestsError &&
+                requests.map((r) => (
+                  <View key={r.id} style={{ paddingVertical: 4 }}>
+                    <Text style={{ fontWeight: "600" }}>{r.name}</Text>
+                    <Text style={styles.cardSubtitle}>Status: {r.status}</Text>
+                  </View>
+                ))}
+            </View>
+          )}
+          {isQc ? (
+            <TouchableOpacity style={[styles.button, { marginTop: 12, backgroundColor: "#0ea5e9" }]} onPress={() => navigation.navigate("MyEmployees")}>
+              <Text style={styles.buttonText}>My Employees</Text>
+            </TouchableOpacity>
+          ) : null}
         </>
       )}
       <TouchableOpacity style={styles.button} onPress={handleLogout}>

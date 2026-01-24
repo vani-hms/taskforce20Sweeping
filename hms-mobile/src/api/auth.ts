@@ -37,3 +37,21 @@ export async function login(body: { email: string; password: string }) {
 export async function fetchCityInfo() {
   return request<{ city: { id: string; name: string } }>("/city/info");
 }
+
+export async function listRegistrationRequests() {
+  return request<{ requests: { id: string; name: string; status: string }[] }>("/city/registration-requests");
+}
+
+export async function submitRegistration(body: {
+  ulbCode: string;
+  name: string;
+  email: string;
+  phone: string;
+  aadharNumber: string;
+  password: string;
+}) {
+  return request<{ success: boolean; message: string }>("/auth/register-request", {
+    method: "POST",
+    body: JSON.stringify(body)
+  });
+}

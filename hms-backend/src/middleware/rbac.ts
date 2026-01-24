@@ -33,12 +33,9 @@ export function requireCityAccess() {
     const isCityAdmin = req.auth.roles.includes("CITY_ADMIN" as Role);
     const isCommissioner = req.auth.roles.includes("COMMISSIONER" as Role);
     const isActionOfficer = req.auth.roles.includes("ACTION_OFFICER" as Role);
-    if (isWrite && !isCityAdmin) {
-      return next(new HttpError(403, "Write access not permitted for this role"));
-    }
-    if (!isCityAdmin && !isCommissioner && !isActionOfficer) {
-      return next(new HttpError(403, "Forbidden"));
-    }
+    const isQc = req.auth.roles.includes("QC" as Role);
+    if (isWrite && !isCityAdmin) return next(new HttpError(403, "Write access not permitted for this role"));
+    if (!isCityAdmin && !isCommissioner && !isActionOfficer && !isQc) return next(new HttpError(403, "Forbidden"));
     next();
   };
 }

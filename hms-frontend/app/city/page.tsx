@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { ApiError, apiFetch } from "@lib/apiClient";
+import { ApiError, apiFetch, RegistrationApi } from "@lib/apiClient";
 
 const cards = [
   {
@@ -33,22 +33,36 @@ const cards = [
 
 export default function CityDashboardPage() {
   const [cityName, setCityName] = useState<string | null>(null);
+  const [ulbCode, setUlbCode] = useState<string | null>(null);
   const [cityError, setCityError] = useState("");
   const [cityLoading, setCityLoading] = useState(true);
+  const [requests, setRequests] = useState<{ id: string; name: string; status: string }[]>([]);
+  const [reqError, setReqError] = useState("");
 
   useEffect(() => {
     const loadCity = async () => {
       try {
         setCityLoading(true);
-        const res = await apiFetch<{ city: { id: string; name: string } }>("/city/info");
+        const res = await apiFetch<{ city: { id: string; name: string; ulbCode?: string } }>("/city/info");
         setCityName(res.city.name);
+        setUlbCode(res.city.ulbCode || null);
       } catch (err) {
         setCityError(err instanceof ApiError ? err.message : "Failed to load city");
       } finally {
         setCityLoading(false);
       }
     };
+    const loadRequests = async () => {
+      try {
+        const data = await RegistrationApi.listRequests();
+        setRequests((data.requests || []).slice(0, 5));
+        setReqError("");
+      } catch (err) {
+        setReqError(err instanceof ApiError ? err.message : "Failed to load registration requests");
+      }
+    };
     loadCity();
+    loadRequests();
   }, []);
 
   return (
@@ -66,8 +80,36 @@ export default function CityDashboardPage() {
           <>
             <p className="muted">You are managing hierarchy and users for your assigned city.</p>
             <div className="badge">{cityName || "Active City"}</div>
+            {ulbCode ? <div className="muted" style={{ marginTop: 4 }}>ULB Code: {ulbCode}</div> : null}
           </>
         )}
+      </div>
+
+      <div className="grid grid-2">
+        <div className="card">
+          <h3>Recent Registration Requests</h3>
+          {reqError && <div className="alert error">{reqError}</div>}
+          {!reqError && requests.length === 0 && <p className="muted">No registration requests.</p>}
+          {!reqError && requests.length > 0 && (
+            <div className="table">
+              <div className="table-head">
+                <div>Name</div>
+                <div>Status</div>
+              </div>
+              {requests.map((r) => (
+                <div className="table-row" key={r.id}>
+                  <div>{r.name}</div>
+                  <div>{r.status}</div>
+                </div>
+              ))}
+            </div>
+          )}
+          <div style={{ marginTop: 8 }}>
+            <Link className="btn btn-secondary btn-sm" href="/registration-requests">
+              View all requests
+            </Link>
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-2">

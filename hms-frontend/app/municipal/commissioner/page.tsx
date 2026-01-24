@@ -8,7 +8,7 @@ export default function CommissionerDashboard() {
         <p>Read-only city-wide and module-wise reports.</p>
         <ul>
           <li>City performance metrics</li>
-          <li>Module KPIs (Taskforce, IEC, etc.)</li>
+          <li>Module KPIs (Taskforce, Toilet, etc.)</li>
           <li>Download/export reports</li>
         </ul>
       </div>

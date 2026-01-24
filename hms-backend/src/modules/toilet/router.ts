@@ -24,7 +24,7 @@ const formSchema = z.object({
 router.post("/forms", validateBody(formSchema), async (req, res, next) => {
   try {
     const cityId = req.auth!.cityId!;
-    const moduleId = await getModuleIdByName("IEC");
+    const moduleId = await getModuleIdByName("TOILET");
     await assertModuleAccess(req, res, moduleId, [Role.EMPLOYEE, Role.QC, Role.ACTION_OFFICER, Role.CITY_ADMIN]);
     await ensureModuleEnabled(cityId, moduleId);
 
@@ -54,7 +54,7 @@ const updateSchema = z.object({
 router.patch("/forms/:id", validateBody(updateSchema), async (req, res, next) => {
   try {
     const cityId = req.auth!.cityId!;
-    const moduleId = await getModuleIdByName("IEC");
+    const moduleId = await getModuleIdByName("TOILET");
     await assertModuleAccess(req, res, moduleId, [Role.EMPLOYEE, Role.QC, Role.ACTION_OFFICER, Role.CITY_ADMIN]);
     await ensureModuleEnabled(cityId, moduleId);
 
@@ -74,7 +74,7 @@ router.patch("/forms/:id", validateBody(updateSchema), async (req, res, next) =>
 router.get("/forms", async (req, res, next) => {
   try {
     const cityId = req.auth!.cityId!;
-    const moduleId = await getModuleIdByName("IEC");
+    const moduleId = await getModuleIdByName("TOILET");
     await assertModuleAccess(req, res, moduleId, [
       Role.EMPLOYEE,
       Role.QC,
@@ -97,7 +97,7 @@ router.get("/forms", async (req, res, next) => {
 router.get("/reports/summary", async (req, res, next) => {
   try {
     const cityId = req.auth!.cityId!;
-    const moduleId = await getModuleIdByName("IEC");
+    const moduleId = await getModuleIdByName("TOILET");
     await assertModuleAccess(req, res, moduleId, [
       Role.EMPLOYEE,
       Role.QC,

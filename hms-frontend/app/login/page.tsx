@@ -81,6 +81,11 @@ export default function LoginPage() {
             {loading ? "Signing in..." : "Sign in"}
           </button>
         </form>
+        <div style={{ marginTop: 16, textAlign: "center" }}>
+          <a href="/register" className="link">
+            Register as User
+          </a>
+        </div>
       </div>
     </div>
   );

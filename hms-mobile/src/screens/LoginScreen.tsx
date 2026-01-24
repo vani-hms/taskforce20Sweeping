@@ -20,7 +20,6 @@ export default function LoginScreen({ navigation }: Props) {
     try {
       const { token, user } = await login({ email, password });
       await completeLogin(token, user.cityName, user.modules);
-      navigation.replace("CityLanding", { cityName: user.cityName });
     } catch (err: any) {
       if (err instanceof ApiError && err.status === 401) setError("Invalid credentials");
       else setError(err.message || "Login failed");
@@ -51,6 +50,9 @@ export default function LoginScreen({ navigation }: Props) {
       {error ? <Text style={styles.error}>{error}</Text> : null}
       <TouchableOpacity style={styles.button} onPress={onSubmit} disabled={loading}>
         {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Login</Text>}
+      </TouchableOpacity>
+      <TouchableOpacity style={{ marginTop: 12 }} onPress={() => navigation.navigate("Register")}>
+        <Text style={{ color: "#1d4ed8", textAlign: "center" }}>Register as User</Text>
       </TouchableOpacity>
     </View>
   );

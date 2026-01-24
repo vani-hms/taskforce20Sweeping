@@ -29,6 +29,7 @@ model City {
   hmsId               String
   name                String
   code                String              @unique
+  ulbCode             String              @unique
   enabled             Boolean             @default(true)
   modules             CityModule[]
   users               UserCity[]
@@ -97,6 +98,8 @@ model UserCity {
   userId    String
   cityId    String
   role      Role // City-level role (e.g., CITY_ADMIN)
+  zoneIds   String[] @default([])
+  wardIds   String[] @default([])
   createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)

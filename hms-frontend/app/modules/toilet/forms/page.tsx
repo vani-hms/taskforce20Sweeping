@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { ModuleGuard } from "@components/Guards";
-import { ApiError, IecApi } from "@lib/apiClient";
+import { ApiError, ToiletApi } from "@lib/apiClient";
 
 type Form = { id: string; title: string; description?: string; status: string; createdAt: string };
 
-export default function IecFormsPage() {
+export default function ToiletFormsPage() {
   const [forms, setForms] = useState<Form[]>([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -19,14 +19,14 @@ export default function IecFormsPage() {
   const load = async () => {
     try {
       setLoading(true);
-      const data = await IecApi.listForms();
+      const data = await ToiletApi.listForms();
       setForms(data.forms || []);
       setError("");
     } catch (err) {
       if (err instanceof ApiError && (err.status === 401 || err.status === 403)) {
-        setError("Not authorized for IEC in this city.");
+        setError("Not authorized for Toilet in this city.");
       } else {
-        setError("Failed to load IEC forms.");
+        setError("Failed to load Toilet forms.");
       }
     } finally {
       setLoading(false);
@@ -42,7 +42,7 @@ export default function IecFormsPage() {
     setSaving(true);
     setCreateStatus("Saving...");
     try {
-      await IecApi.createForm({ title, description: description || undefined });
+      await ToiletApi.createForm({ title, description: description || undefined });
       setCreateStatus("Created form");
       setTitle("");
       setDescription("");
@@ -56,10 +56,10 @@ export default function IecFormsPage() {
   };
 
   return (
-    <ModuleGuard module="IEC" roles={["EMPLOYEE", "QC", "ACTION_OFFICER", "CITY_ADMIN", "HMS_SUPER_ADMIN"]}>
+    <ModuleGuard module="TOILET" roles={["EMPLOYEE", "QC", "ACTION_OFFICER", "CITY_ADMIN", "HMS_SUPER_ADMIN"]}>
       <div className="grid grid-2">
         <div className="card">
-          <h3>Create IEC Form</h3>
+          <h3>Create Toilet Form</h3>
           <form onSubmit={createForm} className="form">
             <label>Title</label>
             <input className="input" value={title} onChange={(e) => setTitle(e.target.value)} required />

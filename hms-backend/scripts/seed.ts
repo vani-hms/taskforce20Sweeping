@@ -8,7 +8,7 @@ async function main() {
   const email = process.env.SEED_HMS_EMAIL || "admin@hms.local";
   const password = process.env.SEED_HMS_PASSWORD || "ChangeMe!123";
   const name = process.env.SEED_HMS_NAME || "HMS Super Admin";
-  const modules = ["TASKFORCE", "IEC"];
+  const modules = ["TASKFORCE", "TOILET"];
 
   // Ensure HMS org exists
   let hms = await prisma.hMS.findFirst();
@@ -27,7 +27,7 @@ async function main() {
       create: { name: mod }
     });
   }
-  console.log("✅ Base modules ensured (TASKFORCE, IEC)");
+  console.log("✅ Base modules ensured (TASKFORCE, TOILET)");
 
   const hashed = await hashPassword(password);
 

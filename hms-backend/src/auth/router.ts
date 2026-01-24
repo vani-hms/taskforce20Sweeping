@@ -242,4 +242,47 @@ router.post("/request-registration", validateBody(registrationSchema), async (re
   }
 });
 
+const publicRegistrationSchema = z.object({
+  ulbCode: z.string().min(1),
+  name: z.string().min(1),
+  email: z.string().email(),
+  phone: z.string().min(6),
+  aadharNumber: z.string().min(6),
+  password: z.string().min(6)
+});
+
+router.post("/register-request", validateBody(publicRegistrationSchema), async (req, res, next) => {
+  try {
+    const { ulbCode, name, email, phone, aadharNumber, password } = req.body as z.infer<
+      typeof publicRegistrationSchema
+    >;
+
+    const city = await prisma.city.findFirst({ where: { ulbCode } });
+    if (!city) throw new HttpError(400, "Invalid ULB Code");
+
+    const pending = await prisma.userRegistrationRequest.findFirst({
+      where: { cityId: city.id, email, status: "PENDING" }
+    });
+    if (pending) throw new HttpError(400, "A pending request already exists for this city");
+
+    const passwordHash = await hashPassword(password);
+    await prisma.userRegistrationRequest.create({
+      data: {
+        cityId: city.id,
+        name,
+        phone,
+        aadhaar: aadharNumber,
+        email,
+        passwordHash,
+        status: "PENDING",
+        requestedModules: []
+      }
+    });
+
+    res.json({ success: true, message: "Registration request sent to City Admin" });
+  } catch (err) {
+    next(err);
+  }
+});
+
 export default router;

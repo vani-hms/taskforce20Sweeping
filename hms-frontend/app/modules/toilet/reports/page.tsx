@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { ModuleGuard } from "@components/Guards";
-import { ApiError, IecApi } from "@lib/apiClient";
+import { ApiError, ToiletApi } from "@lib/apiClient";
 
 type Summary = { status: string; count: number };
 
-export default function IecReportsPage() {
+export default function ToiletReportsPage() {
   const [summary, setSummary] = useState<Summary[]>([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -14,14 +14,14 @@ export default function IecReportsPage() {
   useEffect(() => {
     const load = async () => {
       try {
-        const data = await IecApi.summary();
+        const data = await ToiletApi.summary();
         setSummary(data.summary || []);
         setError("");
       } catch (err) {
         if (err instanceof ApiError && (err.status === 401 || err.status === 403)) {
-          setError("Not authorized for IEC in this city.");
+          setError("Not authorized for Toilet in this city.");
         } else {
-          setError("Failed to load IEC summary.");
+          setError("Failed to load Toilet summary.");
         }
       } finally {
         setLoading(false);
@@ -31,9 +31,9 @@ export default function IecReportsPage() {
   }, []);
 
   return (
-    <ModuleGuard module="IEC" roles={["EMPLOYEE", "QC", "ACTION_OFFICER", "CITY_ADMIN", "HMS_SUPER_ADMIN"]}>
+    <ModuleGuard module="TOILET" roles={["EMPLOYEE", "QC", "ACTION_OFFICER", "CITY_ADMIN", "HMS_SUPER_ADMIN"]}>
       <div className="card">
-        <h3>IEC Summary</h3>
+        <h3>Toilet Summary</h3>
         {loading && <p>Loading...</p>}
         {error && <p className="alert error">{error}</p>}
         {!loading && !summary.length && !error && <p>No data.</p>}

@@ -65,15 +65,15 @@ Updates case; writes require canWrite or City Admin/HMS.
 POST /modules/taskforce/cases/:id/activity
 Body: { action: string; metadata? }
 Adds activity log; writes require canWrite or City Admin/HMS.
-Module: IEC (city-scoped; similar RBAC rules)
+Module: TOILET (city-scoped; similar RBAC rules)
 
-POST /modules/iec/forms
+POST /modules/toilet/forms
 Body: { title: string; description? }
-PATCH /modules/iec/forms/:id
+PATCH /modules/toilet/forms/:id
 Body: { title?, description?, status? }
-GET /modules/iec/forms
+GET /modules/toilet/forms
 Lists forms for city.
-GET /modules/iec/reports/summary
+GET /modules/toilet/reports/summary
 Returns status summary.
 RBAC rules summary
 

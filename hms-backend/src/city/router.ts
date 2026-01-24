@@ -208,7 +208,7 @@ const userSchema = z.object({
   name: z.string().min(1),
   password: z.string().min(6),
   // CITY_ADMIN creation via HMS only; limit here to non-admin staff
-  role: z.nativeEnum(Role).refine((r) => ["COMMISSIONER", "ACTION_OFFICER", "QC", "EMPLOYEE"].includes(r), {
+  role: z.nativeEnum(Role).refine((r) => ["COMMISSIONER", "ACTION_OFFICER", "QC", "EMPLOYEE"].includes(r as any), {
     message: "Invalid role"
   }),
   modules: moduleAssignmentSchema
@@ -291,12 +291,65 @@ router.get("/users", async (req, res, next) => {
   }
 });
 
+router.get("/employees", async (req, res, next) => {
+  try {
+    const cityId = req.auth!.cityId!;
+    const roles = req.auth!.roles || [];
+    const isCityAdmin = roles.includes(Role.CITY_ADMIN);
+    const isQc = roles.includes(Role.QC);
+    if (!isCityAdmin && !isQc) throw new HttpError(403, "Forbidden");
+
+    const records = await prisma.userCity.findMany({
+      where: { cityId },
+      include: { user: { include: { modules: { where: { cityId }, include: { module: true } } } } },
+      orderBy: { createdAt: "asc" }
+    });
+
+    const qcModuleIds = isQc ? req.auth!.modules?.map((m) => m.moduleId) || [] : [];
+    const filtered = isCityAdmin
+      ? records
+      : records.filter((uc) => {
+          if (uc.userId === req.auth!.sub) return false; // QC should not list self
+          const mods = uc.user.modules.map((m) => m.moduleId);
+          return mods.some((mid) => qcModuleIds.includes(mid));
+        });
+
+    const zoneIds = filtered.flatMap((f) => (f as any).zoneIds || []);
+    const wardIds = filtered.flatMap((f) => (f as any).wardIds || []);
+    const geoNodes = await prisma.geoNode.findMany({
+      where: { id: { in: Array.from(new Set([...zoneIds, ...wardIds])) } },
+      select: { id: true, name: true, level: true }
+    });
+    const geoMap = Object.fromEntries(geoNodes.map((g) => [g.id, g.name]));
+
+    res.json({
+      employees: filtered.map((uc) => ({
+        id: uc.userId,
+        name: uc.user.name,
+        email: uc.user.email,
+        role: uc.role,
+        modules: uc.user.modules.map((m) => ({
+          id: m.moduleId,
+          key: normalizeModuleKey(m.module.name),
+          name: getModuleLabel(m.module.name),
+          canWrite: m.canWrite
+        })),
+        zones: ((uc as any).zoneIds || []).map((z: string) => geoMap[z]).filter(Boolean),
+        wards: ((uc as any).wardIds || []).map((w: string) => geoMap[w]).filter(Boolean),
+        createdAt: uc.createdAt
+      }))
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.get("/info", async (req, res, next) => {
   try {
     const cityId = req.auth!.cityId!;
     const city = await prisma.city.findUnique({
       where: { id: cityId },
-      select: { id: true, name: true, code: true, enabled: true }
+      select: { id: true, name: true, code: true, ulbCode: true, enabled: true }
     });
     if (!city) throw new HttpError(404, "City not found");
     res.json({ city });
@@ -394,47 +447,20 @@ router.get("/registration-requests", async (req, res, next) => {
   try {
     const cityId = req.auth!.cityId!;
     const roles = req.auth!.roles || [];
-    const modules = req.auth!.modules || [];
-    const isCityAdmin = roles.includes(Role.CITY_ADMIN);
-    const isActionOfficer = roles.includes(Role.ACTION_OFFICER);
-    if (!isCityAdmin && !isActionOfficer) throw new HttpError(403, "Forbidden");
-
-    let moduleNames: string[] = [];
-    if (isActionOfficer && !isCityAdmin) {
-      const moduleIds = modules.map((m) => m.moduleId);
-      if (moduleIds.length) {
-        const mods = await prisma.module.findMany({ where: { id: { in: moduleIds } }, select: { name: true } });
-        moduleNames = mods.map((m) => m.name.toUpperCase());
-      }
-    }
+    if (!roles.includes(Role.CITY_ADMIN)) throw new HttpError(403, "Forbidden");
 
     const requests = await prisma.userRegistrationRequest.findMany({
-      where: {
-        cityId,
-        ...(isActionOfficer && !isCityAdmin && moduleNames.length
-          ? { requestedModules: { hasSome: moduleNames } }
-          : {})
-      },
+      where: { cityId },
       orderBy: { createdAt: "desc" }
     });
-
-    const zoneIds = Array.from(new Set(requests.map((r) => r.zoneId).filter(Boolean) as string[]));
-    const wardIds = Array.from(new Set(requests.map((r) => r.wardId).filter(Boolean) as string[]));
-    const geoNodes = await prisma.geoNode.findMany({
-      where: { id: { in: [...zoneIds, ...wardIds] } },
-      select: { id: true, name: true, level: true }
-    });
-    const geoMap = Object.fromEntries(geoNodes.map((g) => [g.id, g.name]));
 
     res.json({
       requests: requests.map((r) => ({
         id: r.id,
         name: r.name,
+        email: r.email,
         phone: r.phone,
-        cityId: r.cityId,
-        zone: r.zoneId ? geoMap[r.zoneId] : null,
-        ward: r.wardId ? geoMap[r.wardId] : null,
-        requestedModules: r.requestedModules,
+        aadhaar: r.aadhaar,
         status: r.status,
         createdAt: r.createdAt
       }))
@@ -444,35 +470,47 @@ router.get("/registration-requests", async (req, res, next) => {
   }
 });
 
-router.post("/registration-requests/:id/approve", async (req, res, next) => {
+const approvalSchema = z.object({
+  role: z.enum(["EMPLOYEE", "QC", "ACTION_OFFICER"]),
+  moduleKeys: z.array(z.string().min(1)).min(1),
+  zoneIds: z.array(z.string().uuid()).optional(),
+  wardIds: z.array(z.string().uuid()).optional()
+});
+
+router.post("/registration-requests/:id/approve", validateBody(approvalSchema), async (req, res, next) => {
   try {
     const cityId = req.auth!.cityId!;
     const userId = req.auth!.sub;
     const roles = req.auth!.roles || [];
-    const modules = req.auth!.modules || [];
+    if (!roles.includes(Role.CITY_ADMIN)) throw new HttpError(403, "Forbidden");
+
+    const { role, moduleKeys, zoneIds, wardIds } = req.body as z.infer<typeof approvalSchema>;
 
     const request = await prisma.userRegistrationRequest.findUnique({ where: { id: req.params.id } });
     if (!request || request.cityId !== cityId) throw new HttpError(404, "Request not found");
     if (request.status !== "PENDING") throw new HttpError(400, "Request already processed");
 
-    const isCityAdmin = roles.includes(Role.CITY_ADMIN);
-    const isActionOfficer = roles.includes(Role.ACTION_OFFICER);
-    let allowed = isCityAdmin;
-    if (!allowed && isActionOfficer) {
-      const moduleIds = modules.map((m) => m.moduleId);
-      if (moduleIds.length) {
-        const modNames = await prisma.module.findMany({
-          where: { id: { in: moduleIds } },
-          select: { name: true }
-        });
-        const names = modNames.map((m) => m.name.toUpperCase());
-        allowed = request.requestedModules.some((rm) => names.includes(rm));
-      }
-    }
-    if (!allowed) throw new HttpError(403, "Forbidden");
+    // Validate zones/wards belong to city
+    const zoneList = zoneIds?.length
+      ? await prisma.geoNode.findMany({ where: { id: { in: zoneIds }, cityId, level: "ZONE" as any } })
+      : [];
+    if (zoneIds && zoneList.length !== zoneIds.length) throw new HttpError(400, "Invalid zones for this city");
+    const wardList = wardIds?.length
+      ? await prisma.geoNode.findMany({ where: { id: { in: wardIds }, cityId, level: "WARD" as any } })
+      : [];
+    if (wardIds && wardList.length !== wardIds.length) throw new HttpError(400, "Invalid wards for this city");
 
-    const existing = await prisma.user.findUnique({ where: { email: request.email } });
-    if (existing) throw new HttpError(400, "User already exists");
+    // Resolve modules by key and ensure enabled for city
+    const moduleNames = moduleKeys.map((k: string) => normalizeModuleKey(k));
+    const modules = await prisma.module.findMany({ where: { name: { in: moduleNames } } });
+    if (modules.length !== moduleNames.length) throw new HttpError(400, "One or more modules not found");
+    const cityModules = await prisma.cityModule.findMany({
+      where: { cityId, moduleId: { in: modules.map((m) => m.id) }, enabled: true }
+    });
+    if (cityModules.length !== modules.length) throw new HttpError(400, "Modules not enabled for this city");
+
+    const existingUser = await prisma.user.findUnique({ where: { email: request.email } });
+    if (existingUser) throw new HttpError(400, "User already exists");
 
     const createdUser = await prisma.user.create({
       data: {
@@ -481,24 +519,23 @@ router.post("/registration-requests/:id/approve", async (req, res, next) => {
         password: request.passwordHash
       }
     });
+
     await prisma.userCity.create({
       data: {
         userId: createdUser.id,
         cityId,
-        role: Role.EMPLOYEE
-      }
+        role: role as any,
+        zoneIds: zoneIds || [],
+        wardIds: wardIds || []
+      } as any
     });
 
-    const modulesToAssign = await prisma.module.findMany({
-      where: { name: { in: request.requestedModules } },
-      select: { id: true, name: true }
-    });
     await prisma.userModuleRole.createMany({
-      data: modulesToAssign.map((m) => ({
+      data: modules.map((m) => ({
         userId: createdUser.id,
         cityId,
         moduleId: m.id,
-        role: Role.EMPLOYEE,
+        role: role as any,
         canWrite: false
       }))
     });
@@ -508,7 +545,7 @@ router.post("/registration-requests/:id/approve", async (req, res, next) => {
       data: {
         status: "APPROVED",
         approvedByUserId: userId,
-        approvedByRole: isCityAdmin ? Role.CITY_ADMIN : Role.ACTION_OFFICER,
+        approvedByRole: Role.CITY_ADMIN,
         approvedAt: new Date()
       }
     });
@@ -524,35 +561,19 @@ router.post("/registration-requests/:id/reject", async (req, res, next) => {
     const cityId = req.auth!.cityId!;
     const userId = req.auth!.sub;
     const roles = req.auth!.roles || [];
-    const modules = req.auth!.modules || [];
     const reason = typeof req.body?.reason === "string" ? req.body.reason : null;
+    if (!roles.includes(Role.CITY_ADMIN)) throw new HttpError(403, "Forbidden");
 
     const request = await prisma.userRegistrationRequest.findUnique({ where: { id: req.params.id } });
     if (!request || request.cityId !== cityId) throw new HttpError(404, "Request not found");
     if (request.status !== "PENDING") throw new HttpError(400, "Request already processed");
-
-    const isCityAdmin = roles.includes(Role.CITY_ADMIN);
-    const isActionOfficer = roles.includes(Role.ACTION_OFFICER);
-    let allowed = isCityAdmin;
-    if (!allowed && isActionOfficer) {
-      const moduleIds = modules.map((m) => m.moduleId);
-      if (moduleIds.length) {
-        const modNames = await prisma.module.findMany({
-          where: { id: { in: moduleIds } },
-          select: { name: true }
-        });
-        const names = modNames.map((m) => m.name.toUpperCase());
-        allowed = request.requestedModules.some((rm) => names.includes(rm));
-      }
-    }
-    if (!allowed) throw new HttpError(403, "Forbidden");
 
     await prisma.userRegistrationRequest.update({
       where: { id: request.id },
       data: {
         status: "REJECTED",
         rejectedByUserId: userId,
-        rejectedByRole: isCityAdmin ? Role.CITY_ADMIN : Role.ACTION_OFFICER,
+        rejectedByRole: Role.CITY_ADMIN,
         rejectedAt: new Date(),
         rejectReason: reason
       }

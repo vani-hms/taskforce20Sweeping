@@ -9,7 +9,7 @@ export default function ActionOfficerPage() {
         <ul>
           <li>View assigned tasks (API: GET /municipal/tasks?assignedTo=me)</li>
           <li>Update status (in-progress, completed, escalated)</li>
-          <li>Module-specific links (Taskforce, IEC, etc.)</li>
+          <li>Module-specific links (Taskforce, Toilet, etc.)</li>
         </ul>
       </div>
     </RoleGuard>

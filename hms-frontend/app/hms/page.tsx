@@ -12,6 +12,7 @@ interface CityRow {
   id: string;
   name: string;
   code: string;
+  ulbCode?: string;
   enabled: boolean;
   cityAdmin: CityAdminInfo | null;
 }
@@ -23,6 +24,7 @@ export default function HmsDashboardPage() {
 
   const [cityName, setCityName] = useState("");
   const [cityCode, setCityCode] = useState("");
+  const [cityUlbCode, setCityUlbCode] = useState("");
   const [cityStatus, setCityStatus] = useState("");
 
   const [adminCityId, setAdminCityId] = useState("");
@@ -53,10 +55,11 @@ export default function HmsDashboardPage() {
     e.preventDefault();
     setCityStatus("Creating...");
     try {
-      await CityApi.create({ name: cityName, code: cityCode });
+      await CityApi.create({ name: cityName, code: cityCode, ulbCode: cityUlbCode || cityCode });
       setCityStatus("City created.");
       setCityName("");
       setCityCode("");
+      setCityUlbCode("");
       await refresh();
     } catch (err: any) {
       const message = err instanceof ApiError ? err.message : "Failed to create city.";
@@ -115,6 +118,7 @@ export default function HmsDashboardPage() {
               <div className="table-head">
                 <div>City</div>
                 <div>Code</div>
+                <div>ULB Code</div>
                 <div>City Admin</div>
                 <div>Email</div>
                 <div>Status</div>
@@ -128,6 +132,7 @@ export default function HmsDashboardPage() {
                     </div>
                   </div>
                   <div>{city.code}</div>
+                  <div>{city.ulbCode || "—"}</div>
                   <div>{city.cityAdmin?.name || "—"}</div>
                   <div>{city.cityAdmin?.email || "—"}</div>
                   <div>
@@ -154,6 +159,13 @@ export default function HmsDashboardPage() {
                 <input className="input" value={cityName} onChange={(e) => setCityName(e.target.value)} required />
                 <label>Code</label>
                 <input className="input" value={cityCode} onChange={(e) => setCityCode(e.target.value)} required />
+                <label>ULB Code</label>
+                <input
+                  className="input"
+                  value={cityUlbCode}
+                  onChange={(e) => setCityUlbCode(e.target.value)}
+                  placeholder="Enter ULB code"
+                />
                 <button className="btn btn-primary" type="submit">
                   Create
                 </button>

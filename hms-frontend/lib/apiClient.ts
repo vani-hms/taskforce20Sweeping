@@ -44,12 +44,24 @@ export const AuthApi = {
       method: "POST",
       body: JSON.stringify(body)
     }),
+  registerRequest: (body: {
+    ulbCode: string;
+    name: string;
+    email: string;
+    phone: string;
+    aadharNumber: string;
+    password: string;
+  }) =>
+    apiFetch<{ success: boolean; message: string }>("/auth/register-request", {
+      method: "POST",
+      body: JSON.stringify(body)
+    }),
   logout: async () => apiFetch<{ success: boolean }>("/auth/logout", { method: "POST" })
 };
 
 export const CityApi = {
   list: () => apiFetch("/hms/cities"),
-  create: (body: { name: string; code: string }) =>
+  create: (body: { name: string; code: string; ulbCode: string }) =>
     apiFetch("/hms/cities", { method: "POST", body: JSON.stringify(body) }),
   setEnabled: (cityId: string, enabled: boolean) =>
     apiFetch(`/hms/cities/${cityId}`, { method: "PATCH", body: JSON.stringify({ enabled }) }),
@@ -134,13 +146,13 @@ export const TaskforceApi = {
     })
 };
 
-export const IecApi = {
+export const ToiletApi = {
   createForm: (body: { title: string; description?: string }) =>
-    apiFetch<{ form: any }>("/modules/iec/forms", { method: "POST", body: JSON.stringify(body) }),
+    apiFetch<{ form: any }>("/modules/toilet/forms", { method: "POST", body: JSON.stringify(body) }),
   updateForm: (id: string, body: { title?: string; description?: string; status?: string }) =>
-    apiFetch<{ form: any }>(`/modules/iec/forms/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
-  listForms: () => apiFetch<{ forms: any[] }>("/modules/iec/forms"),
-  summary: () => apiFetch<{ summary: { status: string; count: number }[] }>("/modules/iec/reports/summary")
+    apiFetch<{ form: any }>(`/modules/toilet/forms/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
+  listForms: () => apiFetch<{ forms: any[] }>("/modules/toilet/forms"),
+  summary: () => apiFetch<{ summary: { status: string; count: number }[] }>("/modules/toilet/reports/summary")
 };
 
 export const ModuleRecordsApi = {
@@ -152,7 +164,33 @@ export const ModuleRecordsApi = {
 
 export const RegistrationApi = {
   listRequests: () =>
-    apiFetch<{ requests: { id: string; name: string; phone: string; cityId: string; zone?: string | null; ward?: string | null; requestedModules: string[]; status: string; createdAt: string }[] }>(
-      "/city/registration-requests"
-    )
+    apiFetch<{
+      requests: { id: string; name: string; email: string; phone: string; aadhaar: string; status: string; createdAt: string }[];
+    }>("/city/registration-requests"),
+  approve: (id: string, body: { role: "EMPLOYEE" | "QC" | "ACTION_OFFICER"; moduleKeys: string[]; zoneIds?: string[]; wardIds?: string[] }) =>
+    apiFetch<{ success: boolean }>(`/city/registration-requests/${id}/approve`, {
+      method: "POST",
+      body: JSON.stringify(body)
+    }),
+  reject: (id: string, reason?: string) =>
+    apiFetch<{ success: boolean }>(`/city/registration-requests/${id}/reject`, {
+      method: "POST",
+      body: JSON.stringify(reason ? { reason } : {})
+    })
+};
+
+export const EmployeesApi = {
+  list: () =>
+    apiFetch<{
+      employees: {
+        id: string;
+        name: string;
+        email: string;
+        role: string;
+        modules: { id: string; key: string; name: string; canWrite: boolean }[];
+        zones: string[];
+        wards: string[];
+        createdAt: string;
+      }[];
+    }>("/city/employees")
 };

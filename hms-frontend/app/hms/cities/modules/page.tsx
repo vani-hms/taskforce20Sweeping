@@ -5,7 +5,7 @@ import { ApiError, CityApi, getModuleId } from "@lib/apiClient";
 
 type City = { id: string; name: string; modules: { moduleId: string; enabled: boolean; name: string }[] };
 
-const AVAILABLE_MODULES = ["TASKFORCE", "IEC", "MODULE3", "MODULE4", "MODULE5", "MODULE6", "MODULE7", "MODULE8"] as const;
+const AVAILABLE_MODULES = ["TASKFORCE", "TOILET", "MODULE3", "MODULE4", "MODULE5", "MODULE6", "MODULE7", "MODULE8"] as const;
 
 export default function CityModulesPage() {
   const [cities, setCities] = useState<City[]>([]);

@@ -2,7 +2,8 @@ const MODULE_LABELS: Record<string, string> = {
   SWEEP_RES: "Sweeping Residential",
   SWEEP_COM: "Sweeping Commercial",
   TWINBIN: "Twinbin",
-  TASKFORCE: "Taskforce"
+  TASKFORCE: "Taskforce",
+  TOILET: "Toilet"
 };
 
 export function normalizeModuleKey(key: string) {

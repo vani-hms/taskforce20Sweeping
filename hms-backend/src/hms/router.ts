@@ -14,10 +14,11 @@ router.use(authenticate, requireRoles([Role.HMS_SUPER_ADMIN]));
 
 const citySchema = z.object({
   name: z.string().min(1),
-  code: z.string().min(1)
+  code: z.string().min(1),
+  ulbCode: z.string().min(1)
 });
 
-const DEFAULT_MODULES = ["SWEEP_RES", "SWEEP_COM", "TWINBIN", "TASKFORCE"];
+const DEFAULT_MODULES = ["SWEEP_RES", "SWEEP_COM", "TWINBIN", "TASKFORCE", "TOILET"];
 
 async function ensureModulesExist(): Promise<{ id: string; name: string }[]> {
   const existing = await prisma.module.findMany({ orderBy: { name: "asc" } });
@@ -50,6 +51,7 @@ router.get("/cities", async (_req, res, next) => {
         id: c.id,
         name: c.name,
         code: c.code,
+        ulbCode: c.ulbCode,
         enabled: c.enabled,
         cityAdmin: c.users.find((u) => u.role === Role.CITY_ADMIN)
           ? {
@@ -71,18 +73,21 @@ router.get("/cities", async (_req, res, next) => {
 
 router.post("/cities", validateBody(citySchema), async (req, res, next) => {
   try {
-    const { name, code } = req.body as z.infer<typeof citySchema>;
+    const { name, code, ulbCode } = req.body as z.infer<typeof citySchema>;
     const hms = await prisma.hMS.findFirst({ where: { name: "HMS" } });
     if (!hms) throw new HttpError(400, "HMS org missing");
     const activeModules = await ensureModulesExist();
+    const existing = await prisma.city.findFirst({ where: { OR: [{ code }, { ulbCode }] } });
+    if (existing) throw new HttpError(400, "City code or ULB code already exists");
 
     const city = await prisma.city.create({
       data: {
         name,
         code,
+        ulbCode,
         hmsId: hms.id,
         enabled: true
-      }
+      } as any
     });
 
     await syncCityModules(city.id);

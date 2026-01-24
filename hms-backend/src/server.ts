@@ -5,7 +5,7 @@ import authRouter from "./auth/router";
 import hmsRouter from "./hms/router";
 import cityRouter from "./city/router";
 import taskforceRouter from "./modules/taskforce/router";
-import iecRouter from "./modules/iec/router";
+import toiletRouter from "./modules/toilet/router";
 import recordsRouter from "./modules/recordsRouter";
 import publicRouter from "./public/router";
 import { errorHandler } from "./middleware/errorHandler";
@@ -45,7 +45,7 @@ app.use("/hms", hmsRouter);
 app.use("/city", cityRouter);
 app.use("/modules", recordsRouter);
 app.use("/modules/taskforce", taskforceRouter);
-app.use("/modules/iec", iecRouter);
+app.use("/modules/toilet", toiletRouter);
 
 app.use(errorHandler);
 

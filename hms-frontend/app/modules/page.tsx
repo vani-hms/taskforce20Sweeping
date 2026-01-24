@@ -15,6 +15,7 @@ function labelForModule(name?: string, key?: string) {
 export default function ModulesLanding() {
   const { user } = useAuth();
   const modules = user?.modules || [];
+  const hasQc = user?.roles?.includes("QC");
 
   return (
     <Protected>
@@ -35,6 +36,15 @@ export default function ModulesLanding() {
                 </Link>
               </div>
             ))}
+            {hasQc && (
+              <div className="card card-hover">
+                <h3>Employees</h3>
+                <p className="muted">View employees assigned to your modules.</p>
+                <Link className="btn btn-secondary btn-sm" href="/employees">
+                  View
+                </Link>
+              </div>
+            )}
           </div>
         )}
       </div>

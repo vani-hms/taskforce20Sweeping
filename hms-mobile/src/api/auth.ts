@@ -42,6 +42,37 @@ export async function listRegistrationRequests() {
   return request<{ requests: { id: string; name: string; status: string }[] }>("/city/registration-requests");
 }
 
+export async function listModules() {
+  return request<{ id: string; key: string; name: string; enabled: boolean }[]>("/city/modules");
+}
+
+export async function listGeo(level: "ZONE" | "WARD") {
+  return request<{ nodes: { id: string; name: string; parentId?: string | null }[] }>(
+    `/city/geo?level=${level}`
+  );
+}
+
+export async function approveRegistrationRequest(
+  id: string,
+  body: { role: "EMPLOYEE" | "QC" | "ACTION_OFFICER"; moduleKeys: string[]; zoneIds?: string[]; wardIds?: string[] }
+) {
+  const token = await getToken();
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...(token ? { Authorization: `Bearer ${token}` } : {})
+  };
+  const res = await fetch(`${API_BASE_URL}/city/registration-requests/${id}/approve`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new ApiError(res.status, text || res.statusText);
+  }
+  return res.json() as Promise<{ success: boolean }>;
+}
+
 export async function submitRegistration(body: {
   ulbCode: string;
   name: string;

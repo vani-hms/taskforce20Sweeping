@@ -299,19 +299,29 @@ router.get("/employees", async (req, res, next) => {
     const isQc = roles.includes(Role.QC);
     if (!isCityAdmin && !isQc) throw new HttpError(403, "Forbidden");
 
+    const qcModuleIds = isQc
+      ? new Set(
+          (
+            await prisma.userModuleRole.findMany({
+              where: { userId: req.auth!.sub, cityId },
+              select: { moduleId: true }
+            })
+          ).map((m) => m.moduleId)
+        )
+      : new Set<string>();
+
     const records = await prisma.userCity.findMany({
-      where: { cityId },
+      where: { cityId, role: Role.EMPLOYEE },
       include: { user: { include: { modules: { where: { cityId }, include: { module: true } } } } },
       orderBy: { createdAt: "asc" }
     });
 
-    const qcModuleIds = isQc ? req.auth!.modules?.map((m) => m.moduleId) || [] : [];
     const filtered = isCityAdmin
       ? records
       : records.filter((uc) => {
           if (uc.userId === req.auth!.sub) return false; // QC should not list self
           const mods = uc.user.modules.map((m) => m.moduleId);
-          return mods.some((mid) => qcModuleIds.includes(mid));
+          return mods.some((mid) => qcModuleIds.has(mid));
         });
 
     const zoneIds = filtered.flatMap((f) => (f as any).zoneIds || []);

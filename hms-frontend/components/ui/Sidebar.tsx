@@ -52,7 +52,11 @@ export default function Sidebar() {
       ...moduleLinks
     ];
   } else if (hasRole("ACTION_OFFICER") || hasRole("QC") || hasRole("EMPLOYEE")) {
-    links = moduleLinks;
+    const common = [...moduleLinks];
+    if (hasRole("QC")) {
+      common.push({ label: "Employees", href: "/employees" });
+    }
+    links = common;
   } else {
     links = [{ label: "Home", href: "/" }];
   }

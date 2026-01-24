@@ -19,7 +19,7 @@ export default function RegistrationRequestsPage() {
   const [requests, setRequests] = useState<Request[]>([]);
   const [modules, setModules] = useState<{ id: string; key: string; name: string }[]>([]);
   const [zones, setZones] = useState<{ id: string; name: string }[]>([]);
-  const [wards, setWards] = useState<{ id: string; name: string }[]>([]);
+  const [wards, setWards] = useState<{ id: string; name: string; parentId?: string | null }[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [modal, setModal] = useState<{
@@ -44,7 +44,7 @@ export default function RegistrationRequestsPage() {
       setRequests(reqs.requests || []);
       setModules(mods);
       setZones((zonesData.nodes || []).map((z: any) => ({ id: z.id, name: z.name })));
-      setWards((wardsData.nodes || []).map((w: any) => ({ id: w.id, name: w.name })));
+      setWards((wardsData.nodes || []).map((w: any) => ({ id: w.id, name: w.name, parentId: w.parentId || null })));
     } catch {
       setError("Failed to load registration requests");
     } finally {
@@ -195,18 +195,20 @@ export default function RegistrationRequestsPage() {
 
               <label>Wards (optional)</label>
               <div className="pill-grid">
-                {wards.map((w) => (
-                  <label key={w.id} className="pill">
-                    <input
-                      type="checkbox"
-                      checked={modal.wardIds.has(w.id)}
-                      onChange={() =>
-                        setModal((mod) => (mod ? { ...mod, wardIds: toggleSet(mod.wardIds, w.id) } : mod))
-                      }
-                    />{" "}
-                    {w.name}
-                  </label>
-                ))}
+                {wards
+                  .filter((w) => modal.zoneIds.size === 0 || (w.parentId && modal.zoneIds.has(w.parentId)))
+                  .map((w) => (
+                    <label key={w.id} className="pill">
+                      <input
+                        type="checkbox"
+                        checked={modal.wardIds.has(w.id)}
+                        onChange={() =>
+                          setModal((mod) => (mod ? { ...mod, wardIds: toggleSet(mod.wardIds, w.id) } : mod))
+                        }
+                      />{" "}
+                      {w.name}
+                    </label>
+                  ))}
               </div>
             </div>
             <div className="modal-footer">

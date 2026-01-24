@@ -5,6 +5,7 @@ import RegisterScreen from "../screens/RegisterScreen";
 import CityLandingScreen from "../screens/CityLandingScreen";
 import ModuleHomeWrapper from "../screens/modules/ModuleHomeWrapper";
 import MyEmployeesScreen from "../screens/MyEmployeesScreen";
+import RegistrationRequestsScreen from "../screens/RegistrationRequestsScreen";
 import { useAuthContext } from "../auth/AuthProvider";
 import { RootStackParamList } from "./types";
 
@@ -27,6 +28,7 @@ export function RootNavigator() {
       <Stack.Screen name="CityLanding" component={CityLandingScreen} initialParams={{ cityName: auth.cityName }} />
       <Stack.Screen name="Module" component={ModuleHomeWrapper} />
       <Stack.Screen name="MyEmployees" component={MyEmployeesScreen} />
+      <Stack.Screen name="RegistrationRequests" component={RegistrationRequestsScreen} />
     </Stack.Navigator>
   );
 }

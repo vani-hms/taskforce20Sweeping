@@ -91,19 +91,41 @@ export default function CityLandingScreen({ route, navigation }: Props) {
           <Text style={styles.welcome}>WELCOME</Text>
           <Text style={styles.city}>{cityName || "Your City"}</Text>
           {error ? <Text style={styles.error}>{error}</Text> : null}
-        {modules.length === 0 ? (
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>You are not assigned to any module yet.</Text>
-            <Text style={styles.cardSubtitle}>Please contact your city administrator.</Text>
-          </View>
+          {modules.length === 0 ? (
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>You are not assigned to any module yet.</Text>
+              <Text style={styles.cardSubtitle}>Please contact your city administrator.</Text>
+            </View>
           ) : (
             <FlatList
-              data={modules}
+              data={[
+                ...modules,
+                ...(isQc
+                  ? [
+                      {
+                        key: "__employees__",
+                        name: "Employees",
+                        meta: "QC"
+                      }
+                    ]
+                  : [])
+              ]}
               keyExtractor={(item) => item.key}
               renderItem={({ item }) => (
-                <TouchableOpacity style={styles.card} onPress={() => openModule(item.key)}>
+                <TouchableOpacity
+                  style={styles.card}
+                  onPress={() => {
+                    if (item.key === "__employees__") {
+                      navigation.navigate("MyEmployees");
+                    } else {
+                      openModule(item.key);
+                    }
+                  }}
+                >
                   <Text style={styles.cardTitle}>{item.name || item.key}</Text>
-                  <Text style={styles.cardSubtitle}>Records: {counts[item.key] ?? 0}</Text>
+                  <Text style={styles.cardSubtitle}>
+                    {item.key === "__employees__" ? "View employees for your modules" : `Records: ${counts[item.key] ?? 0}`}
+                  </Text>
                 </TouchableOpacity>
               )}
               contentContainerStyle={{ paddingVertical: 12 }}
@@ -123,6 +145,12 @@ export default function CityLandingScreen({ route, navigation }: Props) {
                     <Text style={styles.cardSubtitle}>Status: {r.status}</Text>
                   </View>
                 ))}
+              <TouchableOpacity
+                style={[styles.button, { marginTop: 8, backgroundColor: "#0ea5e9" }]}
+                onPress={() => navigation.navigate("RegistrationRequests")}
+              >
+                <Text style={styles.buttonText}>Manage Requests</Text>
+              </TouchableOpacity>
             </View>
           )}
           {isQc ? (

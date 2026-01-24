@@ -4,4 +4,5 @@ export type RootStackParamList = {
   CityLanding: { cityName?: string };
   Module: { moduleKey: string };
   MyEmployees: undefined;
+  RegistrationRequests: undefined;
 };

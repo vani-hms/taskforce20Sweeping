@@ -1,12 +1,16 @@
 import express from "express";
 import dotenv from "dotenv";
+import { Server } from "http";
 import authRouter from "./auth/router";
 import hmsRouter from "./hms/router";
 import cityRouter from "./city/router";
 import taskforceRouter from "./modules/taskforce/router";
 import iecRouter from "./modules/iec/router";
+import recordsRouter from "./modules/recordsRouter";
+import publicRouter from "./public/router";
 import { errorHandler } from "./middleware/errorHandler";
 import { prisma } from "./prisma";
+import { syncAllCityModules } from "./utils/cityModuleSync";
 
 dotenv.config();
 
@@ -35,21 +39,45 @@ app.use(express.json());
 
 app.get("/health", (_req, res) => res.json({ ok: true }));
 
+app.use("/public", publicRouter);
 app.use("/auth", authRouter);
 app.use("/hms", hmsRouter);
 app.use("/city", cityRouter);
+app.use("/modules", recordsRouter);
 app.use("/modules/taskforce", taskforceRouter);
 app.use("/modules/iec", iecRouter);
 
 app.use(errorHandler);
 
 const port = process.env.PORT || 4000;
-const server = app.listen(port, () => {
-  console.log(`HMS backend listening on ${port}`);
-});
+let server: Server | null = null;
+
+async function startServer() {
+  try {
+    await syncAllCityModules();
+  } catch (err) {
+    console.error("Failed to sync city modules on startup", err);
+  }
+
+  server = app.listen(port, () => {
+    console.log(`HMS backend listening on ${port}`);
+  });
+}
+
+startServer();
 
 const shutdown = async (signal: string) => {
   console.log(`Received ${signal}, shutting down gracefully...`);
+  if (!server) {
+    try {
+      await prisma.$disconnect();
+    } catch (err) {
+      console.error("Error during Prisma disconnect", err);
+    } finally {
+      process.exit(0);
+    }
+    return;
+  }
   server.close(async () => {
     try {
       await prisma.$disconnect();

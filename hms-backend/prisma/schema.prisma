@@ -37,6 +37,11 @@ model City {
   taskforceCases      TaskforceCase[]
   taskforceActivities TaskforceActivity[]
   iecForms            IECForm[]
+  sweepingResidentialRecords SweepingResidentialRecord[]
+  sweepingCommercialRecords  SweepingCommercialRecord[]
+  twinbinRecords             TwinbinRecord[]
+  taskforceRecords           TaskforceRecord[]
+  registrationRequests       UserRegistrationRequest[]
   zones               GeoNode[] // top-level children of type=ZONE
   createdAt           DateTime            @default(now())
 
@@ -79,6 +84,10 @@ model User {
   password  String
   cities    UserCity[]
   modules   UserModuleRole[]
+  sweepingResidentialRecords SweepingResidentialRecord[]
+  sweepingCommercialRecords  SweepingCommercialRecord[]
+  twinbinRecords             TwinbinRecord[]
+  taskforceRecords           TaskforceRecord[]
   createdAt DateTime         @default(now())
   updatedAt DateTime         @updatedAt
 }
@@ -146,6 +155,18 @@ enum AreaType {
   RESIDENTIAL
   COMMERCIAL
   SLUM
+}
+
+enum ModuleRecordStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+}
+
+enum RegistrationStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
 
 model GeoNode {
@@ -230,4 +251,91 @@ model IECForm {
 
   @@index([cityId, status])
   @@index([cityId, moduleId])
+}
+
+model SweepingResidentialRecord {
+  id        String              @id @default(uuid())
+  cityId    String
+  createdBy String
+  status    ModuleRecordStatus  @default(DRAFT)
+  payload   Json
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+
+  city       City @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  createdByUser User @relation(fields: [createdBy], references: [id], onDelete: Restrict)
+
+  @@index([cityId])
+}
+
+model SweepingCommercialRecord {
+  id        String              @id @default(uuid())
+  cityId    String
+  createdBy String
+  status    ModuleRecordStatus  @default(DRAFT)
+  payload   Json
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+
+  city       City @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  createdByUser User @relation(fields: [createdBy], references: [id], onDelete: Restrict)
+
+  @@index([cityId])
+}
+
+model TwinbinRecord {
+  id        String              @id @default(uuid())
+  cityId    String
+  createdBy String
+  status    ModuleRecordStatus  @default(DRAFT)
+  payload   Json
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+
+  city       City @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  createdByUser User @relation(fields: [createdBy], references: [id], onDelete: Restrict)
+
+  @@index([cityId])
+}
+
+model TaskforceRecord {
+  id        String              @id @default(uuid())
+  cityId    String
+  createdBy String
+  status    ModuleRecordStatus  @default(DRAFT)
+  payload   Json
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+
+  city       City @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  createdByUser User @relation(fields: [createdBy], references: [id], onDelete: Restrict)
+
+  @@index([cityId])
+}
+
+model UserRegistrationRequest {
+  id               String              @id @default(uuid())
+  name             String
+  phone            String
+  aadhaar          String
+  email            String
+  passwordHash     String
+  cityId           String
+  zoneId           String?
+  wardId           String?
+  requestedModules String[]
+  status           RegistrationStatus @default(PENDING)
+  createdAt        DateTime           @default(now())
+  approvedByUserId String?
+  approvedByRole   Role?
+  approvedAt       DateTime?
+  rejectedByUserId String?
+  rejectedByRole   Role?
+  rejectedAt       DateTime?
+  rejectReason     String?
+
+  city   City @relation(fields: [cityId], references: [id], onDelete: Cascade)
+
+  @@index([cityId])
+  @@unique([email, cityId])
 }

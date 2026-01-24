@@ -1,10 +1,18 @@
 declare const Buffer: any;
 
+export type ModuleAccess = {
+  moduleId?: string;
+  key: string;
+  name?: string;
+  canWrite?: boolean;
+};
+
 type Session = {
   token?: string;
   roles?: string[];
   cityId?: string;
   cityName?: string;
+  modules?: ModuleAccess[];
 };
 
 let session: Session = {};
@@ -21,7 +29,7 @@ export async function clearSession() {
   session = {};
 }
 
-export function decodeJwt(token: string): { roles?: string[]; cityId?: string } {
+export function decodeJwt(token: string): { roles?: string[]; cityId?: string; modules?: ModuleAccess[] } {
   try {
     const [, payload] = token.split(".");
     const base64 = payload.replace(/-/g, "+").replace(/_/g, "/");
@@ -39,8 +47,16 @@ export function decodeJwt(token: string): { roles?: string[]; cityId?: string } 
       json = Buffer.from(padded, "base64").toString("utf8");
     }
     const parsed = JSON.parse(json);
-    return { roles: parsed.roles || [], cityId: parsed.cityId };
+    const modules = Array.isArray(parsed.modules)
+      ? (parsed.modules as any[]).map((m) => ({
+          moduleId: m.moduleId,
+          key: (m.key || m.name || "").toString().toUpperCase(),
+          name: m.name,
+          canWrite: Boolean(m.canWrite)
+        }))
+      : [];
+    return { roles: parsed.roles || [], cityId: parsed.cityId, modules };
   } catch {
-    return { roles: [], cityId: undefined };
+    return { roles: [], cityId: undefined, modules: [] };
   }
 }

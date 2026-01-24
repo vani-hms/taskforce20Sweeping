@@ -2,17 +2,67 @@ import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "../prisma";
 import { authenticate } from "../middleware/auth";
-import { requireCityContext, requireCityAccess } from "../middleware/rbac";
+import { requireCityContext, requireCityAccess, requireRoles } from "../middleware/rbac";
 import { validateBody } from "../utils/validation";
 import { Prisma, Role, $Enums } from "../../generated/prisma";
 import { HttpError } from "../utils/errors";
 import { hashPassword } from "../auth/password";
+import { getModuleLabel, normalizeModuleKey } from "../modules/moduleMetadata";
+import { resolveCanWrite } from "../utils/moduleAccess";
+import { syncCityModules } from "../utils/cityModuleSync";
 
 const router = Router();
-router.use(authenticate, requireCityContext(), requireCityAccess());
+router.use(authenticate, requireCityContext());
 
 type GeoLevel = "ZONE" | "WARD" | "AREA" | "BEAT";
 const geoLevels: GeoLevel[] = ["ZONE", "WARD", "AREA", "BEAT"];
+
+router.get(
+  "/modules",
+  requireRoles([Role.CITY_ADMIN, Role.COMMISSIONER, Role.ACTION_OFFICER, Role.EMPLOYEE, Role.QC]),
+  async (req, res, next) => {
+    try {
+      const cityId = req.auth!.cityId!;
+      await syncCityModules(cityId);
+      const cityModules = await prisma.cityModule.findMany({
+        where: { cityId },
+        include: { module: true },
+        orderBy: { module: { name: "asc" } }
+      });
+      const modules = cityModules.map((m) => ({
+        id: m.moduleId,
+        key: normalizeModuleKey(m.module.name),
+        name: getModuleLabel(m.module.name),
+        enabled: m.enabled
+      }));
+      res.json(modules);
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+// Apply city-level access guard to remaining routes
+router.use(requireCityAccess());
+
+router.get("/geo", async (req, res, next) => {
+  try {
+    const cityId = req.auth!.cityId!;
+    const level = req.query.level as GeoLevel | undefined;
+    const where: any = { cityId };
+    if (level) {
+      if (!geoLevels.includes(level)) throw new HttpError(400, "Invalid level");
+      where.level = level;
+    }
+    const nodes = await prisma.geoNode.findMany({
+      where,
+      orderBy: { createdAt: "asc" }
+    });
+    res.json({ nodes });
+  } catch (err) {
+    next(err);
+  }
+});
 
 const geoSchema = z.object({
   name: z.string().min(1),
@@ -84,29 +134,25 @@ router.post("/geo", validateBody(geoSchema), async (req, res, next) => {
   }
 });
 
-router.get("/geo", async (req, res, next) => {
-  try {
-    const cityId = req.auth!.cityId!;
-    const level = req.query.level as GeoLevel | undefined;
-    const where: any = { cityId };
-    if (level) {
-      if (!geoLevels.includes(level)) throw new HttpError(400, "Invalid level");
-      where.level = level;
-    }
-    const nodes = await prisma.geoNode.findMany({
-      where,
-      orderBy: { createdAt: "asc" }
-    });
-    res.json({ nodes });
-  } catch (err) {
-    next(err);
-  }
-});
-
 const geoUpdateSchema = z.object({
   name: z.string().min(1).optional(),
   areaType: z.enum(["RESIDENTIAL", "COMMERCIAL", "SLUM"]).optional()
 });
+
+async function validateCityModules(cityId: string, modules: z.infer<typeof moduleAssignmentSchema>) {
+  if (!modules.length) return modules;
+  const ids = modules.map((m) => m.moduleId);
+  const uniqueIds = new Set(ids);
+  if (uniqueIds.size !== ids.length) throw new HttpError(400, "Duplicate modules are not allowed");
+  const cityModules = await prisma.cityModule.findMany({
+    where: { cityId, moduleId: { in: ids }, enabled: true },
+    include: { module: true }
+  });
+  if (cityModules.length !== ids.length) {
+    throw new HttpError(400, "One or more modules are not enabled for this city");
+  }
+  return cityModules;
+}
 
 router.patch("/geo/:id", validateBody(geoUpdateSchema), async (req, res, next) => {
   try {
@@ -148,6 +194,15 @@ router.delete("/geo/:id", async (req, res, next) => {
   }
 });
 
+const moduleAssignmentSchema = z
+  .array(
+    z.object({
+      moduleId: z.string().uuid(),
+      canWrite: z.boolean()
+    })
+  )
+  .default([]);
+
 const userSchema = z.object({
   email: z.string().email(),
   name: z.string().min(1),
@@ -156,24 +211,14 @@ const userSchema = z.object({
   role: z.nativeEnum(Role).refine((r) => ["COMMISSIONER", "ACTION_OFFICER", "QC", "EMPLOYEE"].includes(r), {
     message: "Invalid role"
   }),
-  moduleId: z.string().uuid().optional(),
-  canWrite: z.boolean().optional().default(false)
+  modules: moduleAssignmentSchema
 });
 
 router.post("/users", validateBody(userSchema), async (req, res, next) => {
   try {
     const cityId = req.auth!.cityId!;
-    const { email, name, password, role, moduleId, canWrite } = req.body as z.infer<typeof userSchema>;
-
-    // Ensure module belongs to city if provided
-    if (moduleId) {
-      const cityModule = await prisma.cityModule.findUnique({
-        where: { cityId_moduleId: { cityId, moduleId } }
-      });
-      if (!cityModule || !cityModule.enabled) {
-        throw new HttpError(400, "Module not enabled for this city");
-      }
-    }
+    const { email, name, password, role, modules } = req.body as z.infer<typeof userSchema>;
+    const cityModules = await validateCityModules(cityId, modules);
 
     let user = await prisma.user.findUnique({ where: { email } });
     if (!user) {
@@ -181,35 +226,36 @@ router.post("/users", validateBody(userSchema), async (req, res, next) => {
       user = await prisma.user.create({
         data: { email, name, password: hashed }
       });
-    } else {
-      // if user exists and already assigned with this role in this city, block
-      const exists = await prisma.userCity.findFirst({
-        where: { userId: user.id, cityId, role }
-      });
-      if (exists) {
-        throw new HttpError(400, "User already assigned to this city with this role");
-      }
     }
 
-    await prisma.userCity.create({
-      data: {
-        userId: user.id,
-        cityId,
-        role
-      }
+    const exists = await prisma.userCity.findFirst({
+      where: { userId: user.id, cityId, role }
     });
+    if (exists) {
+      throw new HttpError(400, "User already assigned to this city with this role");
+    }
 
-    if (moduleId) {
-      await prisma.userModuleRole.create({
+    await prisma.$transaction(async (tx) => {
+      await tx.userCity.create({
         data: {
           userId: user.id,
           cityId,
-          moduleId,
-          role,
-          canWrite: !!canWrite
+          role
         }
       });
-    }
+
+      if (cityModules.length) {
+        await tx.userModuleRole.createMany({
+          data: cityModules.map((cm) => ({
+            userId: user.id,
+            cityId,
+            moduleId: cm.moduleId,
+            role,
+            canWrite: resolveCanWrite(role, modules.find((m) => m.moduleId === cm.moduleId)?.canWrite ?? false)
+          }))
+        });
+      }
+    });
 
     res.json({ user: { id: user.id, email: user.email, name: user.name, role } });
   } catch (err) {
@@ -222,7 +268,7 @@ router.get("/users", async (req, res, next) => {
     const cityId = req.auth!.cityId!;
     const users = await prisma.userCity.findMany({
       where: { cityId },
-      include: { user: true },
+      include: { user: { include: { modules: { where: { cityId }, include: { module: true } } } } },
       orderBy: { createdAt: "asc" }
     });
     res.json({
@@ -231,7 +277,13 @@ router.get("/users", async (req, res, next) => {
         name: uc.user.name,
         email: uc.user.email,
         role: uc.role,
-        createdAt: uc.createdAt
+        createdAt: uc.createdAt,
+        modules: uc.user.modules.map((m) => ({
+          id: m.moduleId,
+          key: normalizeModuleKey(m.module.name),
+          name: getModuleLabel(m.module.name),
+          canWrite: m.canWrite
+        }))
       }))
     });
   } catch (err) {
@@ -261,18 +313,18 @@ const userUpdateSchema = z.object({
     .refine((r) => !r || ["COMMISSIONER", "ACTION_OFFICER", "QC", "EMPLOYEE"].includes(r), {
       message: "Invalid role"
     }),
-  moduleId: z.string().uuid().optional(),
-  canWrite: z.boolean().optional()
+  modules: moduleAssignmentSchema.optional()
 });
 
 router.patch("/users/:userId", validateBody(userUpdateSchema), async (req, res, next) => {
   try {
     const cityId = req.auth!.cityId!;
-    const { name, role, moduleId, canWrite } = req.body as z.infer<typeof userUpdateSchema>;
+    const { name, role, modules } = req.body as z.infer<typeof userUpdateSchema>;
     const userId = req.params.userId;
 
     const uc = await prisma.userCity.findFirst({ where: { userId, cityId } });
     if (!uc) throw new HttpError(404, "User not found in this city");
+    const newRole = role || uc.role;
 
     if (name) {
       await prisma.user.update({ where: { id: userId }, data: { name } });
@@ -280,31 +332,38 @@ router.patch("/users/:userId", validateBody(userUpdateSchema), async (req, res, 
     if (role && role !== uc.role) {
       await prisma.userCity.update({ where: { id: uc.id }, data: { role } });
     }
-    if (moduleId) {
-      const cityModule = await prisma.cityModule.findUnique({
-        where: { cityId_moduleId: { cityId, moduleId } }
-      });
-      if (!cityModule || !cityModule.enabled) {
-        throw new HttpError(400, "Module not enabled for this city");
+
+    if (modules) {
+      const cityModules = await validateCityModules(cityId, modules);
+      const operations: any[] = [prisma.userModuleRole.deleteMany({ where: { userId, cityId } })];
+      if (cityModules.length) {
+        operations.push(
+          prisma.userModuleRole.createMany({
+            data: cityModules.map((cm) => ({
+              userId,
+              cityId,
+              moduleId: cm.moduleId,
+              role: newRole,
+              canWrite: resolveCanWrite(
+                newRole,
+                modules.find((m) => m.moduleId === cm.moduleId)?.canWrite ?? false
+              )
+            }))
+          })
+        );
       }
-      const existing = await prisma.userModuleRole.findFirst({
-        where: { userId, cityId, moduleId }
-      });
-      if (existing) {
-        await prisma.userModuleRole.update({
-          where: { id: existing.id },
-          data: { role: role || existing.role, canWrite: canWrite ?? existing.canWrite }
-        });
-      } else {
-        await prisma.userModuleRole.create({
-          data: {
-            userId,
-            cityId,
-            moduleId,
-            role: role || Role.EMPLOYEE,
-            canWrite: !!canWrite
-          }
-        });
+      await prisma.$transaction(operations);
+    } else if (role && role !== uc.role) {
+      const assignments = await prisma.userModuleRole.findMany({ where: { userId, cityId } });
+      if (assignments.length) {
+        await prisma.$transaction(
+          assignments.map((m) =>
+            prisma.userModuleRole.update({
+              where: { id: m.id },
+              data: { role: newRole, canWrite: resolveCanWrite(newRole, m.canWrite) }
+            })
+          )
+        );
       }
     }
 
@@ -324,6 +383,180 @@ router.delete("/users/:userId", async (req, res, next) => {
 
     await prisma.userModuleRole.deleteMany({ where: { userId, cityId } });
     await prisma.userCity.deleteMany({ where: { userId, cityId } });
+
+    res.json({ success: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get("/registration-requests", async (req, res, next) => {
+  try {
+    const cityId = req.auth!.cityId!;
+    const roles = req.auth!.roles || [];
+    const modules = req.auth!.modules || [];
+    const isCityAdmin = roles.includes(Role.CITY_ADMIN);
+    const isActionOfficer = roles.includes(Role.ACTION_OFFICER);
+    if (!isCityAdmin && !isActionOfficer) throw new HttpError(403, "Forbidden");
+
+    let moduleNames: string[] = [];
+    if (isActionOfficer && !isCityAdmin) {
+      const moduleIds = modules.map((m) => m.moduleId);
+      if (moduleIds.length) {
+        const mods = await prisma.module.findMany({ where: { id: { in: moduleIds } }, select: { name: true } });
+        moduleNames = mods.map((m) => m.name.toUpperCase());
+      }
+    }
+
+    const requests = await prisma.userRegistrationRequest.findMany({
+      where: {
+        cityId,
+        ...(isActionOfficer && !isCityAdmin && moduleNames.length
+          ? { requestedModules: { hasSome: moduleNames } }
+          : {})
+      },
+      orderBy: { createdAt: "desc" }
+    });
+
+    const zoneIds = Array.from(new Set(requests.map((r) => r.zoneId).filter(Boolean) as string[]));
+    const wardIds = Array.from(new Set(requests.map((r) => r.wardId).filter(Boolean) as string[]));
+    const geoNodes = await prisma.geoNode.findMany({
+      where: { id: { in: [...zoneIds, ...wardIds] } },
+      select: { id: true, name: true, level: true }
+    });
+    const geoMap = Object.fromEntries(geoNodes.map((g) => [g.id, g.name]));
+
+    res.json({
+      requests: requests.map((r) => ({
+        id: r.id,
+        name: r.name,
+        phone: r.phone,
+        cityId: r.cityId,
+        zone: r.zoneId ? geoMap[r.zoneId] : null,
+        ward: r.wardId ? geoMap[r.wardId] : null,
+        requestedModules: r.requestedModules,
+        status: r.status,
+        createdAt: r.createdAt
+      }))
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post("/registration-requests/:id/approve", async (req, res, next) => {
+  try {
+    const cityId = req.auth!.cityId!;
+    const userId = req.auth!.sub;
+    const roles = req.auth!.roles || [];
+    const modules = req.auth!.modules || [];
+
+    const request = await prisma.userRegistrationRequest.findUnique({ where: { id: req.params.id } });
+    if (!request || request.cityId !== cityId) throw new HttpError(404, "Request not found");
+    if (request.status !== "PENDING") throw new HttpError(400, "Request already processed");
+
+    const isCityAdmin = roles.includes(Role.CITY_ADMIN);
+    const isActionOfficer = roles.includes(Role.ACTION_OFFICER);
+    let allowed = isCityAdmin;
+    if (!allowed && isActionOfficer) {
+      const moduleIds = modules.map((m) => m.moduleId);
+      if (moduleIds.length) {
+        const modNames = await prisma.module.findMany({
+          where: { id: { in: moduleIds } },
+          select: { name: true }
+        });
+        const names = modNames.map((m) => m.name.toUpperCase());
+        allowed = request.requestedModules.some((rm) => names.includes(rm));
+      }
+    }
+    if (!allowed) throw new HttpError(403, "Forbidden");
+
+    const existing = await prisma.user.findUnique({ where: { email: request.email } });
+    if (existing) throw new HttpError(400, "User already exists");
+
+    const createdUser = await prisma.user.create({
+      data: {
+        email: request.email,
+        name: request.name,
+        password: request.passwordHash
+      }
+    });
+    await prisma.userCity.create({
+      data: {
+        userId: createdUser.id,
+        cityId,
+        role: Role.EMPLOYEE
+      }
+    });
+
+    const modulesToAssign = await prisma.module.findMany({
+      where: { name: { in: request.requestedModules } },
+      select: { id: true, name: true }
+    });
+    await prisma.userModuleRole.createMany({
+      data: modulesToAssign.map((m) => ({
+        userId: createdUser.id,
+        cityId,
+        moduleId: m.id,
+        role: Role.EMPLOYEE,
+        canWrite: false
+      }))
+    });
+
+    await prisma.userRegistrationRequest.update({
+      where: { id: request.id },
+      data: {
+        status: "APPROVED",
+        approvedByUserId: userId,
+        approvedByRole: isCityAdmin ? Role.CITY_ADMIN : Role.ACTION_OFFICER,
+        approvedAt: new Date()
+      }
+    });
+
+    res.json({ success: true, userId: createdUser.id });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post("/registration-requests/:id/reject", async (req, res, next) => {
+  try {
+    const cityId = req.auth!.cityId!;
+    const userId = req.auth!.sub;
+    const roles = req.auth!.roles || [];
+    const modules = req.auth!.modules || [];
+    const reason = typeof req.body?.reason === "string" ? req.body.reason : null;
+
+    const request = await prisma.userRegistrationRequest.findUnique({ where: { id: req.params.id } });
+    if (!request || request.cityId !== cityId) throw new HttpError(404, "Request not found");
+    if (request.status !== "PENDING") throw new HttpError(400, "Request already processed");
+
+    const isCityAdmin = roles.includes(Role.CITY_ADMIN);
+    const isActionOfficer = roles.includes(Role.ACTION_OFFICER);
+    let allowed = isCityAdmin;
+    if (!allowed && isActionOfficer) {
+      const moduleIds = modules.map((m) => m.moduleId);
+      if (moduleIds.length) {
+        const modNames = await prisma.module.findMany({
+          where: { id: { in: moduleIds } },
+          select: { name: true }
+        });
+        const names = modNames.map((m) => m.name.toUpperCase());
+        allowed = request.requestedModules.some((rm) => names.includes(rm));
+      }
+    }
+    if (!allowed) throw new HttpError(403, "Forbidden");
+
+    await prisma.userRegistrationRequest.update({
+      where: { id: request.id },
+      data: {
+        status: "REJECTED",
+        rejectedByUserId: userId,
+        rejectedByRole: isCityAdmin ? Role.CITY_ADMIN : Role.ACTION_OFFICER,
+        rejectedAt: new Date(),
+        rejectReason: reason
+      }
+    });
 
     res.json({ success: true });
   } catch (err) {

@@ -20,9 +20,9 @@ export default function LoginPage() {
     setLoading(true);
     setError("");
     try {
-      const { token, redirectTo } = await AuthApi.login({ email, password });
+      const { token, user: authUser, redirectTo } = await AuthApi.login({ email, password });
       setAuthCookie(token);
-      const decoded = decodeToken(token);
+      const decoded = decodeToken(token, authUser);
       setUser(decoded);
       router.replace(redirectTo || "/");
     } catch (err) {

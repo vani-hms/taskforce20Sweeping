@@ -79,14 +79,32 @@ export const GeoApi = {
 
 export const CityUserApi = {
   list: () =>
-    apiFetch<{ users: { id: string; name: string; email: string; role: string; createdAt: string }[] }>(
-      "/city/users"
-    ),
-  create: (body: { name: string; email: string; password: string; role: string; moduleId?: string; canWrite?: boolean }) =>
-    apiFetch("/city/users", { method: "POST", body: JSON.stringify(body) }),
-  update: (id: string, body: { name?: string; role?: string; moduleId?: string; canWrite?: boolean }) =>
-    apiFetch<{ success: boolean }>(`/city/users/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
+    apiFetch<{
+      users: {
+        id: string;
+        name: string;
+        email: string;
+        role: string;
+        createdAt: string;
+        modules: { id: string; key: string; name: string; canWrite: boolean }[];
+      }[];
+    }>("/city/users"),
+  create: (body: {
+    name: string;
+    email: string;
+    password: string;
+    role: string;
+    modules: { moduleId: string; canWrite: boolean }[];
+  }) => apiFetch("/city/users", { method: "POST", body: JSON.stringify(body) }),
+  update: (
+    id: string,
+    body: { name?: string; role?: string; modules?: { moduleId: string; canWrite: boolean }[] }
+  ) => apiFetch<{ success: boolean }>(`/city/users/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
   remove: (id: string) => apiFetch<{ success: boolean }>(`/city/users/${id}`, { method: "DELETE" })
+};
+
+export const CityModulesApi = {
+  list: () => apiFetch<{ id: string; key: string; name: string; enabled: boolean }[]>("/city/modules")
 };
 
 // Module resolution cache (expects backend to expose module listing)
@@ -123,4 +141,18 @@ export const IecApi = {
     apiFetch<{ form: any }>(`/modules/iec/forms/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
   listForms: () => apiFetch<{ forms: any[] }>("/modules/iec/forms"),
   summary: () => apiFetch<{ summary: { status: string; count: number }[] }>("/modules/iec/reports/summary")
+};
+
+export const ModuleRecordsApi = {
+  getRecords: (moduleKey: string) =>
+    apiFetch<{ city: string; module: string; count: number; records: any[] }>(
+      `/modules/${moduleKey}/records`
+    )
+};
+
+export const RegistrationApi = {
+  listRequests: () =>
+    apiFetch<{ requests: { id: string; name: string; phone: string; cityId: string; zone?: string | null; ward?: string | null; requestedModules: string[]; status: string; createdAt: string }[] }>(
+      "/city/registration-requests"
+    )
 };

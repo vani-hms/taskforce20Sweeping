@@ -2,7 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "../../prisma";
 import { authenticate } from "../../middleware/auth";
-import { requireCityContext, requireModuleAccess } from "../../middleware/rbac";
+import { requireCityContext, assertModuleAccess } from "../../middleware/rbac";
 import { Role, IECStatus } from "../../../generated/prisma";
 import { validateBody } from "../../utils/validation";
 import { HttpError } from "../../utils/errors";
@@ -25,11 +25,7 @@ router.post("/forms", validateBody(formSchema), async (req, res, next) => {
   try {
     const cityId = req.auth!.cityId!;
     const moduleId = await getModuleIdByName("IEC");
-    await requireModuleAccess(moduleId, [Role.EMPLOYEE, Role.QC, Role.ACTION_OFFICER, Role.CITY_ADMIN])(
-      req,
-      res,
-      async () => {}
-    );
+    await assertModuleAccess(req, res, moduleId, [Role.EMPLOYEE, Role.QC, Role.ACTION_OFFICER, Role.CITY_ADMIN]);
     await ensureModuleEnabled(cityId, moduleId);
 
     const { title, description } = req.body as z.infer<typeof formSchema>;
@@ -59,11 +55,7 @@ router.patch("/forms/:id", validateBody(updateSchema), async (req, res, next) =>
   try {
     const cityId = req.auth!.cityId!;
     const moduleId = await getModuleIdByName("IEC");
-    await requireModuleAccess(moduleId, [Role.EMPLOYEE, Role.QC, Role.ACTION_OFFICER, Role.CITY_ADMIN])(
-      req,
-      res,
-      async () => {}
-    );
+    await assertModuleAccess(req, res, moduleId, [Role.EMPLOYEE, Role.QC, Role.ACTION_OFFICER, Role.CITY_ADMIN]);
     await ensureModuleEnabled(cityId, moduleId);
 
     const existing = await prisma.iECForm.findUnique({ where: { id: req.params.id } });
@@ -83,13 +75,13 @@ router.get("/forms", async (req, res, next) => {
   try {
     const cityId = req.auth!.cityId!;
     const moduleId = await getModuleIdByName("IEC");
-    await requireModuleAccess(moduleId, [
+    await assertModuleAccess(req, res, moduleId, [
       Role.EMPLOYEE,
       Role.QC,
       Role.ACTION_OFFICER,
       Role.CITY_ADMIN,
       Role.COMMISSIONER
-    ])(req, res, async () => {});
+    ]);
     await ensureModuleEnabled(cityId, moduleId);
 
     const forms = await prisma.iECForm.findMany({
@@ -106,13 +98,13 @@ router.get("/reports/summary", async (req, res, next) => {
   try {
     const cityId = req.auth!.cityId!;
     const moduleId = await getModuleIdByName("IEC");
-    await requireModuleAccess(moduleId, [
+    await assertModuleAccess(req, res, moduleId, [
       Role.EMPLOYEE,
       Role.QC,
       Role.ACTION_OFFICER,
       Role.CITY_ADMIN,
       Role.COMMISSIONER
-    ])(req, res, async () => {});
+    ]);
     await ensureModuleEnabled(cityId, moduleId);
 
     const totals = await prisma.iECForm.groupBy({

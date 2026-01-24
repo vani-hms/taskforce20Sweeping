@@ -46,15 +46,41 @@ export function getTokenFromCookies(): string | undefined {
 }
 
 // NOTE: In production, validate the JWT signature with the backend's public key/secret.
-export function decodeToken(token?: string): AuthUser | null {
+function normalizeKey(key?: string) {
+  return (key || "").trim().toUpperCase();
+}
+
+export function decodeToken(token?: string, fallback?: Partial<AuthUser>): AuthUser | null {
   if (!token) return null;
   try {
-    const decoded = jwt.decode(token) as AuthUser | null;
+    const decoded = jwt.decode(token) as any;
     if (!decoded) return null;
-    if (decoded && (decoded as any).exp && Date.now() >= ((decoded as any).exp as number) * 1000) {
-      return null; // expired
+    if (decoded.exp && Date.now() >= (decoded.exp as number) * 1000) {
+      return null;
     }
-    return decoded;
+    const modules = Array.isArray(decoded.modules)
+      ? decoded.modules.map((m: any) => ({
+          moduleId: m.moduleId,
+          key: normalizeKey(m.key || m.name),
+          name: m.name,
+          canWrite: Boolean(m.canWrite),
+          roles: m.roles
+        }))
+      : fallback?.modules || [];
+
+    const roles = Array.isArray(decoded.roles) ? decoded.roles : fallback?.roles || [];
+    const id = (decoded.sub as string) || fallback?.id;
+    if (!id) return null;
+
+    return {
+      id,
+      email: fallback?.email,
+      name: fallback?.name,
+      cityId: decoded.cityId || fallback?.cityId,
+      cityName: fallback?.cityName,
+      roles,
+      modules
+    };
   } catch (err) {
     console.error("Failed to decode token", err);
     return null;

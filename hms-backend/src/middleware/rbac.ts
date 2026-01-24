@@ -32,10 +32,11 @@ export function requireCityAccess() {
     if (req.auth.roles.includes("HMS_SUPER_ADMIN" as Role)) return next();
     const isCityAdmin = req.auth.roles.includes("CITY_ADMIN" as Role);
     const isCommissioner = req.auth.roles.includes("COMMISSIONER" as Role);
+    const isActionOfficer = req.auth.roles.includes("ACTION_OFFICER" as Role);
     if (isWrite && !isCityAdmin) {
       return next(new HttpError(403, "Write access not permitted for this role"));
     }
-    if (!isCityAdmin && !isCommissioner) {
+    if (!isCityAdmin && !isCommissioner && !isActionOfficer) {
       return next(new HttpError(403, "Forbidden"));
     }
     next();
@@ -64,4 +65,15 @@ export function requireModuleAccess(moduleId: string, roles: Role[]) {
     }
     next();
   };
+}
+
+// Helper to await middleware guards inside route handlers
+export function assertModuleAccess(req: Request, res: Response, moduleId: string, roles: Role[]) {
+  return new Promise<void>((resolve, reject) => {
+    const guard = requireModuleAccess(moduleId, roles);
+    guard(req, res, (err?: any) => {
+      if (err) reject(err);
+      else resolve();
+    });
+  });
 }

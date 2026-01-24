@@ -2,12 +2,9 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useAuth } from "@hooks/useAuth";
-import { ModuleApi } from "@lib/apiClient";
-import type { ModuleName, Role } from "../../types/auth";
-
-type ModuleMap = Record<string, string>;
+import type { Role } from "../../types/auth";
 
 function titleCase(text: string) {
   return text
@@ -20,37 +17,14 @@ export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout, loading } = useAuth();
-  const [moduleMap, setModuleMap] = useState<ModuleMap>({});
-
-  useEffect(() => {
-    let mounted = true;
-    const load = async () => {
-      try {
-        const result = await ModuleApi.list();
-        if (!mounted) return;
-        const map: ModuleMap = {};
-        result.modules.forEach((m) => {
-          map[m.id] = m.name;
-        });
-        setModuleMap(map);
-      } catch {
-        // if module list fails, fall back to empty map
-      }
-    };
-    if (user?.modules?.length) load();
-    return () => {
-      mounted = false;
-    };
-  }, [user?.modules?.length]);
 
   const moduleLinks = useMemo(() => {
     if (!user?.modules?.length) return [];
-    return user.modules.map((m) => {
-      const id = (m as any).moduleId || (m as any).module;
-      const name = moduleMap[id] || (typeof (m as any).module === "string" ? (m as any).module : "Module");
-      return { label: titleCase(name), href: `/modules/${name.toLowerCase()}` };
-    });
-  }, [user?.modules, moduleMap]);
+    return user.modules.map((m) => ({
+      label: titleCase(m.name || m.key),
+      href: `/modules/${(m.key || "").toLowerCase()}`
+    }));
+  }, [user?.modules]);
 
   const hasRole = (r: Role) => Boolean(user?.roles?.includes(r));
 
@@ -69,7 +43,8 @@ export default function Sidebar() {
     links = [
       { label: "Home", href: "/" },
       { label: "City Admin", href: "/city" },
-      { label: "Municipal", href: "/municipal" }
+      { label: "Municipal", href: "/municipal" },
+      ...moduleLinks
     ];
   } else if (hasRole("COMMISSIONER")) {
     links = [

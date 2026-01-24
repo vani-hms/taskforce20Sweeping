@@ -1,13 +1,13 @@
 import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, StyleSheet } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { RootStackParamList } from "../navigation/types";
-import { useAuthContext } from "../navigation/authContext";
+import { RootStackParamList } from "../navigation";
+import { useAuthContext } from "../auth/AuthProvider";
 import { login, ApiError } from "../api/auth";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Login">;
 
-export default function LoginScreen({}: Props) {
+export default function LoginScreen({ navigation }: Props) {
   const { completeLogin } = useAuthContext();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -19,7 +19,8 @@ export default function LoginScreen({}: Props) {
     setError("");
     try {
       const { token, user } = await login({ email, password });
-      await completeLogin(token, user.cityName);
+      await completeLogin(token, user.cityName, user.modules);
+      navigation.replace("CityLanding", { cityName: user.cityName });
     } catch (err: any) {
       if (err instanceof ApiError && err.status === 401) setError("Invalid credentials");
       else setError(err.message || "Login failed");

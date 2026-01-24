@@ -5,32 +5,38 @@ const cards = [
     title: "HMS Super Admin",
     desc: "Onboard cities, enable modules, and provision city admins.",
     href: "/hms",
-    icon: "🛡️"
-  },
-  {
-    title: "City Admin",
-    desc: "Manage geo hierarchy, municipal staff, and module access for your city.",
-    href: "#",
-    icon: "🏙️"
-  },
-  {
-    title: "Municipal Commissioner",
-    desc: "City-wide oversight and reporting.",
-    href: "#r",
     icon: "🏛️"
   },
   {
-    title: "Taskforce Module",
-    desc: "Create, assign, and track operational cases.",
-    href: "#",
-    icon: "🗂️"
+    title: "Modules",
+    desc: "View module data scoped to your city.",
+    href: "/modules",
+    icon: "📦"
   },
   {
-    title: "IEC Module",
-    desc: "Capture IEC submissions and review summaries.",
-    href: "#",
-    icon: "📑"
-  } 
+    title: "Sweeping Residential",
+    desc: "Module records (read-only).",
+    href: "/modules/SWEEP_RES",
+    icon: "🧹"
+  },
+  {
+    title: "Sweeping Commercial",
+    desc: "Module records (read-only).",
+    href: "/modules/SWEEP_COM",
+    icon: "🏬"
+  },
+  {
+    title: "Twinbin",
+    desc: "Module records (read-only).",
+    href: "/modules/TWINBIN",
+    icon: "🗑️"
+  },
+  {
+    title: "Taskforce",
+    desc: "Module records (read-only).",
+    href: "/modules/TASKFORCE",
+    icon: "🛠️"
+  }
 ];
 
 export default function LandingPage() {

@@ -6,25 +6,21 @@ export type Role =
   | "EMPLOYEE"
   | "QC";
 
-export type ModuleName =
-  | "TASKFORCE"
-  | "IEC"
-  | "MODULE3"
-  | "MODULE4"
-  | "MODULE5"
-  | "MODULE6"
-  | "MODULE7"
-  | "MODULE8";
+export type ModuleKey = string;
+export type ModuleName = ModuleKey;
 
 export interface ModuleAssignment {
-  module: ModuleName;
-  roles: Role[];
+  moduleId?: string;
+  key: ModuleKey;
+  name?: string;
+  canWrite: boolean;
+  roles?: Role[];
 }
 
 export interface AuthUser {
-  userId: string;
-  name: string;
-  email: string;
+  id: string;
+  name?: string;
+  email?: string;
   cityId?: string;
   cityName?: string;
   roles: Role[]; // city-level roles

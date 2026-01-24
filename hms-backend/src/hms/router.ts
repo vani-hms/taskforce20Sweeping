@@ -2,11 +2,12 @@ import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "../prisma";
 import { authenticate } from "../middleware/auth";
-import { requireRoles, requireModuleAccess, requireCityAccess } from "../middleware/rbac";
+import { requireRoles, requireCityAccess } from "../middleware/rbac";
 import { validateBody } from "../utils/validation";
 import { Role } from "../../generated/prisma";
 import { HttpError } from "../utils/errors";
 import { hashPassword } from "../auth/password";
+import { syncAllCityModules, syncCityModules } from "../utils/cityModuleSync";
 
 const router = Router();
 router.use(authenticate, requireRoles([Role.HMS_SUPER_ADMIN]));
@@ -15,6 +16,25 @@ const citySchema = z.object({
   name: z.string().min(1),
   code: z.string().min(1)
 });
+
+const DEFAULT_MODULES = ["SWEEP_RES", "SWEEP_COM", "TWINBIN", "TASKFORCE"];
+
+async function ensureModulesExist(): Promise<{ id: string; name: string }[]> {
+  const existing = await prisma.module.findMany({ orderBy: { name: "asc" } });
+  if (existing.length) return existing;
+
+  // Seed defaults if no modules are present
+  const seeded = await Promise.all(
+    DEFAULT_MODULES.map((m) =>
+      prisma.module.upsert({
+        where: { name: m },
+        update: { isActive: true },
+        create: { name: m, isActive: true }
+      })
+    )
+  );
+  return seeded;
+}
 
 router.get("/cities", async (_req, res, next) => {
   try {
@@ -54,6 +74,8 @@ router.post("/cities", validateBody(citySchema), async (req, res, next) => {
     const { name, code } = req.body as z.infer<typeof citySchema>;
     const hms = await prisma.hMS.findFirst({ where: { name: "HMS" } });
     if (!hms) throw new HttpError(400, "HMS org missing");
+    const activeModules = await ensureModulesExist();
+
     const city = await prisma.city.create({
       data: {
         name,
@@ -62,6 +84,9 @@ router.post("/cities", validateBody(citySchema), async (req, res, next) => {
         enabled: true
       }
     });
+
+    await syncCityModules(city.id);
+
     res.json({ city });
   } catch (err) {
     next(err);
@@ -134,6 +159,28 @@ router.get("/modules", async (_req, res, next) => {
   try {
     const modules = await prisma.module.findMany({ orderBy: { name: "asc" } });
     res.json({ modules });
+  } catch (err) {
+    next(err);
+  }
+});
+
+const moduleCreateSchema = z.object({
+  name: z.string().min(1)
+});
+
+router.post("/modules", validateBody(moduleCreateSchema), async (req, res, next) => {
+  try {
+    const { name } = req.body as z.infer<typeof moduleCreateSchema>;
+    const normalized = name.trim().toUpperCase();
+    const module = await prisma.module.upsert({
+      where: { name: normalized },
+      update: { isActive: true },
+      create: { name: normalized, isActive: true }
+    });
+
+    await syncAllCityModules();
+
+    res.json({ module });
   } catch (err) {
     next(err);
   }

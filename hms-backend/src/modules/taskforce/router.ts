@@ -2,7 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "../../prisma";
 import { authenticate } from "../../middleware/auth";
-import { requireCityContext, requireModuleAccess } from "../../middleware/rbac";
+import { requireCityContext, assertModuleAccess } from "../../middleware/rbac";
 import { validateBody } from "../../utils/validation";
 import { Role } from "../../../generated/prisma";
 import { HttpError } from "../../utils/errors";
@@ -27,11 +27,7 @@ router.post("/cases", validateBody(createSchema), async (req, res, next) => {
   try {
     const cityId = req.auth!.cityId!;
     const moduleId = await getModuleIdByName("TASKFORCE");
-    await requireModuleAccess(moduleId, [Role.EMPLOYEE, Role.QC, Role.ACTION_OFFICER, Role.CITY_ADMIN])(
-      req,
-      res,
-      async () => {}
-    );
+    await assertModuleAccess(req, res, moduleId, [Role.EMPLOYEE, Role.QC, Role.ACTION_OFFICER, Role.CITY_ADMIN]);
     await ensureModuleEnabled(cityId, moduleId);
 
     const { title, status, geoNodeId, assignedTo } = req.body as z.infer<typeof createSchema>;
@@ -75,11 +71,7 @@ router.patch("/cases/:id", validateBody(statusSchema), async (req, res, next) =>
   try {
     const cityId = req.auth!.cityId!;
     const moduleId = await getModuleIdByName("TASKFORCE");
-    await requireModuleAccess(moduleId, [Role.EMPLOYEE, Role.QC, Role.ACTION_OFFICER, Role.CITY_ADMIN])(
-      req,
-      res,
-      async () => {}
-    );
+    await assertModuleAccess(req, res, moduleId, [Role.EMPLOYEE, Role.QC, Role.ACTION_OFFICER, Role.CITY_ADMIN]);
     await ensureModuleEnabled(cityId, moduleId);
 
     const caseRecord = await prisma.taskforceCase.findUnique({ where: { id: req.params.id } });
@@ -112,11 +104,13 @@ router.get("/cases", async (req, res, next) => {
   try {
     const cityId = req.auth!.cityId!;
     const moduleId = await getModuleIdByName("TASKFORCE");
-    await requireModuleAccess(moduleId, [Role.EMPLOYEE, Role.QC, Role.ACTION_OFFICER, Role.CITY_ADMIN, Role.COMMISSIONER])(
-      req,
-      res,
-      async () => {}
-    );
+    await assertModuleAccess(req, res, moduleId, [
+      Role.EMPLOYEE,
+      Role.QC,
+      Role.ACTION_OFFICER,
+      Role.CITY_ADMIN,
+      Role.COMMISSIONER
+    ]);
     await ensureModuleEnabled(cityId, moduleId);
 
     const cases = await prisma.taskforceCase.findMany({
@@ -138,11 +132,7 @@ router.post("/cases/:id/activity", validateBody(activitySchema), async (req, res
   try {
     const cityId = req.auth!.cityId!;
     const moduleId = await getModuleIdByName("TASKFORCE");
-    await requireModuleAccess(moduleId, [Role.EMPLOYEE, Role.QC, Role.ACTION_OFFICER, Role.CITY_ADMIN])(
-      req,
-      res,
-      async () => {}
-    );
+    await assertModuleAccess(req, res, moduleId, [Role.EMPLOYEE, Role.QC, Role.ACTION_OFFICER, Role.CITY_ADMIN]);
     await ensureModuleEnabled(cityId, moduleId);
 
     const caseRecord = await prisma.taskforceCase.findUnique({ where: { id: req.params.id } });

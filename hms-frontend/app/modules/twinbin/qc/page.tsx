@@ -116,6 +116,9 @@ export default function TwinbinQcPage() {
             <a className="btn btn-secondary btn-sm" href="/modules/twinbin/qc/visits">
               Pending Visit Reports
             </a>
+            <a className="btn btn-secondary btn-sm" style={{ marginLeft: 8 }} href="/modules/twinbin/qc/reports">
+              Pending Bin Reports
+            </a>
           </div>
           {error && <div className="alert error">{error}</div>}
           {loading ? (

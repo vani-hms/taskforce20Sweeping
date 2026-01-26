@@ -4,7 +4,7 @@ import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import * as Location from "expo-location";
 import * as ImagePicker from "expo-image-picker";
 import { RootStackParamList } from "../navigation";
-import { submitTwinbinVisit, ApiError } from "../api/auth";
+import { submitTwinbinReport, ApiError } from "../api/auth";
 
 type Props = NativeStackScreenProps<RootStackParamList, "TwinbinBinDetail">;
 
@@ -71,7 +71,7 @@ export default function TwinbinBinDetailScreen({ route }: Props) {
     }
   };
 
-  const withinFence = useMemo(() => (distance !== null ? distance <= 100 : false), [distance]);
+  const withinFence = useMemo(() => (distance !== null ? distance <= 50 : false), [distance]);
 
   const submit = async () => {
     if (!withinFence || lat === null || lng === null) return;
@@ -83,10 +83,10 @@ export default function TwinbinBinDetailScreen({ route }: Props) {
     setSubmitting(true);
     setSubmitError("");
     try {
-      await submitTwinbinVisit(bin.id, {
+      await submitTwinbinReport(bin.id, {
         latitude: lat,
         longitude: lng,
-        inspectionAnswers: Object.fromEntries(
+        questionnaire: Object.fromEntries(
           Object.entries(answers).map(([k, v]) => [k, { answer: v.answer as "YES" | "NO", photoUrl: v.photoUrl }])
         )
       });
@@ -120,6 +120,11 @@ export default function TwinbinBinDetailScreen({ route }: Props) {
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 24 }}>
       <Text style={styles.title}>Bin Detail</Text>
+      {bin.latestReport?.status ? (
+        <Text style={[styles.badge]}>{`Report Status: ${bin.latestReport.status}`}</Text>
+      ) : (
+        <Text style={styles.muted}>Report not submitted yet.</Text>
+      )}
       <View style={styles.card}>
         <Label label="Area" value={bin.areaName} />
         <Label label="Area Type" value={bin.areaType} />
@@ -140,8 +145,8 @@ export default function TwinbinBinDetailScreen({ route }: Props) {
       {error ? <Text style={styles.error}>{error}</Text> : null}
       <Text style={styles.muted}>
         {withinFence
-          ? "You are within 100 meters. You can submit a report."
-          : "You must be within 100 meters to submit a report."}
+          ? "You are within 50 meters. You can submit a report."
+          : "You must be within 50 meters to submit a report."}
       </Text>
       <View style={[styles.card, { marginTop: 10 }]}>
         {questions.map((q, idx) => {
@@ -231,5 +236,15 @@ const styles = StyleSheet.create({
     marginTop: 6,
     textAlignVertical: "top"
   },
-  preview: { width: "100%", height: 160, marginTop: 8, borderRadius: 8 }
+  preview: { width: "100%", height: 160, marginTop: 8, borderRadius: 8 },
+  badge: {
+    alignSelf: "flex-start",
+    backgroundColor: "#e0f2fe",
+    color: "#075985",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    marginBottom: 8,
+    fontWeight: "700"
+  }
 });

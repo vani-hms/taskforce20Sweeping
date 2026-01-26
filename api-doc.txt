@@ -1,0 +1,197 @@
+# HMS Multicity – API Reference (Current Codebase)
+
+## 1. Overview
+- **What it is**: HMS Multicity manages city operations across multiple modules (Sweeping, Twinbin, Taskforce, IEC, Toilet, etc.) with strict city isolation.
+- **City-based architecture**: Every authenticated request carries a `cityId` claim; data queries are filtered by `cityId`.
+- **Roles**: `HMS_SUPER_ADMIN`, `CITY_ADMIN`, `COMMISSIONER`, `QC`, `EMPLOYEE`, `ACTION_OFFICER`.
+- **Module isolation**: Users receive module claims (`key`, `moduleId`, `role`, `canWrite`) in JWT; per‑module routers re‑check access.
+
+## 2. Authentication
+- **JWT**: Issued by `/auth/login`; includes `sub`, `cityId`, `roles`, `modules`.
+- **City scoping**: `cityId` in JWT is required for non‑HMS users; enforced by `requireCityContext`.
+- **Module permissions**: `modules` array in JWT is used by `assertModuleAccess`/`requireRoles` to gate endpoints.
+
+---
+
+## AUTH & PUBLIC APIs
+
+### POST /auth/login
+- **Auth required**: No
+- **Roles allowed**: Public; response roles derived.
+- **Body**: `{ email, password, cityId? }`
+- **Success**: `{ token, user:{id,email,name,cityId,roles,modules}, redirectTo }`
+- **Errors**:
+  - 403 pending registration exists
+  - 401 invalid credentials
+  - 403 no city assignment or no module assignment
+- **Notes**: `cityId` optional; if omitted, first assigned city is used. City Admin inherits access to all enabled city modules.
+
+### POST /auth/logout
+- **Auth required**: No (stateless)
+- **Roles**: Any
+- **Body**: none
+- **Success**: `{ success: true }`
+- **Notes**: Client deletes token.
+
+### POST /auth/request-registration
+- **Auth required**: No
+- **Roles**: Public applicant
+- **Body**: `{ name, phone, aadhaar, email, password, cityId, zoneId?, wardId?, requestedModules[] }`
+- **Success**: `{ requestId, status }`
+- **Errors**: 404 city not found; 400 invalid geo; 400 user exists.
+- **Notes**: Creates `UserRegistrationRequest` with status `PENDING`.
+
+### POST /auth/register-request
+- **Auth required**: No
+- **Roles**: Public applicant (ULB code)
+- **Body**: `{ ulbCode, name, email, phone, aadharNumber, password }`
+- **Success**: `{ success: true, message }`
+- **Errors**: 400 invalid ULB; 400 pending request exists.
+
+---
+
+## CITY & ADMIN APIs
+
+### GET /city/info
+- Auth: Yes; roles: any city user
+- Returns current city details.
+
+### GET /city/users
+- Roles: `CITY_ADMIN`, `COMMISSIONER`
+- Lists all users with modules.
+
+### GET /city/employees
+- Roles: `CITY_ADMIN`, `COMMISSIONER`
+- Optional `moduleKey`; filters employees by module.
+
+### GET /city/modules
+- Roles: any city role (`CITY_ADMIN`, `COMMISSIONER`, `ACTION_OFFICER`, `EMPLOYEE`, `QC`)
+- Lists enabled/disabled modules for the city.
+
+### GET /city/registration-requests
+- Roles: `CITY_ADMIN`, `COMMISSIONER`
+- Lists pending/approved/rejected registration requests.
+
+### POST /city/registration-requests/:id/approve
+- Roles: `CITY_ADMIN`, `COMMISSIONER`
+- Body: `{ role: "EMPLOYEE"|"QC"|"ACTION_OFFICER", moduleKeys: string[], zoneIds?, wardIds? }`
+- Effects: assigns role & modules; sets status `APPROVED`.
+
+### POST /city/registration-requests/:id/reject
+- Roles: `CITY_ADMIN`, `COMMISSIONER`
+- Body: `{ reason? }`
+- Sets status `REJECTED`.
+
+**City isolation**: all routes scope by `req.auth.cityId`.  
+**Zone/Ward rules**: approval can include zone/ward assignments; geo validation prevents cross-city IDs.  
+**Module assignment**: only enabled city modules are allowed; uniqueness enforced.  
+**QC visibility**: QC only sees data within their city via `assertModuleAccess` + city filters.
+
+---
+
+## GEO / HIERARCHY APIs
+
+| Route | Method | Roles | Notes |
+| --- | --- | --- | --- |
+| /city/geo | GET | any city role | Optional `level` filter (`ZONE`,`WARD`,`AREA`,`BEAT`) |
+| /city/geo | POST | `CITY_ADMIN`, `COMMISSIONER` | Validate parent & areaType; AREA requires areaType; prevents duplicates within ward |
+| /city/geo/:id | PATCH | `CITY_ADMIN`, `COMMISSIONER` | Rename; set `areaType` only for AREA |
+| /city/geo/:id | DELETE | `CITY_ADMIN`, `COMMISSIONER` | Blocks if children exist |
+
+Hierarchy: ZONE → WARD → AREA → BEAT. `areaType` used only at AREA (RESIDENTIAL | COMMERCIAL | SLUM).
+
+---
+
+## MODULE RECORD APIs (Read-only)
+
+### GET /modules/:moduleKey/records
+- Roles: any city role with module access
+- City-scoped; `moduleKey` examples: `SWEEP_RES`, `SWEEP_COM`, `TWINBIN`, `TASKFORCE`, `TOILET`, `IEC`.
+- Returns module record summaries for dashboards.
+
+---
+
+## TWINBIN MODULE APIs
+
+### Section A — Litter Bin Registration
+| Endpoint | Method | Roles | Description |
+| --- | --- | --- | --- |
+| /modules/twinbin/bins/request | POST | EMPLOYEE | Create bin request (area, type, location, condition, geo) |
+| /modules/twinbin/bins/pending | GET | QC | Pending QC review in city; includes requester info |
+| /modules/twinbin/bins/:id/approve | POST | QC | Optionally assign employee IDs; sets status APPROVED |
+| /modules/twinbin/bins/:id/reject | POST | QC | Sets status REJECTED |
+| /modules/twinbin/bins/assigned | GET | EMPLOYEE | Approved bins assigned to requester; includes latest report |
+| /modules/twinbin/bins/my-requests | GET | EMPLOYEE | Requests created by employee |
+
+Notes: city isolation on every query; assignment validated against city employees.
+
+### Section B — Twinbin Reports
+| Endpoint | Method | Roles | Description |
+| --- | --- | --- | --- |
+| /modules/twinbin/bins/:id/report | POST | EMPLOYEE | Submit report with `questionnaire`, `latitude`, `longitude`; **50 m geofence** vs bin coords |
+| /modules/twinbin/reports/pending | GET | QC | Lists SUBMITTED reports with bin info & employee |
+| /modules/twinbin/reports/:id/approve | POST | QC | Status → APPROVED; sets reviewer + timestamp |
+| /modules/twinbin/reports/:id/reject | POST | QC | Status → REJECTED |
+| /modules/twinbin/reports/:id/action-required | POST | QC | Status → ACTION_REQUIRED |
+
+Lifecycle: SUBMITTED → (APPROVED | REJECTED | ACTION_REQUIRED). QC decisions recorded with `reviewedByQcId`, `reviewedAt`. Geofence violations return 403.
+
+---
+
+## TASKFORCE MODULE APIs
+
+### Section A — Feeder Point
+| Endpoint | Method | Roles | Description |
+| --- | --- | --- | --- |
+| /modules/taskforce/feeder-points/request | POST | EMPLOYEE | Create feeder point request (area, geo, lat/lng) |
+| /modules/taskforce/feeder-points/pending | GET | QC | Pending QC list |
+| /modules/taskforce/feeder-points/:id/approve | POST | QC | Optional employee assignment; status APPROVED |
+| /modules/taskforce/feeder-points/:id/reject | POST | QC | Status REJECTED |
+| /modules/taskforce/feeder-points/:id/action-required | POST | QC | Status ACTION_REQUIRED |
+| /modules/taskforce/feeder-points/assigned | GET | EMPLOYEE | Approved & assigned to employee |
+
+### Section B — Taskforce Reports
+| Endpoint | Method | Roles | Description |
+| --- | --- | --- | --- |
+| /modules/taskforce/feeder-points/:id/report | POST | EMPLOYEE | Submit report payload with `latitude`, `longitude`; **100 m geofence** |
+| /modules/taskforce/reports/pending | GET | QC | Lists SUBMITTED reports with feeder + employee info |
+| /modules/taskforce/reports/:id/approve | POST | QC | Status → APPROVED; records reviewer & time |
+| /modules/taskforce/reports/:id/reject | POST | QC | Status → REJECTED |
+| /modules/taskforce/reports/:id/action-required | POST | QC | Status → ACTION_REQUIRED |
+
+Differences vs Twinbin: 100 m geofence; payload is generic JSON; feeder context instead of bin.
+
+---
+
+## RBAC Matrix
+
+| Capability | HMS_SUPER_ADMIN | CITY_ADMIN | COMMISSIONER | QC | EMPLOYEE | ACTION_OFFICER |
+| --- | --- | --- | --- | --- | --- | --- |
+| Login | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
+| Register (self) | – | – | – | – | – | – |
+| Create Geo | – | ✔ | ✔ | – | – | – |
+| Assign Modules / Approve registration | – | ✔ | ✔ | – | – | – |
+| Request Bin/Feeder | – | – | – | – | ✔ | – |
+| Approve Requests (bin/feeder) | – | – | – | ✔ | – | – |
+| Submit Report (twinbin/taskforce) | – | – | – | – | ✔ | – |
+| Review Report (QC) | – | – | – | ✔ | – | – |
+
+(✔ allowed, – not allowed; all actions city-scoped.)
+
+---
+
+## Error Codes & Common Rules
+- **401 Unauthorized**: Missing/invalid JWT.
+- **403 Forbidden**: Role not permitted; city admin/commissioner blocked where specified; geofence violations.
+- **404 Not Found**: Resource not found in requester’s city.
+- **409 Conflict**: Duplicate module assignment or existing pending registration (returned as 400/409 depending on route).
+- **Geo-fence violations**: 403 with message (“You must be within 50 meters…” or “within 100 meters…”).
+- **City mismatch**: 404/400 when IDs not in current city.
+- **Validation**: Zod schemas enforce required fields; detailed 400 errors.
+
+---
+
+## Notes
+- All module endpoints re-check `assertModuleAccess` against JWT module claims.
+- City isolation is enforced by `requireCityContext` and city filters on queries.
+- Distance checks use Haversine with Earth radius 6,371,000 m.

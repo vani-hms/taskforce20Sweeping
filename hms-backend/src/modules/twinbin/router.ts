@@ -27,6 +27,12 @@ function haversineMeters(lat1: number, lon1: number, lat2: number, lon2: number)
   return R * c;
 }
 
+function forbidCityAdminOrCommissioner(req: any) {
+  if (req.auth?.roles?.includes(Role.CITY_ADMIN) || req.auth?.roles?.includes(Role.COMMISSIONER)) {
+    throw new HttpError(403, "Forbidden");
+  }
+}
+
 async function ensureGeoValid(cityId: string, zoneId?: string | null, wardId?: string | null) {
   if (zoneId) {
     const zone = await prisma.geoNode.findUnique({ where: { id: zoneId } });
@@ -109,19 +115,35 @@ router.get("/bins/my-requests", async (req, res, next) => {
 router.get("/bins/pending", async (req, res, next) => {
   try {
     const cityId = req.auth!.cityId!;
+    const qcId = req.auth!.sub!;
     const moduleId = await getModuleIdByName(MODULE_KEY);
+
+    // allow only QC users who are assigned to the Twinbin module in this city
     await assertModuleAccess(req, res, moduleId, [Role.QC]);
 
     const bins = await prisma.twinbinLitterBin.findMany({
-      where: { cityId, status: "PENDING_QC" },
-      orderBy: { createdAt: "desc" }
+      where: { cityId, status: "PENDING_QC" },          // strict city + status filter
+      orderBy: { createdAt: "desc" },
+      include: {
+        requestedBy: { select: { id: true, name: true, email: true } } // requester details for display
+      }
     });
 
-    res.json({ bins });
+    console.info("[twinbin] pending bins", { cityId, qcId, count: bins.length }); // temp trace
+
+    res.json({
+      bins: bins.map((b) => ({
+        ...b,
+        requestedBy: b.requestedBy
+          ? { id: b.requestedBy.id, name: b.requestedBy.name, email: b.requestedBy.email }
+          : null
+      }))
+    });
   } catch (err) {
     next(err);
   }
 });
+
 
 const approveSchema = z.object({
   assignedEmployeeIds: z.array(z.string().uuid()).optional()
@@ -210,10 +232,22 @@ router.get("/bins/assigned", async (req, res, next) => {
 
     const bins = await prisma.twinbinLitterBin.findMany({
       where: { cityId, status: "APPROVED", assignedEmployeeIds: { has: userId } },
-      orderBy: { createdAt: "desc" }
+      orderBy: { createdAt: "desc" },
+      include: {
+        reports: {
+          where: { cityId },
+          orderBy: { createdAt: "desc" },
+          take: 1
+        }
+      }
     });
 
-    res.json({ bins });
+    res.json({
+      bins: bins.map((b) => ({
+        ...b,
+        latestReport: b.reports[0] || null
+      }))
+    });
   } catch (err) {
     next(err);
   }
@@ -422,5 +456,116 @@ router.post("/visits/:id/action-taken", validateBody(actionTakenSchema), async (
     next(err);
   }
 });
+
+const binReportSchema = z.object({
+  latitude: z.number(),
+  longitude: z.number(),
+  questionnaire: z.any()
+});
+
+router.post("/bins/:id/report", validateBody(binReportSchema), async (req, res, next) => {
+  try {
+    const cityId = req.auth!.cityId!;
+    const userId = req.auth!.sub!;
+    const moduleId = await getModuleIdByName(MODULE_KEY);
+    forbidCityAdminOrCommissioner(req);
+    await assertModuleAccess(req, res, moduleId, [Role.EMPLOYEE]);
+
+    const bin = await prisma.twinbinLitterBin.findUnique({ where: { id: req.params.id } });
+    if (!bin || bin.cityId !== cityId) throw new HttpError(404, "Bin not found");
+    if (bin.status !== "APPROVED") throw new HttpError(400, "Bin not approved");
+    if (!bin.assignedEmployeeIds.includes(userId)) throw new HttpError(403, "Not assigned to this bin");
+
+    if (!bin.latitude || !bin.longitude) throw new HttpError(400, "Bin location unavailable");
+
+    const payload = req.body as z.infer<typeof binReportSchema>;
+    const distance = haversineMeters(payload.latitude, payload.longitude, bin.latitude, bin.longitude);
+    if (distance > 50) throw new HttpError(403, "You must be within 50 meters of the bin to submit");
+
+    const report = await prisma.twinbinLitterBinReport.create({
+      data: {
+        cityId,
+        binId: bin.id,
+        submittedById: userId,
+        reviewedByQcId: null,
+        status: "SUBMITTED",
+        latitude: payload.latitude,
+        longitude: payload.longitude,
+        distanceMeters: distance,
+        questionnaire: payload.questionnaire
+      }
+    });
+
+    res.json({ report });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get("/reports/pending", async (req, res, next) => {
+  try {
+    const cityId = req.auth!.cityId!;
+    const moduleId = await getModuleIdByName(MODULE_KEY);
+    forbidCityAdminOrCommissioner(req);
+    await assertModuleAccess(req, res, moduleId, [Role.QC]);
+
+    const reports = await prisma.twinbinLitterBinReport.findMany({
+      where: { cityId, status: "SUBMITTED" },
+      orderBy: { createdAt: "desc" },
+      include: {
+        bin: {
+          select: {
+            id: true,
+            areaName: true,
+            areaType: true,
+            locationName: true,
+            roadType: true,
+            latitude: true,
+            longitude: true
+          }
+        },
+        submittedBy: { select: { id: true, name: true, email: true } }
+      }
+    });
+
+    res.json({ reports });
+  } catch (err) {
+    next(err);
+  }
+});
+
+async function updateBinReportStatus(
+  req: any,
+  res: any,
+  next: any,
+  status: "APPROVED" | "REJECTED" | "ACTION_REQUIRED"
+) {
+  try {
+    const cityId = req.auth!.cityId!;
+    const userId = req.auth!.sub!;
+    const moduleId = await getModuleIdByName(MODULE_KEY);
+    forbidCityAdminOrCommissioner(req);
+    await assertModuleAccess(req, res, moduleId, [Role.QC]);
+
+    const report = await prisma.twinbinLitterBinReport.findUnique({ where: { id: req.params.id } });
+    if (!report || report.cityId !== cityId) throw new HttpError(404, "Report not found");
+    if (report.status !== "SUBMITTED") throw new HttpError(400, "Report not pending review");
+
+    const updated = await prisma.twinbinLitterBinReport.update({
+      where: { id: report.id },
+      data: { status, reviewedByQcId: userId, reviewedAt: new Date() }
+    });
+
+    res.json({ report: updated });
+  } catch (err) {
+    next(err);
+  }
+}
+
+router.post("/reports/:id/approve", (req, res, next) => updateBinReportStatus(req, res, next, "APPROVED"));
+router.post("/reports/:id/reject", (req, res, next) => updateBinReportStatus(req, res, next, "REJECTED"));
+router.post("/reports/:id/action-required", (req, res, next) =>
+  updateBinReportStatus(req, res, next, "ACTION_REQUIRED")
+);
 
 export default router;

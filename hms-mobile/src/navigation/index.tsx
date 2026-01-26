@@ -18,6 +18,13 @@ import TwinbinVisitPendingScreen from "../screens/TwinbinVisitPendingScreen";
 import TwinbinVisitReviewScreen from "../screens/TwinbinVisitReviewScreen";
 import TwinbinActionRequiredScreen from "../screens/TwinbinActionRequiredScreen";
 import TwinbinActionRequiredDetailScreen from "../screens/TwinbinActionRequiredDetailScreen";
+import TwinbinReportPendingScreen from "../screens/TwinbinReportPendingScreen";
+import TwinbinReportReviewScreen from "../screens/TwinbinReportReviewScreen";
+import TaskforceHomeScreen from "../screens/TaskforceHomeScreen";
+import TaskforceAssignedScreen from "../screens/TaskforceAssignedScreen";
+import TaskforceFeederDetailScreen from "../screens/TaskforceFeederDetailScreen";
+import TaskforceQcReportsScreen from "../screens/TaskforceQcReportsScreen";
+import TaskforceQcReportReviewScreen from "../screens/TaskforceQcReportReviewScreen";
 import { useAuthContext } from "../auth/AuthProvider";
 import { RootStackParamList } from "./types";
 
@@ -53,6 +60,13 @@ export function RootNavigator() {
       <Stack.Screen name="TwinbinVisitReview" component={TwinbinVisitReviewScreen} />
       <Stack.Screen name="TwinbinActionRequired" component={TwinbinActionRequiredScreen} />
       <Stack.Screen name="TwinbinActionRequiredDetail" component={TwinbinActionRequiredDetailScreen} />
+      <Stack.Screen name="TwinbinReportPending" component={TwinbinReportPendingScreen} />
+      <Stack.Screen name="TwinbinReportReview" component={TwinbinReportReviewScreen} />
+      <Stack.Screen name="TaskforceHome" component={TaskforceHomeScreen} />
+      <Stack.Screen name="TaskforceAssigned" component={TaskforceAssignedScreen} />
+      <Stack.Screen name="TaskforceFeederDetail" component={TaskforceFeederDetailScreen} />
+      <Stack.Screen name="TaskforceQcReports" component={TaskforceQcReportsScreen} />
+      <Stack.Screen name="TaskforceQcReportReview" component={TaskforceQcReportReviewScreen} />
     </Stack.Navigator>
   );
 }

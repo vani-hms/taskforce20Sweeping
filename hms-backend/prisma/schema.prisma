@@ -1,6 +1,7 @@
 generator client {
-  provider = "prisma-client-js"
+  provider   = "prisma-client-js"
   engineType = "binary"
+  output     = "../generated/prisma"
 }
 
 datasource db {
@@ -33,12 +34,15 @@ model City {
   taskforceActivities        TaskforceActivity[]
   taskforceCases             TaskforceCase[]
   taskforceRecords           TaskforceRecord[]
+  taskforceFeederPoints      TaskforceFeederPoint[]
   twinbinLitterBins          TwinbinLitterBin[]
   twinbinRecords             TwinbinRecord[]
   twinbinVisitReports        TwinbinVisitReport[]
+  twinbinLitterBinReports    TwinbinLitterBinReport[]
   users                      UserCity[]
   moduleRoles                UserModuleRole[]
   registrationRequests       UserRegistrationRequest[]
+  TaskforceFeederReport      TaskforceFeederReport[]
 
   @@index([hmsId])
 }
@@ -70,23 +74,29 @@ model CityModule {
 }
 
 model User {
-  id                         String                      @id @default(uuid()) @db.Uuid
-  email                      String                      @unique
-  name                       String
-  password                   String
-  createdAt                  DateTime                    @default(now())
-  updatedAt                  DateTime                    @updatedAt
-  sweepingCommercialRecords  SweepingCommercialRecord[]
-  sweepingResidentialRecords SweepingResidentialRecord[]
-  taskforceRecords           TaskforceRecord[]
-  twinbinLitterBinsApproved  TwinbinLitterBin[]          @relation("TwinbinApprovedBy")
-  twinbinLitterBinsRequested TwinbinLitterBin[]          @relation("TwinbinRequestedBy")
-  twinbinRecords             TwinbinRecord[]
-  twinbinVisitActions        TwinbinVisitReport[]        @relation("TwinbinVisitActionTakenBy")
-  twinbinVisitsReviewed      TwinbinVisitReport[]        @relation("TwinbinVisitReviewedBy")
-  twinbinVisitsSubmitted     TwinbinVisitReport[]        @relation("TwinbinVisitSubmittedBy")
-  cities                     UserCity[]
-  modules                    UserModuleRole[]
+  id                              String                      @id @default(uuid()) @db.Uuid
+  email                           String                      @unique
+  name                            String
+  password                        String
+  createdAt                       DateTime                    @default(now())
+  updatedAt                       DateTime                    @updatedAt
+  sweepingCommercialRecords       SweepingCommercialRecord[]
+  sweepingResidentialRecords      SweepingResidentialRecord[]
+  taskforceRecords                TaskforceRecord[]
+  taskforceFeederPointsApproved   TaskforceFeederPoint[]      @relation("TaskforceFeederApprovedBy")
+  taskforceFeederPointsRequested  TaskforceFeederPoint[]      @relation("TaskforceFeederRequestedBy")
+  taskforceFeederReportsSubmitted TaskforceFeederReport[]     @relation("TaskforceReportSubmittedBy")
+  taskforceFeederReportsReviewed  TaskforceFeederReport[]     @relation("TaskforceReportReviewedBy")
+  twinbinLitterBinsApproved       TwinbinLitterBin[]          @relation("TwinbinApprovedBy")
+  twinbinLitterBinsRequested      TwinbinLitterBin[]          @relation("TwinbinRequestedBy")
+  twinbinRecords                  TwinbinRecord[]
+  twinbinVisitActions             TwinbinVisitReport[]        @relation("TwinbinVisitActionTakenBy")
+  twinbinVisitsReviewed           TwinbinVisitReport[]        @relation("TwinbinVisitReviewedBy")
+  twinbinVisitsSubmitted          TwinbinVisitReport[]        @relation("TwinbinVisitSubmittedBy")
+  twinbinReportsSubmitted         TwinbinLitterBinReport[]    @relation("TwinbinReportSubmittedBy")
+  twinbinReportsReviewed          TwinbinLitterBinReport[]    @relation("TwinbinReportReviewedBy")
+  cities                          UserCity[]
+  modules                         UserModuleRole[]
 }
 
 model UserCity {
@@ -272,6 +282,7 @@ model TwinbinLitterBin {
   city                City                 @relation(fields: [cityId], references: [id], onDelete: Cascade)
   requestedBy         User                 @relation("TwinbinRequestedBy", fields: [requestedById], references: [id], onDelete: Cascade)
   visits              TwinbinVisitReport[]
+  reports             TwinbinLitterBinReport[]
 
   @@index([cityId])
 }
@@ -306,6 +317,53 @@ model TwinbinVisitReport {
   @@index([binId])
 }
 
+model TwinbinLitterBinReport {
+  id             String              @id @default(uuid()) @db.Uuid
+  cityId         String              @db.Uuid
+  binId          String              @db.Uuid
+  submittedById  String              @db.Uuid
+  reviewedByQcId String?             @db.Uuid
+  status         TwinbinReportStatus
+  latitude       Float
+  longitude      Float
+  distanceMeters Float
+  questionnaire  Json
+  createdAt      DateTime            @default(now())
+  reviewedAt     DateTime?
+  bin            TwinbinLitterBin    @relation(fields: [binId], references: [id], onDelete: Cascade)
+  city           City                @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  submittedBy    User                @relation("TwinbinReportSubmittedBy", fields: [submittedById], references: [id], onDelete: Cascade)
+  reviewedByQc   User?               @relation("TwinbinReportReviewedBy", fields: [reviewedByQcId], references: [id])
+
+  @@index([cityId])
+  @@index([binId])
+}
+
+model TaskforceFeederPoint {
+  id                  String                  @id @default(uuid()) @db.Uuid
+  cityId              String                  @db.Uuid
+  requestedById       String                  @db.Uuid
+  zoneId              String?                 @db.Uuid
+  wardId              String?                 @db.Uuid
+  areaName            String
+  areaType            AreaType
+  feederPointName     String
+  locationDescription String
+  latitude            Float
+  longitude           Float
+  status              TaskforceRequestStatus
+  assignedEmployeeIds String[]                @default([])
+  approvedByQcId      String?                 @db.Uuid
+  createdAt           DateTime                @default(now())
+  updatedAt           DateTime                @updatedAt
+  city                City                    @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  requestedBy         User                    @relation("TaskforceFeederRequestedBy", fields: [requestedById], references: [id], onDelete: Cascade)
+  approvedByQc        User?                   @relation("TaskforceFeederApprovedBy", fields: [approvedByQcId], references: [id])
+  reports             TaskforceFeederReport[]
+
+  @@index([cityId])
+}
+
 model TaskforceRecord {
   id            String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   cityId        String             @db.Uuid
@@ -316,6 +374,28 @@ model TaskforceRecord {
   updatedAt     DateTime           @default(now()) @updatedAt @db.Timestamptz(6)
   city          City               @relation(fields: [cityId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   createdByUser User               @relation(fields: [createdBy], references: [id], onUpdate: NoAction)
+
+  @@index([cityId])
+}
+
+model TaskforceFeederReport {
+  id             String                @id @default(uuid()) @db.Uuid
+  feederPointId  String                @db.Uuid
+  cityId         String                @db.Uuid
+  submittedById  String                @db.Uuid
+  latitude       Float
+  longitude      Float
+  distanceMeters Float
+  payload        Json
+  status         TaskforceReportStatus
+  reviewedByQcId String?               @db.Uuid
+  reviewedAt     DateTime?
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+  feederPoint    TaskforceFeederPoint  @relation(fields: [feederPointId], references: [id], onDelete: Cascade)
+  city           City                  @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  submittedBy    User                  @relation("TaskforceReportSubmittedBy", fields: [submittedById], references: [id], onDelete: Cascade)
+  reviewedByQc   User?                 @relation("TaskforceReportReviewedBy", fields: [reviewedByQcId], references: [id])
 
   @@index([cityId])
 }
@@ -389,11 +469,32 @@ enum TwinbinVisitStatus {
   REJECTED
 }
 
+enum TwinbinReportStatus {
+  SUBMITTED
+  APPROVED
+  REJECTED
+  ACTION_REQUIRED
+}
+
 enum ReportActionStatus {
   APPROVED
   REJECTED
   ACTION_REQUIRED
   ACTION_TAKEN
+}
+
+enum TaskforceRequestStatus {
+  PENDING_QC
+  APPROVED
+  REJECTED
+  ACTION_REQUIRED
+}
+
+enum TaskforceReportStatus {
+  SUBMITTED
+  APPROVED
+  REJECTED
+  ACTION_REQUIRED
 }
 
 enum TwinbinBinStatus {

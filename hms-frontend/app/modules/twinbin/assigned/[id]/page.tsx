@@ -18,6 +18,7 @@ type Bin = {
   longitude?: number;
   status: string;
   createdAt: string;
+  latestReport?: { status: string } | null;
 };
 
 function haversineMeters(lat1: number, lon1: number, lat2: number, lon2: number) {
@@ -43,6 +44,7 @@ export default function AssignedBinDetailPage() {
   const [statusMsg, setStatusMsg] = useState("");
   const [myLat, setMyLat] = useState<number | null>(null);
   const [myLng, setMyLng] = useState<number | null>(null);
+  const [reportStatus, setReportStatus] = useState<string | null>(null);
   const questions = [
     "Are adequate litter bins provided in the area?",
     "Are the litter bins properly fixed and securely installed?",
@@ -73,6 +75,7 @@ export default function AssignedBinDetailPage() {
           setError("Bin not found or not assigned to you.");
         } else {
           setBin(found);
+          setReportStatus(found.latestReport?.status || null);
         }
       } catch (err) {
         setError(err instanceof ApiError ? err.message : "Failed to load bin");
@@ -104,7 +107,6 @@ export default function AssignedBinDetailPage() {
   };
 
   const withinFence = useMemo(() => (distance !== null ? distance <= 50 : false), [distance]);
-  const fence100 = useMemo(() => (distance !== null ? distance <= 100 : false), [distance]);
 
   const setAnswer = (key: string, answer: "YES" | "NO") => {
     setAnswers((prev) => ({ ...prev, [key]: { ...prev[key], answer } }));
@@ -125,7 +127,7 @@ export default function AssignedBinDetailPage() {
     });
 
   const handleSubmit = async () => {
-    if (!fence100 || !bin || myLat === null || myLng === null) return;
+    if (!withinFence || !bin || myLat === null || myLng === null) return;
     const incomplete = Object.entries(answers).find(([, v]) => !v.answer || !v.photoUrl);
     if (incomplete) {
       setSubmitError("All answers and photos are required.");
@@ -135,14 +137,16 @@ export default function AssignedBinDetailPage() {
     setSubmitError("");
     setStatusMsg("");
     try {
-      await TwinbinApi.submitVisit(bin.id, {
+      const questionnaire = Object.fromEntries(
+        Object.entries(answers).map(([k, v]) => [k, { answer: v.answer as "YES" | "NO", photoUrl: v.photoUrl }])
+      );
+      const res = await TwinbinApi.submitReport(bin.id, {
         latitude: myLat,
         longitude: myLng,
-        inspectionAnswers: Object.fromEntries(
-          Object.entries(answers).map(([k, v]) => [k, { answer: v.answer as "YES" | "NO", photoUrl: v.photoUrl }])
-        )
+        questionnaire
       });
       setStatusMsg("Report submitted, awaiting QC review.");
+      setReportStatus(res.report?.status || "SUBMITTED");
     } catch (err) {
       setSubmitError(err instanceof ApiError ? err.message : "Failed to submit report");
     } finally {
@@ -185,9 +189,9 @@ export default function AssignedBinDetailPage() {
               </div>
               {locError && <div className="alert error">{locError}</div>}
               <div className="muted" style={{ marginTop: 8 }}>
-                {fence100
-                  ? "You are within 100 meters. You can submit a report."
-                  : "You must be within 100 meters to submit a report."}
+                {withinFence
+                  ? "You are within 50 meters. You can submit a report."
+                  : "You must be within 50 meters to submit a report."}
               </div>
               <div className="form-grid" style={{ marginTop: 16 }}>
                 {questions.map((text, idx) => {
@@ -240,9 +244,14 @@ export default function AssignedBinDetailPage() {
               </div>
               {submitError && <div className="alert error" style={{ marginTop: 8 }}>{submitError}</div>}
               {statusMsg && <div className="alert success" style={{ marginTop: 8 }}>{statusMsg}</div>}
+              {reportStatus && (
+                <div className="badge" style={{ marginTop: 8 }}>
+                  Report Status: {reportStatus.replace("_", " ")}
+                </div>
+              )}
               <button
                 className="btn btn-primary"
-                disabled={!fence100 || submitting}
+                disabled={!withinFence || submitting}
                 onClick={handleSubmit}
                 style={{ marginTop: 12 }}
               >

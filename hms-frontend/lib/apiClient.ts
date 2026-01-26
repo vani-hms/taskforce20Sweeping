@@ -143,7 +143,19 @@ export const TaskforceApi = {
     apiFetch<{ activity: any }>(`/modules/taskforce/cases/${id}/activity`, {
       method: "POST",
       body: JSON.stringify(body)
-    })
+      }),
+  assigned: () =>
+    apiFetch<{ feederPoints: any[] }>("/modules/taskforce/feeder-points/assigned"),
+  submitReport: (id: string, body: { latitude: number; longitude: number; payload: any }) =>
+    apiFetch<{ report: any }>(`/modules/taskforce/feeder-points/${id}/report`, {
+      method: "POST",
+      body: JSON.stringify(body)
+    }),
+  pendingReports: () => apiFetch<{ reports: any[] }>("/modules/taskforce/reports/pending"),
+  approveReport: (id: string) => apiFetch<{ report: any }>(`/modules/taskforce/reports/${id}/approve`, { method: "POST" }),
+  rejectReport: (id: string) => apiFetch<{ report: any }>(`/modules/taskforce/reports/${id}/reject`, { method: "POST" }),
+  actionRequiredReport: (id: string) =>
+    apiFetch<{ report: any }>(`/modules/taskforce/reports/${id}/action-required`, { method: "POST" })
 };
 
 export const ToiletApi = {
@@ -240,6 +252,8 @@ export const TwinbinApi = {
   reject: (id: string) => apiFetch<{ bin: any }>(`/modules/twinbin/bins/${id}/reject`, { method: "POST" }),
   submitVisit: (binId: string, body: { latitude: number; longitude: number; inspectionAnswers: Record<string, { answer: "YES" | "NO"; photoUrl: string }> }) =>
     apiFetch<{ report: any }>(`/modules/twinbin/bins/${binId}/visit`, { method: "POST", body: JSON.stringify(body) }),
+  submitReport: (binId: string, body: { latitude: number; longitude: number; questionnaire: any }) =>
+    apiFetch<{ report: any }>(`/modules/twinbin/bins/${binId}/report`, { method: "POST", body: JSON.stringify(body) }),
   pendingVisits: () =>
     apiFetch<{ visits: any[] }>("/modules/twinbin/visits/pending"),
   approveVisit: (id: string) =>
@@ -251,5 +265,10 @@ export const TwinbinApi = {
   listActionRequired: () =>
     apiFetch<{ visits: any[] }>("/modules/twinbin/visits/action-required"),
   submitActionTaken: (id: string, body: { actionRemark: string; actionPhotoUrl: string }) =>
-    apiFetch<{ visit: any }>(`/modules/twinbin/visits/${id}/action-taken`, { method: "POST", body: JSON.stringify(body) })
+    apiFetch<{ visit: any }>(`/modules/twinbin/visits/${id}/action-taken`, { method: "POST", body: JSON.stringify(body) }),
+  pendingReports: () => apiFetch<{ reports: any[] }>("/modules/twinbin/reports/pending"),
+  approveReport: (id: string) => apiFetch<{ report: any }>(`/modules/twinbin/reports/${id}/approve`, { method: "POST" }),
+  rejectReport: (id: string) => apiFetch<{ report: any }>(`/modules/twinbin/reports/${id}/reject`, { method: "POST" }),
+  actionRequiredReport: (id: string) =>
+    apiFetch<{ report: any }>(`/modules/twinbin/reports/${id}/action-required`, { method: "POST" })
 };

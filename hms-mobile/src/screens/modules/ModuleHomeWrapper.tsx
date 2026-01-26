@@ -3,7 +3,6 @@ import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../../navigation";
 import SweepingResHome from "./SweepingResHome";
 import SweepingComHome from "./SweepingComHome";
-import TaskforceHome from "./TaskforceHome";
 import { useAuthContext } from "../../auth/AuthProvider";
 import { View, Text } from "react-native";
 
@@ -38,5 +37,14 @@ export default function ModuleHomeWrapper({ route, navigation }: Props) {
     }
     return null;
   }
-  return <TaskforceHome navigation={navigation} />;
+  if (key === "TASKFORCE") {
+    if (roles.includes("QC")) {
+      navigation.navigate("TaskforceQcReports");
+    } else {
+      navigation.navigate("TaskforceHome");
+    }
+    return null;
+  }
+  navigation.navigate("TaskforceHome");
+  return null;
 }

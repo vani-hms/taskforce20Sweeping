@@ -17,4 +17,11 @@ export type RootStackParamList = {
   TwinbinVisitReview: { visit: any };
   TwinbinActionRequired: undefined;
   TwinbinActionRequiredDetail: { visit: any };
+  TwinbinReportPending: undefined;
+  TwinbinReportReview: { report: any };
+  TaskforceHome: undefined;
+  TaskforceAssigned: undefined;
+  TaskforceFeederDetail: { feeder: any };
+  TaskforceQcReports: undefined;
+  TaskforceQcReportReview: { report: any };
 };

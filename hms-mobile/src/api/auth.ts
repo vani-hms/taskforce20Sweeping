@@ -116,6 +116,17 @@ export async function submitTwinbinVisit(
   } as any);
 }
 
+export async function submitTwinbinReport(
+  binId: string,
+  body: { latitude: number; longitude: number; questionnaire: any }
+) {
+  return request<{ report: any }>(`/modules/twinbin/bins/${binId}/report`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...(await authHeader()) },
+    body: JSON.stringify(body)
+  } as any);
+}
+
 export async function listTwinbinVisitPending() {
   return request<{ visits: any[] }>("/modules/twinbin/visits/pending");
 }
@@ -173,6 +184,47 @@ export async function submitTwinbinActionTaken(id: string, body: { actionRemark:
   } as any);
 }
 
+export async function listTwinbinReportsPending() {
+  return request<{ reports: any[] }>("/modules/twinbin/reports/pending");
+}
+
+export async function approveTwinbinReport(id: string) {
+  return request<{ report: any }>(`/modules/twinbin/reports/${id}/approve`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...(await authHeader()) }
+  } as any);
+}
+
+export async function rejectTwinbinReport(id: string) {
+  return request<{ report: any }>(`/modules/twinbin/reports/${id}/reject`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...(await authHeader()) }
+  } as any);
+}
+
+export async function actionRequiredTwinbinReport(id: string) {
+  return request<{ report: any }>(`/modules/twinbin/reports/${id}/action-required`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...(await authHeader()) }
+  } as any);
+}
+
+// Taskforce feeder points (employee)
+export async function listTaskforceAssigned() {
+  return request<{ feederPoints: any[] }>("/modules/taskforce/feeder-points/assigned");
+}
+
+export async function submitTaskforceReport(
+  feederPointId: string,
+  body: { latitude: number; longitude: number; payload: any }
+) {
+  return request<{ report: any }>(`/modules/taskforce/feeder-points/${feederPointId}/report`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...(await authHeader()) },
+    body: JSON.stringify(body)
+  } as any);
+}
+
 async function authHeader() {
   const token = await getToken();
   return token ? { Authorization: `Bearer ${token}` } : {};
@@ -190,4 +242,29 @@ export async function submitRegistration(body: {
     method: "POST",
     body: JSON.stringify(body)
   });
+}
+
+export async function listTaskforceReportsPending() {
+  return request<{ reports: any[] }>("/modules/taskforce/reports/pending");
+}
+
+export async function approveTaskforceReport(id: string) {
+  return request<{ report: any }>(`/modules/taskforce/reports/${id}/approve`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...(await authHeader()) }
+  } as any);
+}
+
+export async function rejectTaskforceReport(id: string) {
+  return request<{ report: any }>(`/modules/taskforce/reports/${id}/reject`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...(await authHeader()) }
+  } as any);
+}
+
+export async function actionRequiredTaskforceReport(id: string) {
+  return request<{ report: any }>(`/modules/taskforce/reports/${id}/action-required`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...(await authHeader()) }
+  } as any);
 }

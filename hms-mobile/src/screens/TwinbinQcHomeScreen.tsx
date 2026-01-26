@@ -24,6 +24,13 @@ export default function TwinbinQcHomeScreen({ navigation }: Props) {
         </TouchableOpacity>
       </View>
       <View style={styles.card}>
+        <Text style={styles.cardTitle}>Pending Bin Reports</Text>
+        <Text style={styles.cardSubtitle}>Review submitted bin reports and take actions.</Text>
+        <TouchableOpacity style={styles.button} onPress={() => navigation.navigate("TwinbinReportPending")}>
+          <Text style={styles.buttonText}>Open</Text>
+        </TouchableOpacity>
+      </View>
+      <View style={styles.card}>
         <Text style={styles.cardTitle}>Mark Action Required</Text>
         <Text style={styles.cardSubtitle}>Use visit review to send items to Action Officer.</Text>
         <TouchableOpacity style={styles.button} onPress={() => navigation.navigate("TwinbinVisitPending")}>

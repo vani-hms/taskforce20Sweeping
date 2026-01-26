@@ -180,7 +180,7 @@ export const RegistrationApi = {
 };
 
 export const EmployeesApi = {
-  list: () =>
+  list: (moduleKey?: string) =>
     apiFetch<{
       employees: {
         id: string;
@@ -192,5 +192,64 @@ export const EmployeesApi = {
         wards: string[];
         createdAt: string;
       }[];
-    }>("/city/employees")
+    }>(moduleKey ? `/city/employees?moduleKey=${encodeURIComponent(moduleKey)}` : "/city/employees")
+};
+
+export const TwinbinApi = {
+  requestBin: (body: {
+    zoneId?: string;
+    wardId?: string;
+    areaName: string;
+    areaType: string;
+    locationName: string;
+    roadType: string;
+    isFixedProperly: boolean;
+    hasLid: boolean;
+    condition: string;
+    latitude: number;
+    longitude: number;
+  }) => apiFetch<{ bin: any }>("/modules/twinbin/bins/request", { method: "POST", body: JSON.stringify(body) }),
+  myRequests: () =>
+    apiFetch<{
+      bins: {
+        id: string;
+        areaName: string;
+        locationName: string;
+        condition: string;
+        status: string;
+        createdAt: string;
+      }[];
+    }>("/modules/twinbin/bins/my-requests"),
+  assigned: () =>
+    apiFetch<{
+      bins: {
+        id: string;
+        areaName: string;
+        locationName: string;
+        condition: string;
+        status: string;
+        createdAt: string;
+        latitude?: number;
+        longitude?: number;
+      }[];
+    }>("/modules/twinbin/bins/assigned"),
+  myBins: () => apiFetch<{ bins: any[] }>("/modules/twinbin/bins/my"),
+  pending: () => apiFetch<{ bins: any[] }>("/modules/twinbin/bins/pending"),
+  approve: (id: string, body: { assignedEmployeeIds?: string[] }) =>
+    apiFetch<{ bin: any }>(`/modules/twinbin/bins/${id}/approve`, { method: "POST", body: JSON.stringify(body) }),
+  reject: (id: string) => apiFetch<{ bin: any }>(`/modules/twinbin/bins/${id}/reject`, { method: "POST" }),
+  submitVisit: (binId: string, body: { latitude: number; longitude: number; inspectionAnswers: Record<string, { answer: "YES" | "NO"; photoUrl: string }> }) =>
+    apiFetch<{ report: any }>(`/modules/twinbin/bins/${binId}/visit`, { method: "POST", body: JSON.stringify(body) }),
+  pendingVisits: () =>
+    apiFetch<{ visits: any[] }>("/modules/twinbin/visits/pending"),
+  approveVisit: (id: string) =>
+    apiFetch<{ visit: any }>(`/modules/twinbin/visits/${id}/approve`, { method: "POST" }),
+  rejectVisit: (id: string) =>
+    apiFetch<{ visit: any }>(`/modules/twinbin/visits/${id}/reject`, { method: "POST" }),
+  markActionRequired: (id: string, body: { qcRemark: string }) =>
+    apiFetch<{ visit: any }>(`/modules/twinbin/visits/${id}/action-required`, { method: "POST", body: JSON.stringify(body) }),
+  listActionRequired: () =>
+    apiFetch<{ visits: any[] }>("/modules/twinbin/visits/action-required"),
+  submitActionTaken: (id: string, body: { actionRemark: string; actionPhotoUrl: string }) =>
+    apiFetch<{ visit: any }>(`/modules/twinbin/visits/${id}/action-taken`, { method: "POST", body: JSON.stringify(body) })
 };

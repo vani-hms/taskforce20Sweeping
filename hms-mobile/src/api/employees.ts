@@ -24,7 +24,8 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-export async function listEmployees() {
+export async function listEmployees(moduleKey?: string) {
+  const query = moduleKey ? `?moduleKey=${encodeURIComponent(moduleKey)}` : "";
   return request<{
     employees: {
       id: string;
@@ -35,5 +36,5 @@ export async function listEmployees() {
       zones: string[];
       wards: string[];
     }[];
-  }>("/city/employees");
+  }>(`/city/employees${query}`);
 }

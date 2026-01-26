@@ -1,11 +1,349 @@
 generator client {
   provider = "prisma-client-js"
-  output   = "../generated/prisma"
+  engineType = "binary"
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+model HMS {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  cities    City[]
+}
+
+model City {
+  id                         String                      @id @default(uuid()) @db.Uuid
+  hmsId                      String
+  name                       String
+  code                       String                      @unique
+  createdAt                  DateTime                    @default(now())
+  enabled                    Boolean                     @default(true)
+  ulbCode                    String?
+  hms                        HMS                         @relation(fields: [hmsId], references: [id], onDelete: Cascade)
+  modules                    CityModule[]
+  zones                      GeoNode[]
+  iecForms                   IECForm[]
+  permissions                Permission[]
+  sweepingCommercialRecords  SweepingCommercialRecord[]
+  sweepingResidentialRecords SweepingResidentialRecord[]
+  taskforceActivities        TaskforceActivity[]
+  taskforceCases             TaskforceCase[]
+  taskforceRecords           TaskforceRecord[]
+  twinbinLitterBins          TwinbinLitterBin[]
+  twinbinRecords             TwinbinRecord[]
+  twinbinVisitReports        TwinbinVisitReport[]
+  users                      UserCity[]
+  moduleRoles                UserModuleRole[]
+  registrationRequests       UserRegistrationRequest[]
+
+  @@index([hmsId])
+}
+
+model Module {
+  id                  String              @id @default(uuid())
+  name                String              @unique
+  isActive            Boolean             @default(true)
+  createdAt           DateTime            @default(now())
+  cityModules         CityModule[]
+  iecForms            IECForm[]
+  permissions         Permission[]
+  taskforceActivities TaskforceActivity[]
+  taskforceCases      TaskforceCase[]
+  userModuleRoles     UserModuleRole[]
+}
+
+model CityModule {
+  id        String   @id @default(uuid())
+  cityId    String   @db.Uuid
+  moduleId  String
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now())
+  city      City     @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  module    Module   @relation(fields: [moduleId], references: [id])
+
+  @@unique([cityId, moduleId])
+  @@index([cityId, moduleId])
+}
+
+model User {
+  id                         String                      @id @default(uuid()) @db.Uuid
+  email                      String                      @unique
+  name                       String
+  password                   String
+  createdAt                  DateTime                    @default(now())
+  updatedAt                  DateTime                    @updatedAt
+  sweepingCommercialRecords  SweepingCommercialRecord[]
+  sweepingResidentialRecords SweepingResidentialRecord[]
+  taskforceRecords           TaskforceRecord[]
+  twinbinLitterBinsApproved  TwinbinLitterBin[]          @relation("TwinbinApprovedBy")
+  twinbinLitterBinsRequested TwinbinLitterBin[]          @relation("TwinbinRequestedBy")
+  twinbinRecords             TwinbinRecord[]
+  twinbinVisitActions        TwinbinVisitReport[]        @relation("TwinbinVisitActionTakenBy")
+  twinbinVisitsReviewed      TwinbinVisitReport[]        @relation("TwinbinVisitReviewedBy")
+  twinbinVisitsSubmitted     TwinbinVisitReport[]        @relation("TwinbinVisitSubmittedBy")
+  cities                     UserCity[]
+  modules                    UserModuleRole[]
+}
+
+model UserCity {
+  id        String   @id @default(uuid())
+  userId    String   @db.Uuid
+  cityId    String   @db.Uuid
+  role      Role
+  createdAt DateTime @default(now())
+  zoneIds   String[] @default([])
+  wardIds   String[] @default([])
+  city      City     @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, cityId, role])
+  @@index([cityId, role])
+}
+
+model UserModuleRole {
+  id        String   @id @default(uuid())
+  userId    String   @db.Uuid
+  cityId    String   @db.Uuid
+  moduleId  String
+  role      Role
+  createdAt DateTime @default(now())
+  canWrite  Boolean  @default(false)
+  city      City     @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  module    Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, cityId, moduleId, role])
+  @@index([cityId, moduleId, role])
+}
+
+model Permission {
+  id        String   @id @default(uuid())
+  cityId    String   @db.Uuid
+  moduleId  String?
+  role      Role
+  resource  String
+  action    String
+  createdAt DateTime @default(now())
+  city      City     @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  module    Module?  @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  @@index([cityId, moduleId, role])
+  @@index([cityId, resource, action])
+}
+
+model GeoNode {
+  id             String          @id @default(uuid())
+  cityId         String          @db.Uuid
+  parentId       String?
+  level          GeoLevel
+  name           String
+  path           String
+  createdAt      DateTime        @default(now())
+  areaType       AreaType?
+  city           City            @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  parent         GeoNode?        @relation("GeoChildren", fields: [parentId], references: [id], onDelete: Cascade)
+  children       GeoNode[]       @relation("GeoChildren")
+  taskforceCases TaskforceCase[]
+
+  @@index([cityId, level])
+  @@index([cityId, path])
+}
+
+model TaskforceCase {
+  id         String              @id @default(uuid())
+  cityId     String              @db.Uuid
+  moduleId   String
+  geoNodeId  String?
+  title      String
+  status     String
+  assignedTo String?
+  createdBy  String
+  createdAt  DateTime            @default(now())
+  updatedAt  DateTime            @updatedAt
+  activities TaskforceActivity[]
+  city       City                @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  geoNode    GeoNode?            @relation(fields: [geoNodeId], references: [id])
+  module     Module              @relation(fields: [moduleId], references: [id])
+
+  @@index([cityId, status])
+  @@index([cityId, geoNodeId])
+}
+
+model TaskforceActivity {
+  id        String        @id @default(uuid())
+  cityId    String        @db.Uuid
+  moduleId  String
+  caseId    String
+  actorId   String
+  action    String
+  metadata  Json?
+  createdAt DateTime      @default(now())
+  case      TaskforceCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  city      City          @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  module    Module        @relation(fields: [moduleId], references: [id])
+
+  @@index([cityId, caseId])
+}
+
+model IECForm {
+  id          String    @id @default(uuid())
+  cityId      String    @db.Uuid
+  moduleId    String
+  title       String
+  description String?
+  status      IECStatus @default(DRAFT)
+  submittedBy String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  city        City      @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  module      Module    @relation(fields: [moduleId], references: [id])
+
+  @@index([cityId, status])
+  @@index([cityId, moduleId])
+}
+
+model SweepingResidentialRecord {
+  id            String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cityId        String             @db.Uuid
+  createdBy     String             @db.Uuid
+  status        ModuleRecordStatus @default(DRAFT)
+  payload       Json
+  createdAt     DateTime           @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime           @default(now()) @updatedAt @db.Timestamptz(6)
+  city          City               @relation(fields: [cityId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  createdByUser User               @relation(fields: [createdBy], references: [id], onUpdate: NoAction)
+
+  @@index([cityId])
+}
+
+model SweepingCommercialRecord {
+  id            String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cityId        String             @db.Uuid
+  createdBy     String             @db.Uuid
+  status        ModuleRecordStatus @default(DRAFT)
+  payload       Json
+  createdAt     DateTime           @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime           @default(now()) @updatedAt @db.Timestamptz(6)
+  city          City               @relation(fields: [cityId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  createdByUser User               @relation(fields: [createdBy], references: [id], onUpdate: NoAction)
+
+  @@index([cityId])
+}
+
+model TwinbinRecord {
+  id            String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cityId        String             @db.Uuid
+  createdBy     String             @db.Uuid
+  status        ModuleRecordStatus @default(DRAFT)
+  payload       Json
+  createdAt     DateTime           @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime           @default(now()) @updatedAt @db.Timestamptz(6)
+  city          City               @relation(fields: [cityId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  createdByUser User               @relation(fields: [createdBy], references: [id], onUpdate: NoAction)
+
+  @@index([cityId])
+}
+
+model TwinbinLitterBin {
+  id                  String               @id @default(uuid()) @db.Uuid
+  cityId              String               @db.Uuid
+  requestedById       String               @db.Uuid
+  zoneId              String?              @db.Uuid
+  wardId              String?              @db.Uuid
+  areaName            String
+  areaType            AreaType
+  locationName        String
+  roadType            String
+  isFixedProperly     Boolean
+  hasLid              Boolean
+  condition           BinCondition
+  latitude            Float
+  longitude           Float
+  status              TwinbinBinStatus
+  assignedEmployeeIds String[]             @default([])
+  approvedByQcId      String?              @db.Uuid
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  approvedByQc        User?                @relation("TwinbinApprovedBy", fields: [approvedByQcId], references: [id])
+  city                City                 @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  requestedBy         User                 @relation("TwinbinRequestedBy", fields: [requestedById], references: [id], onDelete: Cascade)
+  visits              TwinbinVisitReport[]
+
+  @@index([cityId])
+}
+
+model TwinbinVisitReport {
+  id                String             @id @default(uuid()) @db.Uuid
+  cityId            String             @db.Uuid
+  binId             String             @db.Uuid
+  submittedById     String             @db.Uuid
+  visitedAt         DateTime
+  latitude          Float
+  longitude         Float
+  distanceMeters    Float
+  inspectionAnswers Json
+  status            TwinbinVisitStatus @default(PENDING_QC)
+  actionStatus      ReportActionStatus @default(APPROVED)
+  qcRemark          String?
+  actionTakenById   String?            @db.Uuid
+  actionRemark      String?
+  actionPhotoUrl    String?
+  actionTakenAt     DateTime?
+  reviewedByQcId    String?            @db.Uuid
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  actionTakenBy     User?              @relation("TwinbinVisitActionTakenBy", fields: [actionTakenById], references: [id])
+  bin               TwinbinLitterBin   @relation(fields: [binId], references: [id], onDelete: Cascade)
+  city              City               @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  reviewedByQc      User?              @relation("TwinbinVisitReviewedBy", fields: [reviewedByQcId], references: [id])
+  submittedBy       User               @relation("TwinbinVisitSubmittedBy", fields: [submittedById], references: [id], onDelete: Cascade)
+
+  @@index([cityId])
+  @@index([binId])
+}
+
+model TaskforceRecord {
+  id            String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cityId        String             @db.Uuid
+  createdBy     String             @db.Uuid
+  status        ModuleRecordStatus @default(DRAFT)
+  payload       Json
+  createdAt     DateTime           @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime           @default(now()) @updatedAt @db.Timestamptz(6)
+  city          City               @relation(fields: [cityId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  createdByUser User               @relation(fields: [createdBy], references: [id], onUpdate: NoAction)
+
+  @@index([cityId])
+}
+
+model UserRegistrationRequest {
+  id               String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name             String
+  phone            String
+  aadhaar          String
+  email            String
+  passwordHash     String
+  cityId           String             @db.Uuid
+  zoneId           String?
+  wardId           String?
+  requestedModules String[]
+  status           RegistrationStatus @default(PENDING)
+  createdAt        DateTime           @default(now()) @db.Timestamptz(6)
+  approvedByUserId String?            @db.Uuid
+  approvedByRole   Role?
+  approvedAt       DateTime?          @db.Timestamptz(6)
+  rejectedByUserId String?            @db.Uuid
+  rejectedByRole   Role?
+  rejectedAt       DateTime?          @db.Timestamptz(6)
+  rejectReason     String?
+  city             City               @relation(fields: [cityId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([email, cityId])
+  @@index([cityId])
 }
 
 enum Role {
@@ -17,132 +355,6 @@ enum Role {
   QC
 }
 
-model HMS {
-  id        String   @id @default(uuid())
-  name      String   @unique
-  cities    City[]
-  createdAt DateTime @default(now())
-}
-
-model City {
-  id                  String              @id @default(uuid())
-  hmsId               String
-  name                String
-  code                String              @unique
-  ulbCode             String              @unique
-  enabled             Boolean             @default(true)
-  modules             CityModule[]
-  users               UserCity[]
-  moduleRoles         UserModuleRole[]
-  permissions         Permission[]
-  taskforceCases      TaskforceCase[]
-  taskforceActivities TaskforceActivity[]
-  iecForms            IECForm[]
-  sweepingResidentialRecords SweepingResidentialRecord[]
-  sweepingCommercialRecords  SweepingCommercialRecord[]
-  twinbinRecords             TwinbinRecord[]
-  taskforceRecords           TaskforceRecord[]
-  registrationRequests       UserRegistrationRequest[]
-  zones               GeoNode[] // top-level children of type=ZONE
-  createdAt           DateTime            @default(now())
-
-  hms HMS @relation(fields: [hmsId], references: [id], onDelete: Cascade)
-
-  @@index([hmsId])
-}
-
-model Module {
-  id                  String              @id @default(uuid())
-  name                String              @unique // Taskforce, IEC, Module3...
-  isActive            Boolean             @default(true)
-  createdAt           DateTime            @default(now())
-  cityModules         CityModule[]
-  userModuleRoles     UserModuleRole[]
-  permissions         Permission[]
-  taskforceCases      TaskforceCase[]
-  taskforceActivities TaskforceActivity[]
-  iecForms            IECForm[]
-}
-
-model CityModule {
-  id        String   @id @default(uuid())
-  cityId    String
-  moduleId  String
-  enabled   Boolean  @default(true)
-  createdAt DateTime @default(now())
-
-  city   City   @relation(fields: [cityId], references: [id], onDelete: Cascade)
-  module Module @relation(fields: [moduleId], references: [id], onDelete: Restrict)
-
-  @@unique([cityId, moduleId])
-  @@index([cityId, moduleId])
-}
-
-model User {
-  id        String           @id @default(uuid())
-  email     String           @unique
-  name      String
-  password  String
-  cities    UserCity[]
-  modules   UserModuleRole[]
-  sweepingResidentialRecords SweepingResidentialRecord[]
-  sweepingCommercialRecords  SweepingCommercialRecord[]
-  twinbinRecords             TwinbinRecord[]
-  taskforceRecords           TaskforceRecord[]
-  createdAt DateTime         @default(now())
-  updatedAt DateTime         @updatedAt
-}
-
-model UserCity {
-  id        String   @id @default(uuid())
-  userId    String
-  cityId    String
-  role      Role // City-level role (e.g., CITY_ADMIN)
-  zoneIds   String[] @default([])
-  wardIds   String[] @default([])
-  createdAt DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  city City @relation(fields: [cityId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, cityId, role])
-  @@index([cityId, role])
-}
-
-model UserModuleRole {
-  id        String   @id @default(uuid())
-  userId    String
-  cityId    String
-  moduleId  String
-  role      Role
-  canWrite  Boolean  @default(false)
-  createdAt DateTime @default(now())
-
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  city   City   @relation(fields: [cityId], references: [id], onDelete: Cascade)
-  module Module @relation(fields: [moduleId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, cityId, moduleId, role])
-  @@index([cityId, moduleId, role])
-}
-
-model Permission {
-  id        String   @id @default(uuid())
-  cityId    String
-  moduleId  String?
-  role      Role
-  resource  String // e.g., "taskforce.case"
-  action    String // e.g., "read","write","assign","close"
-  createdAt DateTime @default(now())
-
-  city   City    @relation(fields: [cityId], references: [id], onDelete: Cascade)
-  module Module? @relation(fields: [moduleId], references: [id], onDelete: Cascade)
-
-  @@index([cityId, moduleId, role])
-  @@index([cityId, resource, action])
-}
-
-// Geo hierarchy (extensible)
 enum GeoLevel {
   CITY
   ZONE
@@ -166,179 +378,39 @@ enum ModuleRecordStatus {
   APPROVED
 }
 
+enum BinCondition {
+  GOOD
+  DAMAGED
+}
+
+enum TwinbinVisitStatus {
+  PENDING_QC
+  APPROVED
+  REJECTED
+}
+
+enum ReportActionStatus {
+  APPROVED
+  REJECTED
+  ACTION_REQUIRED
+  ACTION_TAKEN
+}
+
+enum TwinbinBinStatus {
+  PENDING_QC
+  APPROVED
+  REJECTED
+}
+
 enum RegistrationStatus {
   PENDING
   APPROVED
   REJECTED
 }
 
-model GeoNode {
-  id        String   @id @default(uuid())
-  cityId    String
-  parentId  String?
-  level     GeoLevel
-  name      String
-  areaType  AreaType?
-  path      String // materialized path for fast queries, e.g., /city/zone/ward
-  createdAt DateTime @default(now())
-
-  city           City            @relation(fields: [cityId], references: [id], onDelete: Cascade)
-  parent         GeoNode?        @relation("GeoChildren", fields: [parentId], references: [id], onDelete: Cascade)
-  children       GeoNode[]       @relation("GeoChildren")
-  taskforceCases TaskforceCase[]
-
-  @@index([cityId, level])
-  @@index([cityId, path])
-}
-
-// Example Taskforce module tables
-model TaskforceCase {
-  id         String   @id @default(uuid())
-  cityId     String
-  moduleId   String // redundant for clarity; enforce module scoping
-  geoNodeId  String? // ward/gali link
-  title      String
-  status     String
-  assignedTo String? // User.id
-  createdBy  String
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
-  city       City                @relation(fields: [cityId], references: [id], onDelete: Cascade)
-  module     Module              @relation(fields: [moduleId], references: [id], onDelete: Restrict)
-  geoNode    GeoNode?            @relation(fields: [geoNodeId], references: [id], onDelete: SetNull)
-  activities TaskforceActivity[]
-
-  @@index([cityId, status])
-  @@index([cityId, geoNodeId])
-}
-
-model TaskforceActivity {
-  id        String   @id @default(uuid())
-  cityId    String
-  moduleId  String
-  caseId    String
-  actorId   String
-  action    String
-  metadata  Json?
-  createdAt DateTime @default(now())
-
-  city   City          @relation(fields: [cityId], references: [id], onDelete: Cascade)
-  module Module        @relation(fields: [moduleId], references: [id], onDelete: Restrict)
-  case   TaskforceCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
-
-  @@index([cityId, caseId])
-}
-
-// IEC module
 enum IECStatus {
   DRAFT
   SUBMITTED
   APPROVED
   REJECTED
-}
-
-model IECForm {
-  id          String    @id @default(uuid())
-  cityId      String
-  moduleId    String
-  title       String
-  description String?
-  status      IECStatus @default(DRAFT)
-  submittedBy String
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
-  city   City   @relation(fields: [cityId], references: [id], onDelete: Cascade)
-  module Module @relation(fields: [moduleId], references: [id], onDelete: Restrict)
-
-  @@index([cityId, status])
-  @@index([cityId, moduleId])
-}
-
-model SweepingResidentialRecord {
-  id        String              @id @default(uuid())
-  cityId    String
-  createdBy String
-  status    ModuleRecordStatus  @default(DRAFT)
-  payload   Json
-  createdAt DateTime            @default(now())
-  updatedAt DateTime            @updatedAt
-
-  city       City @relation(fields: [cityId], references: [id], onDelete: Cascade)
-  createdByUser User @relation(fields: [createdBy], references: [id], onDelete: Restrict)
-
-  @@index([cityId])
-}
-
-model SweepingCommercialRecord {
-  id        String              @id @default(uuid())
-  cityId    String
-  createdBy String
-  status    ModuleRecordStatus  @default(DRAFT)
-  payload   Json
-  createdAt DateTime            @default(now())
-  updatedAt DateTime            @updatedAt
-
-  city       City @relation(fields: [cityId], references: [id], onDelete: Cascade)
-  createdByUser User @relation(fields: [createdBy], references: [id], onDelete: Restrict)
-
-  @@index([cityId])
-}
-
-model TwinbinRecord {
-  id        String              @id @default(uuid())
-  cityId    String
-  createdBy String
-  status    ModuleRecordStatus  @default(DRAFT)
-  payload   Json
-  createdAt DateTime            @default(now())
-  updatedAt DateTime            @updatedAt
-
-  city       City @relation(fields: [cityId], references: [id], onDelete: Cascade)
-  createdByUser User @relation(fields: [createdBy], references: [id], onDelete: Restrict)
-
-  @@index([cityId])
-}
-
-model TaskforceRecord {
-  id        String              @id @default(uuid())
-  cityId    String
-  createdBy String
-  status    ModuleRecordStatus  @default(DRAFT)
-  payload   Json
-  createdAt DateTime            @default(now())
-  updatedAt DateTime            @updatedAt
-
-  city       City @relation(fields: [cityId], references: [id], onDelete: Cascade)
-  createdByUser User @relation(fields: [createdBy], references: [id], onDelete: Restrict)
-
-  @@index([cityId])
-}
-
-model UserRegistrationRequest {
-  id               String              @id @default(uuid())
-  name             String
-  phone            String
-  aadhaar          String
-  email            String
-  passwordHash     String
-  cityId           String
-  zoneId           String?
-  wardId           String?
-  requestedModules String[]
-  status           RegistrationStatus @default(PENDING)
-  createdAt        DateTime           @default(now())
-  approvedByUserId String?
-  approvedByRole   Role?
-  approvedAt       DateTime?
-  rejectedByUserId String?
-  rejectedByRole   Role?
-  rejectedAt       DateTime?
-  rejectReason     String?
-
-  city   City @relation(fields: [cityId], references: [id], onDelete: Cascade)
-
-  @@index([cityId])
-  @@unique([email, cityId])
 }

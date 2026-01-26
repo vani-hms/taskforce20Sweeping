@@ -73,6 +73,111 @@ export async function approveRegistrationRequest(
   return res.json() as Promise<{ success: boolean }>;
 }
 
+export async function requestTwinbinBin(body: {
+  zoneId?: string;
+  wardId?: string;
+  areaName: string;
+  areaType: "RESIDENTIAL" | "COMMERCIAL" | "SLUM";
+  locationName: string;
+  roadType: string;
+  isFixedProperly: boolean;
+  hasLid: boolean;
+  condition: "GOOD" | "DAMAGED";
+  latitude: number;
+  longitude: number;
+}) {
+  return request<{ bin: any }>("/modules/twinbin/bins/request", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...(await authHeader()) },
+    body: JSON.stringify(body)
+  } as any);
+}
+
+export async function listTwinbinMyRequests() {
+  return request<{ bins: any[] }>("/modules/twinbin/bins/my-requests");
+}
+
+export async function listTwinbinAssigned() {
+  return request<{ bins: any[] }>("/modules/twinbin/bins/assigned");
+}
+
+export async function submitTwinbinVisit(
+  binId: string,
+  body: {
+    latitude: number;
+    longitude: number;
+    inspectionAnswers: Record<string, { answer: "YES" | "NO"; photoUrl: string }>;
+  }
+) {
+  return request<{ report: any }>(`/modules/twinbin/bins/${binId}/visit`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...(await authHeader()) },
+    body: JSON.stringify(body)
+  } as any);
+}
+
+export async function listTwinbinVisitPending() {
+  return request<{ visits: any[] }>("/modules/twinbin/visits/pending");
+}
+
+export async function approveTwinbinVisit(id: string) {
+  return request<{ visit: any }>(`/modules/twinbin/visits/${id}/approve`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...(await authHeader()) }
+  } as any);
+}
+
+export async function rejectTwinbinVisit(id: string) {
+  return request<{ visit: any }>(`/modules/twinbin/visits/${id}/reject`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...(await authHeader()) }
+  } as any);
+}
+
+export async function listTwinbinPending() {
+  return request<{ bins: any[] }>("/modules/twinbin/bins/pending");
+}
+
+export async function approveTwinbinBin(id: string, body: { assignedEmployeeIds?: string[] }) {
+  return request<{ bin: any }>(`/modules/twinbin/bins/${id}/approve`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...(await authHeader()) },
+    body: JSON.stringify(body)
+  } as any);
+}
+
+export async function rejectTwinbinBin(id: string) {
+  return request<{ bin: any }>(`/modules/twinbin/bins/${id}/reject`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...(await authHeader()) }
+  } as any);
+}
+
+export async function markTwinbinVisitActionRequired(id: string, qcRemark: string) {
+  return request<{ visit: any }>(`/modules/twinbin/visits/${id}/action-required`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...(await authHeader()) },
+    body: JSON.stringify({ qcRemark })
+  } as any);
+}
+
+export async function listTwinbinActionRequired() {
+  return request<{ visits: any[] }>("/modules/twinbin/visits/action-required");
+}
+
+export async function submitTwinbinActionTaken(id: string, body: { actionRemark: string; actionPhotoUrl: string }) {
+  return request<{ visit: any }>(`/modules/twinbin/visits/${id}/action-taken`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...(await authHeader()) },
+    body: JSON.stringify(body)
+  } as any);
+}
+
+async function authHeader() {
+  const token = await getToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 export async function submitRegistration(body: {
   ulbCode: string;
   name: string;

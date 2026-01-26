@@ -24,6 +24,8 @@ export default function CityLandingScreen({ route, navigation }: Props) {
   const roles = auth.status === "authenticated" ? auth.roles || [] : [];
   const isQc = roles.includes("QC");
   const isCityAdmin = roles.includes("CITY_ADMIN");
+  const hasTwinbin = modules.some((m) => m.key === "TWINBIN");
+  const moduleCards = modules.filter((m) => m.key !== "TWINBIN");
 
   useEffect(() => {
     const session = getSession();
@@ -99,7 +101,7 @@ export default function CityLandingScreen({ route, navigation }: Props) {
           ) : (
             <FlatList
               data={[
-                ...modules,
+                ...moduleCards,
                 ...(isQc
                   ? [
                       {
@@ -107,6 +109,11 @@ export default function CityLandingScreen({ route, navigation }: Props) {
                         name: "Employees",
                         meta: "QC"
                       }
+                    ]
+                  : []),
+                ...(hasTwinbin
+                  ? [
+                      { key: "__twinbin__", name: "Twinbin", meta: "TWINBIN" }
                     ]
                   : [])
               ]}
@@ -117,6 +124,8 @@ export default function CityLandingScreen({ route, navigation }: Props) {
                   onPress={() => {
                     if (item.key === "__employees__") {
                       navigation.navigate("MyEmployees");
+                    } else if (item.key === "__twinbin__") {
+                      navigation.navigate(isQc ? "TwinbinQcHome" : "TwinbinHome");
                     } else {
                       openModule(item.key);
                     }
@@ -124,7 +133,11 @@ export default function CityLandingScreen({ route, navigation }: Props) {
                 >
                   <Text style={styles.cardTitle}>{item.name || item.key}</Text>
                   <Text style={styles.cardSubtitle}>
-                    {item.key === "__employees__" ? "View employees for your modules" : `Records: ${counts[item.key] ?? 0}`}
+                    {item.key === "__employees__"
+                      ? "View employees for your modules"
+                      : item.key === "__twinbin__"
+                      ? "Manage Twinbin requests"
+                      : `Records: ${counts[item.key] ?? 0}`}
                   </Text>
                 </TouchableOpacity>
               )}

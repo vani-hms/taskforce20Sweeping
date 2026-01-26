@@ -5,4 +5,16 @@ export type RootStackParamList = {
   Module: { moduleKey: string };
   MyEmployees: undefined;
   RegistrationRequests: undefined;
+  TwinbinHome: undefined;
+  TwinbinRegister: undefined;
+  TwinbinMyRequests: undefined;
+  TwinbinQcHome: undefined;
+  TwinbinQcPending: undefined;
+  TwinbinQcReview: { bin: any };
+  TwinbinAssigned: undefined;
+  TwinbinBinDetail: { bin: any };
+  TwinbinVisitPending: undefined;
+  TwinbinVisitReview: { visit: any };
+  TwinbinActionRequired: undefined;
+  TwinbinActionRequiredDetail: { visit: any };
 };

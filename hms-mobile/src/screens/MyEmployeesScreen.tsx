@@ -1,17 +1,23 @@
-import React, { useEffect, useState } from "react";
-import { View, Text, ActivityIndicator, FlatList, StyleSheet } from "react-native";
+import React, { useEffect, useMemo, useState } from "react";
+import { View, Text, ActivityIndicator, FlatList, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
 import { listEmployees, ApiError } from "../api/employees";
+import { useAuthContext } from "../auth/AuthProvider";
 
 export default function MyEmployeesScreen() {
+  const { auth } = useAuthContext();
+  const modules = auth.status === "authenticated" ? auth.modules || [] : [];
+  const moduleKeys = useMemo(() => modules.map((m) => m.key), [modules]);
+
+  const [activeModule, setActiveModule] = useState<string | null>(moduleKeys[0] || null);
   const [employees, setEmployees] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const load = async () => {
+  const load = async (moduleKey?: string) => {
     setLoading(true);
     setError("");
     try {
-      const data = await listEmployees();
+      const data = await listEmployees(moduleKey || undefined);
       setEmployees(data.employees || []);
     } catch (err: any) {
       if (err instanceof ApiError) setError(err.message || "Failed to load employees");
@@ -22,8 +28,8 @@ export default function MyEmployeesScreen() {
   };
 
   useEffect(() => {
-    load();
-  }, []);
+    load(activeModule || undefined);
+  }, [activeModule]);
 
   if (loading) {
     return (
@@ -36,9 +42,28 @@ export default function MyEmployeesScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>My Employees</Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs}>
+        {moduleKeys.map((key) => (
+          <TouchableOpacity
+            key={key}
+            style={[styles.tab, activeModule === key ? styles.tabActive : undefined]}
+            onPress={() => setActiveModule(key)}
+          >
+            <Text style={activeModule === key ? styles.tabTextActive : styles.tabText}>{key}</Text>
+          </TouchableOpacity>
+        ))}
+        <TouchableOpacity
+          style={[styles.tab, activeModule === null ? styles.tabActive : undefined]}
+          onPress={() => setActiveModule(null)}
+        >
+          <Text style={activeModule === null ? styles.tabTextActive : styles.tabText}>All</Text>
+        </TouchableOpacity>
+      </ScrollView>
       {error ? <Text style={styles.error}>{error}</Text> : null}
       {!employees.length ? (
-        <Text style={styles.muted}>No employees to display.</Text>
+        <Text style={styles.muted}>
+          {activeModule ? "No employees assigned to this module." : "No employees to display."}
+        </Text>
       ) : (
         <FlatList
           data={employees}
@@ -64,6 +89,19 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#f5f7fb", padding: 16 },
   center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: "#f5f7fb" },
   title: { fontSize: 22, fontWeight: "700", marginBottom: 12 },
+  tabs: { paddingVertical: 4, gap: 8 },
+  tab: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+    backgroundColor: "#fff",
+    marginRight: 8
+  },
+  tabActive: { backgroundColor: "#cbd5e1", borderColor: "#94a3b8" },
+  tabText: { color: "#334155", fontWeight: "600" },
+  tabTextActive: { color: "#0f172a", fontWeight: "700" },
   card: {
     backgroundColor: "#fff",
     borderRadius: 10,

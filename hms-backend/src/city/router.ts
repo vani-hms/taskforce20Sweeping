@@ -299,6 +299,8 @@ router.get("/employees", async (req, res, next) => {
     const isQc = roles.includes(Role.QC);
     if (!isCityAdmin && !isQc) throw new HttpError(403, "Forbidden");
 
+    const moduleKey = (req.query.moduleKey as string | undefined)?.trim();
+
     const qcModuleIds = isQc
       ? new Set(
           (
@@ -310,19 +312,40 @@ router.get("/employees", async (req, res, next) => {
         )
       : new Set<string>();
 
+    // If moduleKey is provided, resolve it to moduleId and ensure QC has access
+    let moduleFilterId: string | null = null;
+    if (moduleKey) {
+      const normalized = normalizeModuleKey(moduleKey);
+      const mod = await prisma.module.findUnique({ where: { name: normalized } });
+      if (!mod) throw new HttpError(400, "Module not found");
+      moduleFilterId = mod.id;
+      if (isQc && !qcModuleIds.has(mod.id)) {
+        throw new HttpError(403, "Forbidden");
+      }
+    }
+
     const records = await prisma.userCity.findMany({
       where: { cityId, role: Role.EMPLOYEE },
-      include: { user: { include: { modules: { where: { cityId }, include: { module: true } } } } },
+      include: {
+        user: {
+          include: {
+            modules: {
+              where: { cityId, ...(moduleFilterId ? { moduleId: moduleFilterId } : {}) },
+              include: { module: true }
+            }
+          }
+        }
+      },
       orderBy: { createdAt: "asc" }
     });
 
     const filtered = isCityAdmin
       ? records
       : records.filter((uc) => {
-          if (uc.userId === req.auth!.sub) return false; // QC should not list self
-          const mods = uc.user.modules.map((m) => m.moduleId);
-          return mods.some((mid) => qcModuleIds.has(mid));
-        });
+        if (uc.userId === req.auth!.sub) return false; // QC should not list self
+        const mods = uc.user.modules.map((m) => m.moduleId);
+        return mods.some((mid) => qcModuleIds.has(mid));
+      });
 
     const zoneIds = filtered.flatMap((f) => (f as any).zoneIds || []);
     const wardIds = filtered.flatMap((f) => (f as any).wardIds || []);

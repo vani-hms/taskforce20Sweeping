@@ -4,6 +4,7 @@ import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../navigation";
 import { approveTwinbinBin, rejectTwinbinBin, ApiError, listGeo } from "../api/auth";
 import { listEmployees } from "../api/employees";
+import { useAuthContext } from "../auth/AuthProvider";
 
 type Props = NativeStackScreenProps<RootStackParamList, "TwinbinQcReview">;
 
@@ -16,6 +17,8 @@ export default function TwinbinQcReviewScreen({ route, navigation }: Props) {
   const [error, setError] = useState("");
   const [zoneMap, setZoneMap] = useState<Record<string, string>>({});
   const [wardMap, setWardMap] = useState<Record<string, string>>({});
+  const { auth } = useAuthContext();
+  const isQc = auth.status === "authenticated" && (auth.roles || []).includes("QC");
 
   const load = async () => {
     setLoading(true);
@@ -57,6 +60,10 @@ export default function TwinbinQcReviewScreen({ route, navigation }: Props) {
   };
 
   const approve = async () => {
+    if (assignIds.size === 0) {
+      setError("Select at least one employee before approving.");
+      return;
+    }
     setActionLoading(true);
     setError("");
     try {
@@ -86,6 +93,14 @@ export default function TwinbinQcReviewScreen({ route, navigation }: Props) {
     return (
       <View style={styles.center}>
         <ActivityIndicator size="large" color="#1d4ed8" />
+      </View>
+    );
+  }
+
+  if (!isQc) {
+    return (
+      <View style={styles.center}>
+        <Text style={styles.error}>Access restricted to QC users.</Text>
       </View>
     );
   }
@@ -134,7 +149,15 @@ export default function TwinbinQcReviewScreen({ route, navigation }: Props) {
         <TouchableOpacity style={[styles.actionButton, styles.reject]} onPress={reject} disabled={actionLoading}>
           <Text style={styles.buttonText}>Reject</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.actionButton, styles.approve]} onPress={approve} disabled={actionLoading}>
+        <TouchableOpacity
+          style={[
+            styles.actionButton,
+            styles.approve,
+            assignIds.size === 0 ? { backgroundColor: "#9ca3af" } : undefined
+          ]}
+          onPress={approve}
+          disabled={actionLoading || assignIds.size === 0}
+        >
           <Text style={styles.buttonText}>Approve</Text>
         </TouchableOpacity>
       </View>

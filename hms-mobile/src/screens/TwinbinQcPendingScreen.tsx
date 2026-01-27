@@ -4,6 +4,8 @@ import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../navigation";
 import { listTwinbinPending, ApiError } from "../api/auth";
 import { useFocusEffect } from "@react-navigation/native";
+import { listGeo } from "../api/auth";
+import { useAuthContext } from "../auth/AuthProvider";
 
 type Props = NativeStackScreenProps<RootStackParamList, "TwinbinQcPending">;
 
@@ -11,13 +13,19 @@ export default function TwinbinQcPendingScreen({ navigation }: Props) {
   const [bins, setBins] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [zoneMap, setZoneMap] = useState<Record<string, string>>({});
+  const [wardMap, setWardMap] = useState<Record<string, string>>({});
+  const { auth } = useAuthContext();
+  const isQc = auth.status === "authenticated" && (auth.roles || []).includes("QC");
 
   const load = async () => {
     setLoading(true);
     setError("");
     try {
-      const data = await listTwinbinPending();
-      setBins(data.bins || []);
+      const [binRes, zoneRes, wardRes] = await Promise.all([listTwinbinPending(), listGeo("ZONE"), listGeo("WARD")]);
+      setBins(binRes.bins || []);
+      setZoneMap(Object.fromEntries((zoneRes.nodes || []).map((n: any) => [n.id, n.name])));
+      setWardMap(Object.fromEntries((wardRes.nodes || []).map((n: any) => [n.id, n.name])));
     } catch (err: any) {
       setError(err instanceof ApiError ? err.message : "Failed to load pending bins");
     } finally {
@@ -32,6 +40,14 @@ export default function TwinbinQcPendingScreen({ navigation }: Props) {
   );
 
   const onRefresh = () => load();
+
+  if (!isQc) {
+    return (
+      <View style={styles.center}>
+        <Text style={styles.error}>Access restricted to QC users.</Text>
+      </View>
+    );
+  }
 
   if (loading) {
     return (
@@ -58,6 +74,11 @@ export default function TwinbinQcPendingScreen({ navigation }: Props) {
             <Text style={styles.cardTitle}>{item.areaName}</Text>
             <Text style={styles.muted}>{item.locationName}</Text>
             <Text style={styles.badge}>Condition: {item.condition}</Text>
+            <Text style={styles.meta}>
+              Zone/Ward: {(item.zoneId && zoneMap[item.zoneId]) || "-"} / {(item.wardId && wardMap[item.wardId]) || "-"}
+            </Text>
+            <Text style={styles.meta}>Requested By: {item.requestedBy?.name || "-"}</Text>
+            <Text style={[styles.badge, { color: "#10b981" }]}>Status: {item.status}</Text>
             <Text style={styles.meta}>Created: {new Date(item.createdAt).toLocaleString()}</Text>
           </TouchableOpacity>
         )}

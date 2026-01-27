@@ -36,7 +36,7 @@ export default function EmployeesPage() {
       if (!moduleTabs.length) {
         // derive tabs from QC modules if present in payload
         const allModules = new Set<string>();
-        mapped.forEach((e) => e.modules.forEach((m) => allModules.add(m.key)));
+        mapped.forEach((e: Employee) => e.modules.forEach((m: { key: string }) => allModules.add(m.key)));
         if (allModules.size) {
           const tabs = Array.from(allModules);
           setModuleTabs(tabs);

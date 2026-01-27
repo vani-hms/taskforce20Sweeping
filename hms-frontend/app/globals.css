@@ -591,6 +591,38 @@ label {
   color: #1f3a73;
 }
 
+/* Tabs */
+.tab-bar {
+  display: inline-flex;
+  gap: 6px;
+  margin: 12px 0;
+  background: #f8fafc;
+  padding: 4px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+}
+.tab {
+  border: none;
+  background: transparent;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-weight: 700;
+  color: var(--muted);
+  cursor: pointer;
+}
+.tab.active {
+  background: #fff;
+  color: var(--primary-strong);
+  box-shadow: var(--shadow-soft);
+  border: 1px solid var(--border);
+}
+.flex-between {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
 .modal-backdrop {
   position: fixed;
   inset: 0;

@@ -21,12 +21,15 @@ type Bin = {
   wardId?: string | null;
   requestedById?: string;
   assignedEmployeeIds?: string[];
+  requestedBy?: { id: string; name: string; email: string } | null;
+  approvedAt?: string;
 };
 
 type Employee = { id: string; name: string; email: string };
 
 export default function TwinbinQcPage() {
   const [bins, setBins] = useState<Bin[]>([]);
+  const [approvedBins, setApprovedBins] = useState<Bin[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -34,6 +37,7 @@ export default function TwinbinQcPage() {
   const [assignIds, setAssignIds] = useState<Set<string>>(new Set());
   const [actionError, setActionError] = useState("");
   const [actionStatus, setActionStatus] = useState("");
+  const [activeTab, setActiveTab] = useState<"pending" | "approved">("pending");
   const [zoneMap, setZoneMap] = useState<Record<string, string>>({});
   const [wardMap, setWardMap] = useState<Record<string, string>>({});
 
@@ -66,6 +70,14 @@ export default function TwinbinQcPage() {
     load();
   }, []);
 
+  useEffect(() => {
+    if (!activeBin) {
+      setAssignIds(new Set());
+      return;
+    }
+    setAssignIds(new Set(activeBin.assignedEmployeeIds || []));
+  }, [activeBin]);
+
   const toggleAssign = (id: string) => {
     setAssignIds((prev) => {
       const next = new Set(prev);
@@ -77,11 +89,20 @@ export default function TwinbinQcPage() {
 
   const approve = async () => {
     if (!activeBin) return;
+    if (assignIds.size === 0) {
+      setActionError("Select at least one employee before approving.");
+      return;
+    }
     setActionStatus("Approving...");
     setActionError("");
     try {
       await TwinbinApi.approve(activeBin.id, { assignedEmployeeIds: Array.from(assignIds) });
       setBins((prev) => prev.filter((b) => b.id !== activeBin.id));
+      const approvedAt = new Date().toISOString();
+      setApprovedBins((prev) => [
+        { ...activeBin, status: "APPROVED", assignedEmployeeIds: Array.from(assignIds), approvedAt },
+        ...prev
+      ]);
       setReviewId(null);
       setAssignIds(new Set());
       setActionStatus("Approved");
@@ -111,44 +132,104 @@ export default function TwinbinQcPage() {
     <Protected>
       <ModuleGuard module="TWINBIN" roles={["QC"]}>
         <div className="page">
-          <h1>Twinbin - QC</h1>
-          <div style={{ marginBottom: 12 }}>
-            <a className="btn btn-secondary btn-sm" href="/modules/twinbin/qc/visits">
-              Pending Visit Reports
-            </a>
-            <a className="btn btn-secondary btn-sm" style={{ marginLeft: 8 }} href="/modules/twinbin/qc/reports">
-              Pending Bin Reports
-            </a>
+          <div className="flex-between" style={{ marginBottom: 12 }}>
+            <h1>Twinbin - QC</h1>
+            <div>
+              <a className="btn btn-secondary btn-sm" href="/modules/twinbin/qc/visits">
+                Pending Visit Reports
+              </a>
+              <a className="btn btn-secondary btn-sm" style={{ marginLeft: 8 }} href="/modules/twinbin/qc/reports">
+                Pending Bin Reports
+              </a>
+            </div>
           </div>
+
+          <div className="tab-bar">
+            <button
+              className={`tab ${activeTab === "pending" ? "active" : ""}`}
+              onClick={() => setActiveTab("pending")}
+            >
+              Pending Requests
+            </button>
+            <button
+              className={`tab ${activeTab === "approved" ? "active" : ""}`}
+              onClick={() => setActiveTab("approved")}
+            >
+              Approved Bins
+            </button>
+          </div>
+
           {error && <div className="alert error">{error}</div>}
           {loading ? (
             <div className="muted">Loading...</div>
-          ) : bins.length === 0 ? (
-            <div className="muted">No pending bins.</div>
+          ) : activeTab === "pending" ? (
+            bins.length === 0 ? (
+              <div className="muted">No pending bins.</div>
+            ) : (
+              <div className="table-grid">
+                <div className="table-head">
+                  <div>Area</div>
+                  <div>Zone / Ward</div>
+                  <div>Requested By</div>
+                  <div>Status</div>
+                  <div>Created</div>
+                  <div>Action</div>
+                </div>
+                {bins.map((b) => (
+                  <div className="table-row" key={b.id}>
+                    <div>
+                      <div className="fw-600">{b.areaName}</div>
+                      <div className="muted">{b.locationName}</div>
+                    </div>
+                    <div>
+                      <div>{(b.zoneId && zoneMap[b.zoneId]) || "-"}</div>
+                      <div className="muted text-sm">{(b.wardId && wardMap[b.wardId]) || "-"}</div>
+                    </div>
+                    <div>{b.requestedBy?.name || "-"}</div>
+                    <div>
+                      <span className={`badge status-${b.status.toLowerCase()}`}>{b.status}</span>
+                    </div>
+                    <div>{new Date(b.createdAt).toLocaleString()}</div>
+                    <div>
+                      <button className="btn btn-primary btn-sm" onClick={() => setReviewId(b.id)}>
+                        Review
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )
+          ) : approvedBins.length === 0 ? (
+            <div className="muted">No approved bins yet. Approve a request to see it here.</div>
           ) : (
             <div className="table-grid">
               <div className="table-head">
                 <div>Area</div>
-                <div>Type</div>
-                <div>Location</div>
-                <div>Condition</div>
-                <div>Requested By</div>
-                <div>Created</div>
-                <div>Action</div>
+                <div>Zone / Ward</div>
+                <div>Assigned</div>
+                <div>Status</div>
+                <div>Approved</div>
               </div>
-              {bins.map((b) => (
+              {approvedBins.map((b) => (
                 <div className="table-row" key={b.id}>
-                  <div>{b.areaName}</div>
-                  <div>{b.areaType}</div>
-                  <div>{b.locationName}</div>
-                  <div>{b.condition}</div>
-                  <div>{employeeMap[b.requestedById || ""]?.name || "-"}</div>
-                  <div>{new Date(b.createdAt).toLocaleString()}</div>
                   <div>
-                    <button className="btn btn-primary btn-sm" onClick={() => setReviewId(b.id)}>
-                      Review
-                    </button>
+                    <div className="fw-600">{b.areaName}</div>
+                    <div className="muted">{b.locationName}</div>
                   </div>
+                  <div>
+                    <div>{(b.zoneId && zoneMap[b.zoneId]) || "-"}</div>
+                    <div className="muted text-sm">{(b.wardId && wardMap[b.wardId]) || "-"}</div>
+                  </div>
+                  <div>
+                    {(b.assignedEmployeeIds || [])
+                      .map((id) => employeeMap[id]?.name || "—")
+                      .filter(Boolean)
+                      .join(", ") || "—"}
+                  </div>
+                  <div>
+                    <span className="badge status-approved">APPROVED</span>
+                  </div>
+                  <div>{b.approvedAt ? new Date(b.approvedAt).toLocaleString() : "-"}</div>
                 </div>
               ))}
             </div>
@@ -223,17 +304,19 @@ export default function TwinbinQcPage() {
                   </div>
 
                   <label>Assign Employees</label>
-                  <div className="pill-grid">
-                    {employees.map((e) => (
-                      <label key={e.id} className="pill">
-                        <input
-                          type="checkbox"
-                          checked={assignIds.has(e.id)}
-                          onChange={() => toggleAssign(e.id)}
-                        />{" "}
-                        {e.name}
-                      </label>
-                    ))}
+                  <div className="multiselect">
+                    <div className="multiselect-list">
+                      {employees.map((e) => (
+                        <label key={e.id} className={`pill ${assignIds.has(e.id) ? "active" : ""}`}>
+                          <input
+                            type="checkbox"
+                            checked={assignIds.has(e.id)}
+                            onChange={() => toggleAssign(e.id)}
+                          />{" "}
+                          {e.name}
+                        </label>
+                      ))}
+                    </div>
                   </div>
 
                   {actionError && <div className="alert error">{actionError}</div>}
@@ -246,7 +329,7 @@ export default function TwinbinQcPage() {
                   <button className="btn btn-danger" onClick={reject}>
                     Reject
                   </button>
-                  <button className="btn btn-primary" onClick={approve}>
+                  <button className="btn btn-primary" onClick={approve} disabled={assignIds.size === 0}>
                     Approve & Assign
                   </button>
                 </div>

@@ -8,12 +8,12 @@ import { ApiError, TwinbinApi } from "@lib/apiClient";
 type Bin = {
   id: string;
   areaName: string;
-  areaType: string;
+  areaType?: string;
   locationName: string;
-  roadType: string;
-  isFixedProperly: boolean;
-  hasLid: boolean;
-  condition: string;
+  roadType?: string;
+  isFixedProperly?: boolean;
+  hasLid?: boolean;
+  condition?: string;
   latitude?: number;
   longitude?: number;
   status: string;
@@ -75,7 +75,8 @@ export default function AssignedBinDetailPage() {
           setError("Bin not found or not assigned to you.");
         } else {
           setBin(found);
-          setReportStatus(found.latestReport?.status || null);
+          const latestReport = (found as any).latestReport;
+          setReportStatus(latestReport?.status || null);
         }
       } catch (err) {
         setError(err instanceof ApiError ? err.message : "Failed to load bin");
@@ -165,15 +166,15 @@ export default function AssignedBinDetailPage() {
           ) : !bin ? (
             <div className="muted">No bin found.</div>
           ) : (
-            <div className="card">
-              <div className="grid grid-2">
-                <Field label="Area Name" value={bin.areaName} />
-                <Field label="Area Type" value={bin.areaType} />
-                <Field label="Location Name" value={bin.locationName} />
-                <Field label="Road Type" value={bin.roadType} />
-                <Field label="Fixed Properly" value={bin.isFixedProperly ? "Yes" : "No"} />
-                <Field label="Has Lid" value={bin.hasLid ? "Yes" : "No"} />
-                <Field label="Condition" value={bin.condition} />
+              <div className="card">
+                <div className="grid grid-2">
+                  <Field label="Area Name" value={bin.areaName} />
+                  <Field label="Area Type" value={bin.areaType || "-"} />
+                  <Field label="Location Name" value={bin.locationName} />
+                  <Field label="Road Type" value={bin.roadType || "-"} />
+                  <Field label="Fixed Properly" value={bin.isFixedProperly ? "Yes" : "No"} />
+                  <Field label="Has Lid" value={bin.hasLid ? "Yes" : "No"} />
+                  <Field label="Condition" value={bin.condition || "-"} />
                 <Field label="Latitude" value={bin.latitude?.toString() || "-"} />
                 <Field label="Longitude" value={bin.longitude?.toString() || "-"} />
                 <Field label="Created" value={new Date(bin.createdAt).toLocaleString()} />

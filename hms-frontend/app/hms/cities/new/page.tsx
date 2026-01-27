@@ -6,16 +6,18 @@ import { CityApi } from "@lib/apiClient";
 export default function CreateCityPage() {
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
+  const [ulbCode, setUlbCode] = useState("");
   const [status, setStatus] = useState("");
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     setStatus("Saving...");
     try {
-      await CityApi.create({ name, code });
+      await CityApi.create({ name, code, ulbCode });
       setStatus("City created");
       setName("");
       setCode("");
+      setUlbCode("");
     } catch {
       setStatus("Failed to create city");
     }
@@ -32,6 +34,10 @@ export default function CreateCityPage() {
         <div className="form-field">
           <label>Code</label>
           <input className="input" value={code} onChange={(e) => setCode(e.target.value)} />
+        </div>
+        <div className="form-field">
+          <label>ULB Code</label>
+          <input className="input" value={ulbCode} onChange={(e) => setUlbCode(e.target.value)} />
         </div>
         <button className="btn btn-primary" type="submit">
           Create

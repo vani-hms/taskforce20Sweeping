@@ -20,11 +20,17 @@ export default function Sidebar() {
 
   const moduleLinks = useMemo(() => {
     if (!user?.modules?.length) return [];
-    return user.modules.map((m) => ({
-      label: titleCase(m.name || m.key),
-      href: `/modules/${(m.key || "").toLowerCase()}`
-    }));
-  }, [user?.modules]);
+    const isQc = !!user.roles?.includes("QC");
+    return user.modules.map((m) => {
+      const key = (m.key || "").toUpperCase();
+      const href =
+        key === "TWINBIN" && isQc ? "/modules/twinbin/qc" : `/modules/${(m.key || "").toLowerCase()}`;
+      return {
+        label: titleCase(m.name || m.key),
+        href
+      };
+    });
+  }, [user?.modules, user?.roles]);
 
   const hasRole = (r: Role) => Boolean(user?.roles?.includes(r));
 

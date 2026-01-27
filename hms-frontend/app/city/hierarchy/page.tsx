@@ -28,28 +28,20 @@ export default function ExtendedHierarchyPage() {
   return (
     <div className="card">
       <h2>Optional Hierarchy (Kothi / Sub-Kothi / Gali)</h2>
-      <form onSubmit={createNode}>
+      <form onSubmit={createNode} className="form">
         <label>Level</label>
-        <select value={level} onChange={(e) => setLevel(e.target.value as Level)} style={{ marginLeft: 8 }}>
+        <select className="input" value={level} onChange={(e) => setLevel(e.target.value as Level)}>
           <option value="KOTHI">Kothi</option>
           <option value="SUB_KOTHI">Sub-Kothi</option>
           <option value="GALI">Gali</option>
         </select>
-        <div style={{ marginTop: 12 }}>
-          <input
-            style={{ padding: 8, marginRight: 8 }}
-            placeholder="Name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-          <input
-            style={{ padding: 8, marginRight: 8 }}
-            placeholder="Parent ID"
-            value={parentId}
-            onChange={(e) => setParentId(e.target.value)}
-          />
-          <button type="submit">Create</button>
+        <div className="form-grid">
+          <input className="input" placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} />
+          <input className="input" placeholder="Parent ID" value={parentId} onChange={(e) => setParentId(e.target.value)} />
         </div>
+        <button className="btn btn-primary" type="submit">
+          Create
+        </button>
       </form>
       {status && <p>{status}</p>}
     </div>

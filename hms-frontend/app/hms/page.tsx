@@ -114,7 +114,7 @@ export default function HmsDashboardPage() {
               <h3>City Overview</h3>
               <span className="badge">Cities</span>
             </div>
-            <div className="table">
+            <div className="table-grid">
               <div className="table-head">
                 <div>City</div>
                 <div>Code</div>
@@ -212,7 +212,7 @@ export default function HmsDashboardPage() {
                   onChange={(e) => setAdminPassword(e.target.value)}
                   required
                 />
-                <button className="btn" type="submit">
+                <button className="btn btn-primary" type="submit">
                   Create admin
                 </button>
                 {adminStatus && <div className="muted">{adminStatus}</div>}

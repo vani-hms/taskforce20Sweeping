@@ -126,7 +126,7 @@ export default function TwinbinQcPage() {
           ) : bins.length === 0 ? (
             <div className="muted">No pending bins.</div>
           ) : (
-            <div className="table">
+            <div className="table-grid">
               <div className="table-head">
                 <div>Area</div>
                 <div>Type</div>
@@ -258,4 +258,3 @@ export default function TwinbinQcPage() {
     </Protected>
   );
 }
-

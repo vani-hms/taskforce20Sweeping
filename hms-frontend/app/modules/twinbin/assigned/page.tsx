@@ -46,7 +46,7 @@ export default function TwinbinAssignedPage() {
           ) : bins.length === 0 ? (
             <div className="muted">No bins assigned to you.</div>
           ) : (
-            <div className="table">
+            <div className="table-grid">
               <div className="table-head">
                 <div>Area</div>
                 <div>Location</div>

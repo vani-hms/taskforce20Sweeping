@@ -37,7 +37,7 @@ export default function ToiletReportsPage() {
         {loading && <p>Loading...</p>}
         {error && <p className="alert error">{error}</p>}
         {!loading && !summary.length && !error && <p>No data.</p>}
-        <div className="table">
+        <div className="table-grid">
           <div className="table-head">
             <div>Status</div>
             <div>Count</div>

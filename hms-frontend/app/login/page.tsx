@@ -39,10 +39,10 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="page" style={{ alignItems: "center", justifyContent: "center", minHeight: "80vh" }}>
+    <div className="page page-centered">
       <div className="card" style={{ maxWidth: 440, width: "100%" }}>
-        <h2 style={{ marginTop: 0 }}>Sign in to HMS</h2>
-        <p style={{ color: "var(--muted)" }}>Secure access for HMS administrators and municipal teams.</p>
+        <h2>Sign in to HMS</h2>
+        <p className="muted">Secure access for HMS administrators and municipal teams.</p>
         <form onSubmit={handleSubmit}>
           <div className="form-field">
             <label>Email</label>
@@ -77,7 +77,7 @@ export default function LoginPage() {
             </div>
           </div>
           {error && <div className="alert error">{error}</div>}
-          <button type="submit" className="btn btn-primary" disabled={loading} style={{ width: "100%" }}>
+          <button type="submit" className="btn btn-primary w-full" disabled={loading}>
             {loading ? "Signing in..." : "Sign in"}
           </button>
         </form>

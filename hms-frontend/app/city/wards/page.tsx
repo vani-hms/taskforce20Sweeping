@@ -111,7 +111,7 @@ export default function WardManagementPage() {
           {error && <div className="alert error">{error}</div>}
           {!loading && !error && wards.length === 0 && <div className="muted">No wards yet.</div>}
           {!loading && !error && wards.length > 0 && (
-            <div className="table">
+            <div className="table-grid">
               <div className="table-head">
                 <div>Zone</div>
                 <div>Wards</div>

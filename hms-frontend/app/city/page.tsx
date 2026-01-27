@@ -91,7 +91,7 @@ export default function CityDashboardPage() {
           {reqError && <div className="alert error">{reqError}</div>}
           {!reqError && requests.length === 0 && <p className="muted">No registration requests.</p>}
           {!reqError && requests.length > 0 && (
-            <div className="table">
+            <div className="table-grid">
               <div className="table-head">
                 <div>Name</div>
                 <div>Status</div>

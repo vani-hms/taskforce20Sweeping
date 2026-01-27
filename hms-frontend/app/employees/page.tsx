@@ -89,7 +89,7 @@ export default function EmployeesPage() {
           {activeModule ? "No employees assigned to this module." : "No employees to display."}
         </div>
       ) : (
-        <div className="table">
+        <div className="table-grid">
           <div className="table-head">
             <div>Name</div>
             <div>Email</div>

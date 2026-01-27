@@ -24,16 +24,18 @@ export default function CreateCityPage() {
   return (
     <div className="card">
       <h2>Create City</h2>
-      <form onSubmit={handleCreate}>
-        <div style={{ marginBottom: 12 }}>
+      <form onSubmit={handleCreate} className="form">
+        <div className="form-field">
           <label>Name</label>
-          <input style={{ width: "100%", padding: 8 }} value={name} onChange={(e) => setName(e.target.value)} />
+          <input className="input" value={name} onChange={(e) => setName(e.target.value)} />
         </div>
-        <div style={{ marginBottom: 12 }}>
+        <div className="form-field">
           <label>Code</label>
-          <input style={{ width: "100%", padding: 8 }} value={code} onChange={(e) => setCode(e.target.value)} />
+          <input className="input" value={code} onChange={(e) => setCode(e.target.value)} />
         </div>
-        <button type="submit">Create</button>
+        <button className="btn btn-primary" type="submit">
+          Create
+        </button>
       </form>
       {status && <p>{status}</p>}
     </div>

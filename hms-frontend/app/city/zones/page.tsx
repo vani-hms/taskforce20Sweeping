@@ -79,7 +79,7 @@ export default function ZoneManagementPage() {
           {error && <div className="alert error">{error}</div>}
           {!loading && !error && zones.length === 0 && <div className="muted">No zones yet.</div>}
           {!loading && !error && zones.length > 0 && (
-            <div className="table">
+            <div className="table-grid">
               <div className="table-head">
                 <div>Zone Name</div>
                 <div>Created</div>

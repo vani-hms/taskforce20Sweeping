@@ -52,7 +52,7 @@ export default function TwinbinMyRequestsPage() {
           ) : bins.length === 0 ? (
             <div className="muted">No requests yet.</div>
           ) : (
-            <div className="table">
+            <div className="table-grid">
               <div className="table-head">
                 <div>Area</div>
                 <div>Location</div>

@@ -27,15 +27,17 @@ export default function CityAdminCredentialPage() {
     <div className="card">
       <h2>Create City Admin Credentials</h2>
       <form onSubmit={handleCreate}>
-        <div style={{ marginBottom: 12 }}>
+        <div className="form-field">
           <label>City ID</label>
-          <input style={{ width: "100%", padding: 8 }} value={cityId} onChange={(e) => setCityId(e.target.value)} />
+          <input className="input" value={cityId} onChange={(e) => setCityId(e.target.value)} />
         </div>
-        <div style={{ marginBottom: 12 }}>
+        <div className="form-field">
           <label>Admin Email</label>
-          <input style={{ width: "100%", padding: 8 }} value={email} onChange={(e) => setEmail(e.target.value)} />
+          <input className="input" value={email} onChange={(e) => setEmail(e.target.value)} />
         </div>
-        <button type="submit">Create Credential</button>
+        <button className="btn btn-primary" type="submit">
+          Create Credential
+        </button>
       </form>
       {status && <p>{status}</p>}
     </div>

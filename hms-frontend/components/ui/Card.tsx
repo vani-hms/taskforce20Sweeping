@@ -4,8 +4,8 @@ export function Card({ title, children, actions }: { title?: string; actions?: R
   return (
     <div className="card">
       {(title || actions) && (
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-          {title && <h3 style={{ margin: 0 }}>{title}</h3>}
+        <div className="card-header">
+          {title && <h3 className="card-title">{title}</h3>}
           {actions}
         </div>
       )}

@@ -122,7 +122,7 @@ export default function TaskforceTasksPage() {
           {loading && <p>Loading...</p>}
           {error && <p className="alert error">{error}</p>}
           {!loading && !cases.length && !error && <p>No tasks.</p>}
-          <div className="table">
+          <div className="table-grid">
             <div className="table-head">
               <div>Title</div>
               <div>Status</div>

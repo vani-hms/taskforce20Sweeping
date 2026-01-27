@@ -212,7 +212,7 @@ export default function RegistrationRequestsPage() {
               </div>
             </div>
             <div className="modal-footer">
-              <button className="btn" onClick={closeModal}>
+              <button className="btn btn-secondary" onClick={closeModal}>
                 Cancel
               </button>
               <button className="btn btn-primary" disabled={!modalValid || saving} onClick={onApprove}>
@@ -222,51 +222,6 @@ export default function RegistrationRequestsPage() {
           </div>
         </div>
       )}
-      <style jsx>{`
-        .modal-backdrop {
-          position: fixed;
-          inset: 0;
-          background: rgba(0, 0, 0, 0.4);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          z-index: 50;
-        }
-        .modal {
-          background: #fff;
-          border-radius: 12px;
-          padding: 16px;
-          width: min(640px, 95vw);
-          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-        }
-        .modal-header,
-        .modal-footer {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 8px;
-        }
-        .modal-body {
-          display: grid;
-          gap: 12px;
-          margin: 12px 0;
-        }
-        .pill-grid {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 8px;
-        }
-        .pill {
-          padding: 8px 10px;
-          border: 1px solid #e2e8f0;
-          border-radius: 8px;
-          background: #f8fafc;
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          cursor: pointer;
-        }
-      `}</style>
     </div>
   );
 }

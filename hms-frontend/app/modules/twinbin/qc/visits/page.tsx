@@ -83,7 +83,7 @@ export default function TwinbinQcVisitsPage() {
           ) : visits.length === 0 ? (
             <div className="muted">No pending visit reports.</div>
           ) : (
-            <div className="table">
+            <div className="table-grid">
               <div className="table-head">
                 <div>Employee</div>
                 <div>Bin</div>

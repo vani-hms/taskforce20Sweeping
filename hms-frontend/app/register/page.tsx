@@ -39,9 +39,9 @@ export default function RegisterPage() {
   const update = (key: keyof typeof form, value: string) => setForm((f) => ({ ...f, [key]: value }));
 
   return (
-    <div className="page" style={{ alignItems: "center", justifyContent: "center", minHeight: "80vh" }}>
+    <div className="page page-centered">
       <div className="card" style={{ maxWidth: 480, width: "100%" }}>
-        <h2 style={{ marginTop: 0 }}>User Registration</h2>
+        <h2>User Registration</h2>
         <p className="muted">Submit your details to request access. Approval by the City Admin is required.</p>
         <form onSubmit={onSubmit} className="form">
           <label>City ULB Code</label>

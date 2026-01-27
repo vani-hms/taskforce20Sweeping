@@ -4,9 +4,16 @@
     "slug": "hms-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
-    "platforms": ["android"],
-    "assetBundlePatterns": ["**/*"],
-    "plugins": ["expo-secure-store"],
+    "platforms": [
+      "android"
+    ],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "plugins": [
+      "expo-secure-store",
+      "expo-router"
+    ],
     "experiments": {
       "turboModules": false
     }

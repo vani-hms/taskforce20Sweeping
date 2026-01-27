@@ -146,6 +146,14 @@ export const TaskforceApi = {
       }),
   assigned: () =>
     apiFetch<{ feederPoints: any[] }>("/modules/taskforce/feeder-points/assigned"),
+  feederRequests: () => apiFetch<{ feederPoints: any[] }>("/modules/taskforce/feeder-points/requests"),
+  approveRequest: (id: string, body: any) =>
+    apiFetch<{ feederPoint: any }>(`/modules/taskforce/feeder-points/${id}/approve`, {
+      method: "POST",
+      body: JSON.stringify(body)
+    }),
+  rejectRequest: (id: string) =>
+    apiFetch<{ feederPoint: any }>(`/modules/taskforce/feeder-points/${id}/reject`, { method: "POST" }),
   submitReport: (id: string, body: { latitude: number; longitude: number; payload: any }) =>
     apiFetch<{ report: any }>(`/modules/taskforce/feeder-points/${id}/report`, {
       method: "POST",

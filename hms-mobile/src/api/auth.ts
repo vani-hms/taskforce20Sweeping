@@ -214,6 +214,36 @@ export async function listTaskforceAssigned() {
   return request<{ feederPoints: any[] }>("/modules/taskforce/feeder-points/assigned");
 }
 
+export async function submitTaskforceFeederRequest(body: {
+  zoneId?: string;
+  wardId?: string;
+  zoneName?: string;
+  wardName?: string;
+  areaName: string;
+  areaType: "RESIDENTIAL" | "COMMERCIAL" | "SLUM";
+  feederPointName: string;
+  locationDescription: string;
+  populationDensity: string;
+  accessibilityLevel: string;
+  householdsCount: number;
+  vehicleType: string;
+  landmark: string;
+  photoUrl: string;
+  notes?: string;
+  latitude: number;
+  longitude: number;
+}) {
+  return request<{ feederPoint: any }>("/modules/taskforce/feeder-points/request", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...(await authHeader()) },
+    body: JSON.stringify(body)
+  } as any);
+}
+
+export async function listTaskforceFeederRequests() {
+  return request<{ feederPoints: any[] }>("/modules/taskforce/feeder-points/my-requests");
+}
+
 export async function submitTaskforceReport(
   feederPointId: string,
   body: { latitude: number; longitude: number; payload: any }

@@ -20,6 +20,8 @@ export type RootStackParamList = {
   TwinbinReportPending: undefined;
   TwinbinReportReview: { report: any };
   TaskforceHome: undefined;
+  TaskforceRegister: undefined;
+  TaskforceMyRequests: undefined;
   TaskforceAssigned: undefined;
   TaskforceFeederDetail: { feeder: any };
   TaskforceQcReports: undefined;

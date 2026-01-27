@@ -50,10 +50,19 @@ async function ensureGeoValid(cityId: string, zoneId?: string | null, wardId?: s
 const feederRequestSchema = z.object({
   zoneId: z.string().uuid().optional(),
   wardId: z.string().uuid().optional(),
+  zoneName: z.string().min(1).optional(),
+  wardName: z.string().min(1).optional(),
   areaName: z.string().min(1),
   areaType: z.enum(["RESIDENTIAL", "COMMERCIAL", "SLUM"]),
   feederPointName: z.string().min(1),
   locationDescription: z.string().min(1),
+  populationDensity: z.string().min(1),
+  accessibilityLevel: z.string().min(1),
+  householdsCount: z.number().int().nonnegative(),
+  vehicleType: z.string().min(1),
+  landmark: z.string().min(1),
+  photoUrl: z.string().min(1),
+  notes: z.string().optional(),
   latitude: z.number(),
   longitude: z.number()
 });
@@ -78,8 +87,17 @@ router.post("/feeder-points/request", validateBody(feederRequestSchema), async (
         wardId: payload.wardId || null,
         areaName: payload.areaName,
         areaType: payload.areaType as any,
+        zoneName: payload.zoneName || "",
+        wardName: payload.wardName || "",
         feederPointName: payload.feederPointName,
         locationDescription: payload.locationDescription,
+        populationDensity: payload.populationDensity,
+        accessibilityLevel: payload.accessibilityLevel,
+        householdsCount: payload.householdsCount,
+        vehicleType: payload.vehicleType,
+        landmark: payload.landmark,
+        photoUrl: payload.photoUrl,
+        notes: payload.notes,
         latitude: payload.latitude,
         longitude: payload.longitude,
         status: "PENDING_QC"
@@ -112,9 +130,52 @@ router.get("/feeder-points/pending", async (req, res, next) => {
   }
 });
 
-const approveSchema = z.object({
-  assignedEmployeeIds: z.array(z.string().uuid()).optional()
+router.get("/feeder-points/requests", async (req, res, next) => {
+  try {
+    const cityId = req.auth!.cityId!;
+    const moduleId = await getModuleIdByName(MODULE_KEY);
+    forbidCityAdminOrCommissioner(req);
+    await assertModuleAccess(req, res, moduleId, [Role.QC]);
+    await ensureModuleEnabled(cityId, moduleId);
+
+    const feederPoints = await prisma.taskforceFeederPoint.findMany({
+      where: { cityId },
+      orderBy: { createdAt: "desc" },
+      include: { requestedBy: { select: { id: true, name: true, email: true } } }
+    });
+
+    res.json({ feederPoints });
+  } catch (err) {
+    next(err);
+  }
 });
+
+router.get("/feeder-points/my-requests", async (req, res, next) => {
+  try {
+    const cityId = req.auth!.cityId!;
+    const userId = req.auth!.sub!;
+    const moduleId = await getModuleIdByName(MODULE_KEY);
+    forbidCityAdminOrCommissioner(req);
+    await assertModuleAccess(req, res, moduleId, [Role.EMPLOYEE]);
+    await ensureModuleEnabled(cityId, moduleId);
+
+    const feederPoints = await prisma.taskforceFeederPoint.findMany({
+      where: { cityId, requestedById: userId },
+      orderBy: { createdAt: "desc" }
+    });
+
+    res.json({ feederPoints });
+  } catch (err) {
+    next(err);
+  }
+});
+
+const approveSchema = feederRequestSchema
+  .partial()
+  .extend({
+    assignedEmployeeIds: z.array(z.string().uuid()).optional(),
+    status: z.enum(["APPROVED", "PENDING_QC", "REJECTED", "ACTION_REQUIRED"]).optional()
+  });
 
 router.post("/feeder-points/:id/approve", validateBody(approveSchema), async (req, res, next) => {
   try {
@@ -129,7 +190,11 @@ router.post("/feeder-points/:id/approve", validateBody(approveSchema), async (re
     if (!feederPoint || feederPoint.cityId !== cityId) throw new HttpError(404, "Feeder point not found");
     if (feederPoint.status !== "PENDING_QC") throw new HttpError(400, "Feeder point not pending QC");
 
-    const { assignedEmployeeIds = [] } = req.body as z.infer<typeof approveSchema>;
+    const {
+      assignedEmployeeIds = [],
+      status = "APPROVED",
+      ...updates
+    } = req.body as z.infer<typeof approveSchema>;
     if (assignedEmployeeIds.length) {
       const employees = await prisma.userCity.findMany({
         where: { cityId, userId: { in: assignedEmployeeIds }, role: Role.EMPLOYEE }
@@ -140,7 +205,8 @@ router.post("/feeder-points/:id/approve", validateBody(approveSchema), async (re
     const updated = await prisma.taskforceFeederPoint.update({
       where: { id: feederPoint.id },
       data: {
-        status: "APPROVED",
+        ...updates,
+        status,
         approvedByQcId: userId,
         assignedEmployeeIds
       }

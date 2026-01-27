@@ -1,6 +1,11 @@
 {
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
-    "strict": true
-  }
+    "strict": true,
+    "baseUrl": "./src",
+    "paths": {
+      "@/*": ["modules/taskforce/*"]
+    }
+  },
+  "exclude": ["node_modules", "src/modules/taskforce"]
 }

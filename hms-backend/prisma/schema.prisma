@@ -345,10 +345,19 @@ model TaskforceFeederPoint {
   requestedById       String                  @db.Uuid
   zoneId              String?                 @db.Uuid
   wardId              String?                 @db.Uuid
+  zoneName            String?                 @default("")
+  wardName            String?                 @default("")
   areaName            String
   areaType            AreaType
   feederPointName     String
   locationDescription String
+  populationDensity   String                  @default("")
+  accessibilityLevel  String                  @default("")
+  householdsCount     Int                     @default(0)
+  vehicleType         String                  @default("")
+  landmark            String                  @default("")
+  photoUrl            String                  @default("")
+  notes               String?                 @db.Text
   latitude            Float
   longitude           Float
   status              TaskforceRequestStatus

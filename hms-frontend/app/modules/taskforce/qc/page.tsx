@@ -11,6 +11,13 @@ export default function TaskforceQcHomePage() {
           <h1>Taskforce – QC</h1>
           <div className="grid grid-2" style={{ marginTop: 12 }}>
             <div className="card">
+              <h3>Feeder Point Requests</h3>
+              <p className="muted">Review and approve feeder point submissions.</p>
+              <Link className="btn btn-primary btn-sm" href="/modules/taskforce/qc/requests">
+                Open Requests
+              </Link>
+            </div>
+            <div className="card">
               <h3>Pending Reports</h3>
               <p className="muted">Review feeder point reports submitted by employees.</p>
               <Link className="btn btn-primary btn-sm" href="/modules/taskforce/qc/reports">

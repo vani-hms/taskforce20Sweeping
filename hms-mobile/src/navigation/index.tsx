@@ -1,37 +1,45 @@
 import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import LoginScreen from "../screens/LoginScreen";
-import RegisterScreen from "../screens/RegisterScreen";
-import CityLandingScreen from "../screens/CityLandingScreen";
-import ModuleHomeWrapper from "../screens/modules/ModuleHomeWrapper";
-import MyEmployeesScreen from "../screens/MyEmployeesScreen";
-import RegistrationRequestsScreen from "../screens/RegistrationRequestsScreen";
-import TwinbinHomeScreen from "../screens/TwinbinHomeScreen";
-import TwinbinRegisterScreen from "../screens/TwinbinRegisterScreen";
-import TwinbinMyRequestsScreen from "../screens/TwinbinMyRequestsScreen";
-import TwinbinQcHomeScreen from "../screens/TwinbinQcHomeScreen";
-import TwinbinQcPendingScreen from "../screens/TwinbinQcPendingScreen";
-import TwinbinQcReviewScreen from "../screens/TwinbinQcReviewScreen";
-import TwinbinAssignedScreen from "../screens/TwinbinAssignedScreen";
-import TwinbinBinDetailScreen from "../screens/TwinbinBinDetailScreen";
-import TwinbinVisitPendingScreen from "../screens/TwinbinVisitPendingScreen";
-import TwinbinVisitReviewScreen from "../screens/TwinbinVisitReviewScreen";
-import TwinbinActionRequiredScreen from "../screens/TwinbinActionRequiredScreen";
-import TwinbinActionRequiredDetailScreen from "../screens/TwinbinActionRequiredDetailScreen";
-import TwinbinReportPendingScreen from "../screens/TwinbinReportPendingScreen";
-import TwinbinReportReviewScreen from "../screens/TwinbinReportReviewScreen";
-import TaskforceHomeScreen from "../screens/TaskforceHomeScreen";
-import TaskforceAssignedScreen from "../screens/TaskforceAssignedScreen";
-import TaskforceFeederDetailScreen from "../screens/TaskforceFeederDetailScreen";
-import TaskforceQcReportsScreen from "../screens/TaskforceQcReportsScreen";
-import TaskforceQcReportReviewScreen from "../screens/TaskforceQcReportReviewScreen";
+import { LoginScreen, RegisterScreen } from "../modules/auth";
+import { CityLandingScreen, MyEmployeesScreen, RegistrationRequestsScreen } from "../modules/city";
+import { ModuleHomeWrapper } from "../modules/common";
+import {
+  TwinbinHomeScreen,
+  TwinbinRegisterScreen,
+  TwinbinMyRequestsScreen,
+  TwinbinQcHomeScreen,
+  TwinbinQcPendingScreen,
+  TwinbinQcReviewScreen,
+  TwinbinAssignedScreen,
+  TwinbinBinDetailScreen,
+  TwinbinVisitPendingScreen,
+  TwinbinVisitReviewScreen,
+  TwinbinActionRequiredScreen,
+  TwinbinActionRequiredDetailScreen,
+  TwinbinReportPendingScreen,
+  TwinbinReportReviewScreen
+} from "../modules/twinbin";
+import {
+  TaskforceHomeScreen,
+  TaskforceRegisterScreen,
+  TaskforceMyRequestsScreen,
+  TaskforceAssignedScreen,
+  TaskforceFeederDetailScreen,
+  TaskforceQcReportsScreen,
+  TaskforceQcReportReviewScreen
+} from "../modules/taskforce";
 import { useAuthContext } from "../auth/AuthProvider";
 import { RootStackParamList } from "./types";
+export type { RootStackParamList } from "./types";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export function RootNavigator() {
   const { auth } = useAuthContext();
+
+  if (auth.status === "loading") {
+    return null;
+  }
 
   if (auth.status === "guest") {
     return (
@@ -44,7 +52,11 @@ export function RootNavigator() {
 
   return (
     <Stack.Navigator key="app" screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="CityLanding" component={CityLandingScreen} initialParams={{ cityName: auth.cityName }} />
+      <Stack.Screen
+        name="CityLanding"
+        component={CityLandingScreen}
+        initialParams={{ cityName: auth.status === "authenticated" ? auth.cityName : undefined }}
+      />
       <Stack.Screen name="Module" component={ModuleHomeWrapper} />
       <Stack.Screen name="MyEmployees" component={MyEmployeesScreen} />
       <Stack.Screen name="RegistrationRequests" component={RegistrationRequestsScreen} />
@@ -63,6 +75,8 @@ export function RootNavigator() {
       <Stack.Screen name="TwinbinReportPending" component={TwinbinReportPendingScreen} />
       <Stack.Screen name="TwinbinReportReview" component={TwinbinReportReviewScreen} />
       <Stack.Screen name="TaskforceHome" component={TaskforceHomeScreen} />
+      <Stack.Screen name="TaskforceRegister" component={TaskforceRegisterScreen} />
+      <Stack.Screen name="TaskforceMyRequests" component={TaskforceMyRequestsScreen} />
       <Stack.Screen name="TaskforceAssigned" component={TaskforceAssignedScreen} />
       <Stack.Screen name="TaskforceFeederDetail" component={TaskforceFeederDetailScreen} />
       <Stack.Screen name="TaskforceQcReports" component={TaskforceQcReportsScreen} />

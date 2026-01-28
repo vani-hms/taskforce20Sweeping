@@ -3,13 +3,13 @@
 import Link from "next/link";
 import { Protected } from "@components/Guards";
 import { useAuth } from "@hooks/useAuth";
+import { moduleLabel } from "@lib/labels";
 
-function labelForModule(name?: string, key?: string) {
-  const value = name || key || "";
-  return value
-    .toLowerCase()
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (l) => l.toUpperCase());
+function routeForModule(key: string) {
+  const normalized = key.toLowerCase();
+  if (normalized === "litterbins") return "twinbin";
+  if (normalized === "sweeping") return "modules"; // no dedicated UI yet
+  return normalized;
 }
 
 export default function ModulesLanding() {
@@ -29,9 +29,9 @@ export default function ModulesLanding() {
           <div className="grid grid-2">
             {modules.map((m) => (
               <div className="card card-hover" key={m.key}>
-                <h3>{labelForModule(m.name, m.key)}</h3>
+                <h3>{moduleLabel(m.key, m.name)}</h3>
                 <p className="muted">Access records and tasks for this module.</p>
-                <Link className="btn btn-primary btn-sm" href={`/modules/${m.key.toLowerCase()}`}>
+                <Link className="btn btn-primary btn-sm" href={`/modules/${routeForModule(m.key)}`}>
                   Open
                 </Link>
               </div>

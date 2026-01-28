@@ -18,14 +18,27 @@ const citySchema = z.object({
   ulbCode: z.string().min(1)
 });
 
-const DEFAULT_MODULES = ["SWEEP_RES", "SWEEP_COM", "TWINBIN", "TASKFORCE", "TOILET"];
+import { CANONICAL_MODULE_KEYS, normalizeModuleKey } from "../modules/moduleMetadata";
+
+const DEFAULT_MODULES = [...CANONICAL_MODULE_KEYS];
 
 async function ensureModulesExist(): Promise<{ id: string; name: string }[]> {
   const existing = await prisma.module.findMany({ orderBy: { name: "asc" } });
-  if (existing.length) return existing;
+  if (!existing.length) {
+    const seeded = await Promise.all(
+      DEFAULT_MODULES.map((m) =>
+        prisma.module.upsert({
+          where: { name: m },
+          update: { isActive: true },
+          create: { name: m, isActive: true }
+        })
+      )
+    );
+    return seeded;
+  }
 
-  // Seed defaults if no modules are present
-  const seeded = await Promise.all(
+  // Ensure canonical modules are present even if legacy ones exist
+  const ensured = await Promise.all(
     DEFAULT_MODULES.map((m) =>
       prisma.module.upsert({
         where: { name: m },
@@ -34,7 +47,7 @@ async function ensureModulesExist(): Promise<{ id: string; name: string }[]> {
       })
     )
   );
-  return seeded;
+  return ensured;
 }
 
 router.get("/cities", async (_req, res, next) => {
@@ -162,7 +175,10 @@ router.post("/cities/:cityId/admins", validateBody(adminSchema), async (req, res
 
 router.get("/modules", async (_req, res, next) => {
   try {
-    const modules = await prisma.module.findMany({ orderBy: { name: "asc" } });
+    const modules = await prisma.module.findMany({
+      where: { name: { in: DEFAULT_MODULES } },
+      orderBy: { name: "asc" }
+    });
     res.json({ modules });
   } catch (err) {
     next(err);

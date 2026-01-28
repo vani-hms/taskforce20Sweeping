@@ -1,13 +1,25 @@
+export const CANONICAL_MODULE_KEYS = ["TASKFORCE", "LITTERBINS", "SWEEPING", "TOILET"] as const;
+
+const LEGACY_KEY_MAP: Record<string, string> = {
+  SWEEP_RES: "SWEEPING",
+  SWEEP_COM: "SWEEPING",
+  TWINBIN: "LITTERBINS"
+};
+
 const MODULE_LABELS: Record<string, string> = {
-  SWEEP_RES: "Sweeping Residential",
-  SWEEP_COM: "Sweeping Commercial",
-  TWINBIN: "Twinbin",
-  TASKFORCE: "Taskforce",
-  TOILET: "Toilet"
+  TASKFORCE: "CTU / GVP Transformation",
+  LITTERBINS: "Litter Bins",
+  SWEEPING: "Sweeping",
+  TOILET: "Cleanliness of Toilets",
+  // legacy keys fallbacks
+  TWINBIN: "Litter Bins",
+  SWEEP_RES: "Sweeping",
+  SWEEP_COM: "Sweeping"
 };
 
 export function normalizeModuleKey(key: string) {
-  return key.trim().toUpperCase();
+  const upper = key.trim().toUpperCase();
+  return LEGACY_KEY_MAP[upper] || upper;
 }
 
 export function getModuleLabel(key: string) {

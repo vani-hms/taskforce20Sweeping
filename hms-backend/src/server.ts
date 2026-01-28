@@ -36,7 +36,9 @@ app.use((req, res, next) => {
   }
   next();
 });
-app.use(express.json());
+// Increase body size limit to accept base64 photos in twinbin reports
+app.use(express.json({ limit: "20mb" }));
+app.use(express.urlencoded({ limit: "20mb", extended: true }));
 
 app.get("/health", (_req, res) => res.json({ ok: true }));
 

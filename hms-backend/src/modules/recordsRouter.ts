@@ -11,10 +11,13 @@ const router = Router();
 router.use(authenticate, requireCityContext());
 
 const MODULE_MODEL_MAP: Record<string, keyof typeof prisma> = {
-  SWEEP_RES: "sweepingResidentialRecord",
-  SWEEP_COM: "sweepingCommercialRecord",
-  TWINBIN: "twinbinRecord",
-  TASKFORCE: "taskforceRecord"
+  SWEEPING: "sweepingRecord",
+  LITTERBINS: "litterBinRecord",
+  TASKFORCE: "taskforceRecord",
+  // legacy aliases
+  SWEEP_RES: "sweepingRecord",
+  SWEEP_COM: "sweepingRecord",
+  TWINBIN: "litterBinRecord"
 };
 
 router.get("/:moduleKey/records", async (req, res, next) => {

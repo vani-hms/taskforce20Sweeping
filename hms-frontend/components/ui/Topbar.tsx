@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@hooks/useAuth";
+import { roleLabel } from "@lib/labels";
 
 export function Topbar() {
   const { user, logout, loading } = useAuth();
@@ -13,11 +14,7 @@ export function Topbar() {
     router.replace("/login");
   };
 
-  const roleLabel =
-    user?.roles?.[0]
-      ?.replace(/_/g, " ")
-      .toLowerCase()
-      .replace(/\b\w/g, (l) => l.toUpperCase()) || "";
+  const displayRole = user?.roles?.length ? roleLabel(user.roles[0]) : "";
 
   return (
     <header className="topbar">
@@ -33,7 +30,7 @@ export function Topbar() {
             <div className="avatar">{user?.name?.[0]?.toUpperCase() || "H"}</div>
             <div className="user-meta">
               <div className="user-name">{user?.name || "Signed in"}</div>
-              <div className="user-role">{roleLabel || "User"}</div>
+              <div className="user-role">{displayRole || "User"}</div>
             </div>
             <button className="btn btn-secondary btn-sm" onClick={handleLogout}>
               Logout

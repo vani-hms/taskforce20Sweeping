@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { clearAuthCookie, decodeToken, getTokenFromCookies, setAuthCookie } from "@lib/auth";
 import { AuthApi } from "@lib/apiClient";
 import type { AuthUser } from "../types/auth";
+import { roleLabel } from "@lib/labels";
 
 interface AuthContextValue {
   user: AuthUser | null;
@@ -20,7 +21,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const token = getTokenFromCookies();
-    setUser(decodeToken(token));
+    const decoded = decodeToken(token);
+    if (decoded) {
+      decoded.roleLabels = decoded.roles?.map((r: string) => roleLabel(r));
+    }
+    setUser(decoded);
     setLoading(false);
   }, []);
 

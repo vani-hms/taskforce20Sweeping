@@ -8,6 +8,7 @@ import { HttpError } from "../utils/errors";
 import { Prisma, Role } from "../../generated/prisma";
 import { GeoLevel } from "../../generated/prisma";
 import { getModuleLabel, normalizeModuleKey } from "../modules/moduleMetadata";
+import { getRoleLabel } from "../utils/labels";
 import { resolveCanWrite } from "../utils/moduleAccess";
 
 const router = Router();
@@ -132,12 +133,14 @@ router.post("/login", validateBody(loginSchema), async (req, res, next) => {
         id: user.id,
         email: user.email,
         name: user.name,
+        roleLabels: effectiveRoles.map((r) => getRoleLabel(r)),
         cityId: activeCityId,
         roles: effectiveRoles,
         modules: moduleClaims.map((m) => ({
           moduleId: m.moduleId,
           key: m.key,
           name: m.name,
+          label: getModuleLabel(m.key),
           canWrite: m.canWrite
         }))
       },
@@ -193,7 +196,7 @@ const registrationSchema = z.object({
   cityId: z.string().uuid(),
   zoneId: z.string().uuid().optional(),
   wardId: z.string().uuid().optional(),
-  requestedModules: z.array(z.enum(["SWEEP_RES", "SWEEP_COM", "TWINBIN", "TASKFORCE"])).min(1)
+  requestedModules: z.array(z.string()).min(1)
 });
 
 router.post("/request-registration", validateBody(registrationSchema), async (req, res, next) => {
@@ -222,6 +225,8 @@ router.post("/request-registration", validateBody(registrationSchema), async (re
     if (existingUser) throw new HttpError(400, "User already exists");
 
     const hashed = await hashPassword(password);
+    const normalizedModules = Array.from(new Set(requestedModules.map((m) => normalizeModuleKey(m))));
+
     const request = await prisma.userRegistrationRequest.create({
       data: {
         name,
@@ -232,7 +237,7 @@ router.post("/request-registration", validateBody(registrationSchema), async (re
         cityId,
         zoneId: zoneId || null,
         wardId: wardId || null,
-        requestedModules,
+        requestedModules: normalizedModules,
         status: "PENDING"
       }
     });

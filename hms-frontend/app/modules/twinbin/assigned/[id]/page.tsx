@@ -44,6 +44,9 @@ export default function AssignedBinDetailPage() {
   const [statusMsg, setStatusMsg] = useState("");
   const [myLat, setMyLat] = useState<number | null>(null);
   const [myLng, setMyLng] = useState<number | null>(null);
+  const [proximityToken, setProximityToken] = useState<string | null>(null);
+  const [allowed, setAllowed] = useState(false);
+  const [ctxMsg, setCtxMsg] = useState<string | null>(null);
   const [reportStatus, setReportStatus] = useState<string | null>(null);
   const questions = [
     "Are adequate litter bins provided in the area?",
@@ -95,19 +98,30 @@ export default function AssignedBinDetailPage() {
     setLocError("");
     setStatusMsg("");
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
+      async (pos) => {
         const { latitude, longitude } = pos.coords;
-        const dist = haversineMeters(latitude, longitude, bin.latitude!, bin.longitude!);
-        setDistance(dist);
         setMyLat(latitude);
         setMyLng(longitude);
+        try {
+          const ctx = await TwinbinApi.reportContext(bin.id, latitude, longitude);
+          setDistance(ctx.distanceMeters);
+          setAllowed(ctx.allowed);
+          setProximityToken(ctx.proximityToken);
+          setCtxMsg(ctx.message || null);
+          setLocError(ctx.allowed ? "" : ctx.message || "Move closer to submit.");
+        } catch (err: any) {
+          setAllowed(false);
+          setProximityToken(null);
+          setCtxMsg("Failed to verify distance.");
+          setLocError(err instanceof ApiError ? err.message : "Failed to verify distance");
+        }
       },
       (err) => setLocError(err.message),
       { enableHighAccuracy: true, timeout: 10000 }
     );
   };
 
-  const withinFence = useMemo(() => (distance !== null ? distance <= 50 : false), [distance]);
+  const withinFence = useMemo(() => allowed && distance !== null && distance <= 50, [allowed, distance]);
 
   const setAnswer = (key: string, answer: "YES" | "NO") => {
     setAnswers((prev) => ({ ...prev, [key]: { ...prev[key], answer } }));
@@ -128,10 +142,10 @@ export default function AssignedBinDetailPage() {
     });
 
   const handleSubmit = async () => {
-    if (!withinFence || !bin || myLat === null || myLng === null) return;
-    const incomplete = Object.entries(answers).find(([, v]) => !v.answer || !v.photoUrl);
+    if (!withinFence || !bin || myLat === null || myLng === null || !proximityToken) return;
+    const incomplete = Object.entries(answers).find(([, v]) => !v.answer);
     if (incomplete) {
-      setSubmitError("All answers and photos are required.");
+      setSubmitError("All answers are required (photos optional).");
       return;
     }
     setSubmitting(true);
@@ -144,7 +158,8 @@ export default function AssignedBinDetailPage() {
       const res = await TwinbinApi.submitReport(bin.id, {
         latitude: myLat,
         longitude: myLng,
-        questionnaire
+        questionnaire,
+        proximityToken
       });
       setStatusMsg("Report submitted, awaiting QC review.");
       setReportStatus(res.report?.status || "SUBMITTED");
@@ -192,57 +207,55 @@ export default function AssignedBinDetailPage() {
               <div className="muted" style={{ marginTop: 8 }}>
                 {withinFence
                   ? "You are within 50 meters. You can submit a report."
-                  : "You must be within 50 meters to submit a report."}
+                  : ctxMsg || "Fetch your location to verify proximity (<=50 m)."}
               </div>
-              <div className="form-grid" style={{ marginTop: 16 }}>
-                {questions.map((text, idx) => {
-                  const key = `q${idx + 1}`;
-                  const value = answers[key];
-                  return (
-                    <div key={key} className="card" style={{ padding: 12, border: "1px solid #e2e8f0" }}>
-                      <div style={{ fontWeight: 600, marginBottom: 8 }}>{text}</div>
-                      <div className="flex gap-2" style={{ marginBottom: 8 }}>
-                        <label className="checkbox">
+              {withinFence ? (
+                <div className="form-grid" style={{ marginTop: 16 }}>
+                  {questions.map((text, idx) => {
+                    const key = `q${idx + 1}`;
+                    const value = answers[key];
+                    return (
+                      <div key={key} className="card" style={{ padding: 12, border: "1px solid #e2e8f0" }}>
+                        <div style={{ fontWeight: 600, marginBottom: 8 }}>{text}</div>
+                        <div className="flex gap-2" style={{ marginBottom: 8 }}>
+                          <label className="checkbox">
+                            <input
+                              type="radio"
+                              name={key}
+                              checked={value.answer === "YES"}
+                              onChange={() => setAnswer(key, "YES")}
+                            />{" "}
+                            Yes
+                          </label>
+                          <label className="checkbox">
+                            <input
+                              type="radio"
+                              name={key}
+                              checked={value.answer === "NO"}
+                              onChange={() => setAnswer(key, "NO")}
+                            />{" "}
+                            No
+                          </label>
+                        </div>
+                        <label className="btn btn-secondary btn-sm" style={{ display: "inline-block" }}>
+                          Upload Photo (optional)
                           <input
-                            type="radio"
-                            name={key}
-                            checked={value.answer === "YES"}
-                            onChange={() => setAnswer(key, "YES")}
-                          />{" "}
-                          Yes
+                            type="file"
+                            accept="image/*"
+                            style={{ display: "none" }}
+                            onChange={(e) => onFileChange(key, e.target.files?.[0])}
+                          />
                         </label>
-                        <label className="checkbox">
-                          <input
-                            type="radio"
-                            name={key}
-                            checked={value.answer === "NO"}
-                            onChange={() => setAnswer(key, "NO")}
-                          />{" "}
-                          No
-                        </label>
+                        {value.photoUrl ? (
+                          <div style={{ marginTop: 8 }}>
+                            <img src={value.photoUrl} alt="upload preview" style={{ maxHeight: 120, borderRadius: 6 }} />
+                          </div>
+                        ) : null}
                       </div>
-                      <label className="btn btn-secondary btn-sm" style={{ display: "inline-block" }}>
-                        Upload Photo
-                        <input
-                          type="file"
-                          accept="image/*"
-                          style={{ display: "none" }}
-                          onChange={(e) => onFileChange(key, e.target.files?.[0])}
-                        />
-                      </label>
-                      {value.photoUrl ? (
-                        <div style={{ marginTop: 8 }}>
-                          <img src={value.photoUrl} alt="upload preview" style={{ maxHeight: 120, borderRadius: 6 }} />
-                        </div>
-                      ) : (
-                        <div className="muted" style={{ marginTop: 4 }}>
-                          Photo required
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+              ) : null}
               {submitError && <div className="alert error" style={{ marginTop: 8 }}>{submitError}</div>}
               {statusMsg && <div className="alert success" style={{ marginTop: 8 }}>{statusMsg}</div>}
               {reportStatus && (
@@ -252,7 +265,7 @@ export default function AssignedBinDetailPage() {
               )}
               <button
                 className="btn btn-primary"
-                disabled={!withinFence || submitting}
+                disabled={!withinFence || submitting || !proximityToken}
                 onClick={handleSubmit}
                 style={{ marginTop: 12 }}
               >

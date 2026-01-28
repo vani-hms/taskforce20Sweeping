@@ -260,8 +260,19 @@ export const TwinbinApi = {
   reject: (id: string) => apiFetch<{ bin: any }>(`/modules/twinbin/bins/${id}/reject`, { method: "POST" }),
   submitVisit: (binId: string, body: { latitude: number; longitude: number; inspectionAnswers: Record<string, { answer: "YES" | "NO"; photoUrl: string }> }) =>
     apiFetch<{ report: any }>(`/modules/twinbin/bins/${binId}/visit`, { method: "POST", body: JSON.stringify(body) }),
-  submitReport: (binId: string, body: { latitude: number; longitude: number; questionnaire: any }) =>
+  submitReport: (binId: string, body: { latitude: number; longitude: number; questionnaire: any; proximityToken: string }) =>
     apiFetch<{ report: any }>(`/modules/twinbin/bins/${binId}/report`, { method: "POST", body: JSON.stringify(body) }),
+  reportContext: (binId: string, lat: number, lon: number) => {
+    const params = new URLSearchParams({ lat: lat.toString(), lon: lon.toString() });
+    return apiFetch<{
+      allowed: boolean;
+      distanceMeters: number;
+      message?: string;
+      bin?: any;
+      formConfig?: any;
+      proximityToken: string | null;
+    }>(`/modules/twinbin/bins/${binId}/report-context?${params.toString()}`);
+  },
   pendingVisits: () =>
     apiFetch<{ visits: any[] }>("/modules/twinbin/visits/pending"),
   approveVisit: (id: string) =>

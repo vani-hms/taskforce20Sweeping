@@ -118,12 +118,27 @@ export async function submitTwinbinVisit(
 
 export async function submitTwinbinReport(
   binId: string,
-  body: { latitude: number; longitude: number; questionnaire: any }
+  body: { latitude: number; longitude: number; questionnaire: any; proximityToken: string }
 ) {
   return request<{ report: any }>(`/modules/twinbin/bins/${binId}/report`, {
     method: "POST",
     headers: { "Content-Type": "application/json", ...(await authHeader()) },
     body: JSON.stringify(body)
+  } as any);
+}
+
+export async function getTwinbinReportContext(binId: string, lat: number, lon: number) {
+  const params = new URLSearchParams({ lat: lat.toString(), lon: lon.toString() });
+  return request<{
+    allowed: boolean;
+    distanceMeters: number;
+    message?: string;
+    formConfig: any;
+    bin?: any;
+    proximityToken: string | null;
+  }>(`/modules/twinbin/bins/${binId}/report-context?${params.toString()}`, {
+    method: "GET",
+    headers: { ...(await authHeader()) } as any
   } as any);
 }
 

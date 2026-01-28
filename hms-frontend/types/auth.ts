@@ -13,6 +13,7 @@ export interface ModuleAssignment {
   moduleId?: string;
   key: ModuleKey;
   name?: string;
+  label?: string;
   canWrite: boolean;
   roles?: Role[];
 }
@@ -24,6 +25,7 @@ export interface AuthUser {
   cityId?: string;
   cityName?: string;
   roles: Role[]; // city-level roles
+  roleLabels?: string[];
   modules: ModuleAssignment[];
   token?: string;
 }

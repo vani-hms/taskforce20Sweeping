@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { ApiError, CityModulesApi, CityUserApi } from "@lib/apiClient";
 import type { Role } from "../../../types/auth";
+import { roleLabel, moduleLabel } from "@lib/labels";
 
 type CityModule = { id: string; key: string; name: string; enabled?: boolean };
 type UserModule = { id: string; key: string; name: string; canWrite: boolean };
@@ -10,8 +11,6 @@ type CityUser = { id: string; name: string; email: string; role: Role; createdAt
 type EditableUser = { name: string; role: Role; modules: Record<string, { canWrite: boolean }> };
 
 const allowedRoles: Role[] = ["COMMISSIONER", "ACTION_OFFICER", "QC", "EMPLOYEE"];
-
-const normalizeRoleLabel = (r: Role) => r.replace("_", " ").toLowerCase().replace(/\b\w/g, (l) => l.toUpperCase());
 const enforceRoleWriteRules = (role: Role, modules: Record<string, { canWrite: boolean }>) =>
   role === "COMMISSIONER"
     ? Object.fromEntries(Object.keys(modules).map((id) => [id, { canWrite: false }]))
@@ -22,7 +21,9 @@ const toModuleMap = (modules: UserModule[] = []) =>
     return acc;
   }, {});
 const summarizeModules = (modules: UserModule[]) =>
-  modules.length ? modules.map((m) => `${m.name}${m.canWrite ? " (Write)" : " (Read)"}`).join(", ") : "—";
+  modules.length
+    ? modules.map((m) => `${moduleLabel(m.key, m.name)}${m.canWrite ? " (Write)" : " (Read)"}`).join(", ")
+    : "—";
 
 export default function CityUsersPage() {
   const [email, setEmail] = useState("");
@@ -224,7 +225,7 @@ export default function CityUsersPage() {
             <select className="input" value={role} onChange={(e) => changeNewUserRole(e.target.value as Role)}>
               {allowedRoles.map((r) => (
                 <option key={r} value={r}>
-                  {normalizeRoleLabel(r)}
+                  {roleLabel(r)}
                 </option>
               ))}
             </select>
@@ -248,7 +249,7 @@ export default function CityUsersPage() {
                           checked={Boolean(selected)}
                           onChange={(e) => updateNewModuleSelection(m.id, e.target.checked)}
                         />
-                        <span>{m.name}</span>
+                        <span>{moduleLabel(m.key, m.name)}</span>
                       </label>
                       <label className="flex items-center gap-2 text-sm text-slate-700">
                         <input
@@ -322,7 +323,7 @@ export default function CityUsersPage() {
                         >
                           {allowedRoles.map((r) => (
                             <option key={r} value={r}>
-                              {normalizeRoleLabel(r)}
+                              {roleLabel(r)}
                             </option>
                           ))}
                         </select>
@@ -340,7 +341,7 @@ export default function CityUsersPage() {
                                     checked={Boolean(selected)}
                                     onChange={(e) => toggleUserModule(u.id, m.id, e.target.checked)}
                                   />
-                                  <span>{m.name}</span>
+                                  <span>{moduleLabel(m.key, m.name)}</span>
                                 </label>
                                 <label className="flex items-center gap-1 text-xs text-slate-700">
                                   <input

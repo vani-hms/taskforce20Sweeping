@@ -4,7 +4,7 @@ import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import * as Location from "expo-location";
 import * as ImagePicker from "expo-image-picker";
 import { RootStackParamList } from "../../../navigation";
-import { submitTwinbinReport, ApiError } from "../../../api/auth";
+import { submitTwinbinReport, ApiError, getTwinbinReportContext } from "../../../api/auth";
 
 type Props = NativeStackScreenProps<RootStackParamList, "TwinbinBinDetail">;
 
@@ -23,6 +23,9 @@ function haversineMeters(lat1: number, lon1: number, lat2: number, lon2: number)
 export default function TwinbinBinDetailScreen({ route }: Props) {
   const { bin } = route.params;
   const [distance, setDistance] = useState<number | null>(null);
+  const [proximityToken, setProximityToken] = useState<string | null>(null);
+  const [allowed, setAllowed] = useState(false);
+  const [ctxMessage, setCtxMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [lat, setLat] = useState<number | null>(null);
@@ -61,9 +64,27 @@ export default function TwinbinBinDetailScreen({ route }: Props) {
       }
       const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
       const dist = haversineMeters(pos.coords.latitude, pos.coords.longitude, bin.latitude, bin.longitude);
-      setDistance(dist);
       setLat(pos.coords.latitude);
       setLng(pos.coords.longitude);
+
+      try {
+        const ctx = await getTwinbinReportContext(bin.id, pos.coords.latitude, pos.coords.longitude);
+        setDistance(ctx.distanceMeters);
+        setProximityToken(ctx.proximityToken);
+        setAllowed(ctx.allowed);
+        setCtxMessage(ctx.message || null);
+        if (!ctx.allowed) {
+          setError(ctx.message || "Move closer to the bin to submit.");
+        } else {
+          setError("");
+        }
+      } catch (ctxErr: any) {
+        setAllowed(false);
+        setProximityToken(null);
+        setDistance(dist);
+        if (ctxErr instanceof ApiError) setError(ctxErr.message || "Failed to verify proximity");
+        else setError("Failed to verify proximity");
+      }
     } catch (err: any) {
       setError(err.message || "Failed to fetch location");
     } finally {
@@ -71,13 +92,13 @@ export default function TwinbinBinDetailScreen({ route }: Props) {
     }
   };
 
-  const withinFence = useMemo(() => (distance !== null ? distance <= 50 : false), [distance]);
+  const withinFence = useMemo(() => allowed && distance !== null && distance <= 50, [allowed, distance]);
 
   const submit = async () => {
-    if (!withinFence || lat === null || lng === null) return;
-    const missing = Object.values(answers).some((v) => !v.answer || !v.photoUrl);
+    if (!withinFence || lat === null || lng === null || !proximityToken) return;
+    const missing = Object.values(answers).some((v) => !v.answer);
     if (missing) {
-      setSubmitError("All questions require an answer and photo.");
+      setSubmitError("All questions need an answer (photos optional).");
       return;
     }
     setSubmitting(true);
@@ -86,6 +107,7 @@ export default function TwinbinBinDetailScreen({ route }: Props) {
       await submitTwinbinReport(bin.id, {
         latitude: lat,
         longitude: lng,
+        proximityToken: proximityToken!,
         questionnaire: Object.fromEntries(
           Object.entries(answers).map(([k, v]) => [k, { answer: v.answer as "YES" | "NO", photoUrl: v.photoUrl }])
         )
@@ -146,37 +168,35 @@ export default function TwinbinBinDetailScreen({ route }: Props) {
       <Text style={styles.muted}>
         {withinFence
           ? "You are within 50 meters. You can submit a report."
-          : "You must be within 50 meters to submit a report."}
+          : ctxMessage || "Fetch location to check proximity (50 m required)."}
       </Text>
-      <View style={[styles.card, { marginTop: 10 }]}>
-        {questions.map((q, idx) => {
-          const key = `q${idx + 1}`;
-          const val = answers[key];
-          return (
-            <View key={key} style={styles.block}>
-              <Text style={[styles.label, { marginBottom: 6 }]}>{q}</Text>
-              <View style={styles.row}>
-                <View style={styles.choice}>
-                  <Text>Yes</Text>
-                  <Switch value={val.answer === "YES"} onValueChange={(v) => setAnswer(key, v ? "YES" : "NO")} />
+      {withinFence ? (
+        <View style={[styles.card, { marginTop: 10 }]}>
+          {questions.map((q, idx) => {
+            const key = `q${idx + 1}`;
+            const val = answers[key];
+            return (
+              <View key={key} style={styles.block}>
+                <Text style={[styles.label, { marginBottom: 6 }]}>{q}</Text>
+                <View style={styles.row}>
+                  <View style={styles.choice}>
+                    <Text>Yes</Text>
+                    <Switch value={val.answer === "YES"} onValueChange={(v) => setAnswer(key, v ? "YES" : "NO")} />
+                  </View>
+                  <View style={styles.choice}>
+                    <Text>No</Text>
+                    <Switch value={val.answer === "NO"} onValueChange={(v) => setAnswer(key, v ? "NO" : "YES")} />
+                  </View>
                 </View>
-                <View style={styles.choice}>
-                  <Text>No</Text>
-                  <Switch value={val.answer === "NO"} onValueChange={(v) => setAnswer(key, v ? "NO" : "YES")} />
-                </View>
+                <TouchableOpacity style={[styles.button, { marginTop: 8 }]} onPress={() => pickPhoto(key)}>
+                  <Text style={styles.buttonText}>Capture Photo (optional)</Text>
+                </TouchableOpacity>
+                {val.photoUrl ? <Image source={{ uri: val.photoUrl }} style={styles.preview} /> : null}
               </View>
-              <TouchableOpacity style={[styles.button, { marginTop: 8 }]} onPress={() => pickPhoto(key)}>
-                <Text style={styles.buttonText}>Capture Photo</Text>
-              </TouchableOpacity>
-              {val.photoUrl ? (
-                <Image source={{ uri: val.photoUrl }} style={styles.preview} />
-              ) : (
-                <Text style={styles.muted}>Photo required</Text>
-              )}
-            </View>
-          );
-        })}
-      </View>
+            );
+          })}
+        </View>
+      ) : null}
       {submitError ? <Text style={styles.error}>{submitError}</Text> : null}
       <TouchableOpacity
         style={[styles.button, withinFence ? styles.buttonEnabled : styles.buttonDisabled]}

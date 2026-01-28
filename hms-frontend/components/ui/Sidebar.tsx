@@ -23,8 +23,8 @@ export default function Sidebar() {
     const isQc = !!user.roles?.includes("QC");
     return user.modules.map((m) => {
       const key = (m.key || "").toUpperCase();
-      const href =
-        key === "TWINBIN" && isQc ? "/modules/twinbin/qc" : `/modules/${(m.key || "").toLowerCase()}`;
+      const basePath = key === "LITTERBINS" ? "litterbins" : key === "TWINBIN" ? "litterbins" : (m.key || "").toLowerCase();
+      const href = key === "LITTERBINS" && isQc ? "/modules/litterbins/qc" : `/modules/${basePath}`;
       return {
         label: titleCase(m.name || m.key),
         href

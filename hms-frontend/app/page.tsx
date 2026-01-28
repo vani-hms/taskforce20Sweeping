@@ -25,21 +25,15 @@ const cards: Card[] = [
     icon: "📦"
   },
   {
-    title: "Sweeping Residential",
+    title: "Sweeping",
     desc: "Module records (read-only).",
-    href: "/modules/SWEEP_RES",
+    href: "/modules/SWEEPING",
     icon: "🧹"
   },
   {
-    title: "Sweeping Commercial",
-    desc: "Module records (read-only).",
-    href: "/modules/SWEEP_COM",
-    icon: "🏬"
-  },
-  {
-    title: "Twinbin",
-    desc: "Module records (read-only).",
-    href: "/modules/TWINBIN",
+    title: "Litter Bins",
+    desc: "Submit requests, assigned bins, and reports.",
+    href: "/modules/litterbins",
     icon: "🗑️"
   },
   {

@@ -37,7 +37,7 @@ export default function TwinbinAssignedPage() {
 
   return (
     <Protected>
-      <ModuleGuard module="TWINBIN" roles={["EMPLOYEE"]}>
+      <ModuleGuard module="LITTERBINS" roles={["EMPLOYEE"]}>
         <div className="page">
           <h1>Assigned Twinbin Bins</h1>
           {error && <div className="alert error">{error}</div>}

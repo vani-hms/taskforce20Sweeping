@@ -29,6 +29,15 @@ export async function clearSession() {
   session = {};
 }
 
+const LEGACY_KEY_MAP: Record<string, string> = {
+  TWINBIN: "LITTERBINS"
+};
+
+const normalizeKey = (key: string) => {
+  const upper = (key || "").toString().trim().toUpperCase();
+  return LEGACY_KEY_MAP[upper] || upper;
+};
+
 export function decodeJwt(token: string): { roles?: string[]; cityId?: string; modules?: ModuleAccess[] } {
   try {
     const [, payload] = token.split(".");
@@ -48,12 +57,19 @@ export function decodeJwt(token: string): { roles?: string[]; cityId?: string; m
     }
     const parsed = JSON.parse(json);
     const modules = Array.isArray(parsed.modules)
-      ? (parsed.modules as any[]).map((m) => ({
-          moduleId: m.moduleId,
-          key: (m.key || m.name || "").toString().toUpperCase(),
-          name: m.name,
-          canWrite: Boolean(m.canWrite)
-        }))
+      ? (parsed.modules as any[])
+          .map((m) => ({
+            moduleId: m.moduleId,
+            key: normalizeKey(m.key || m.name || ""),
+            name: m.name,
+            canWrite: Boolean(m.canWrite)
+          }))
+          .reduce<ModuleAccess[]>((acc, cur) => {
+            if (!cur.key) return acc;
+            if (acc.find((m) => m.key === cur.key)) return acc;
+            acc.push(cur);
+            return acc;
+          }, [])
       : [];
     return { roles: parsed.roles || [], cityId: parsed.cityId, modules };
   } catch {

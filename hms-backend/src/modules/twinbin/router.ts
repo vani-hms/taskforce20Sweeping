@@ -3,18 +3,35 @@ import { z } from "zod";
 import { prisma } from "../../prisma";
 import { authenticate } from "../../middleware/auth";
 import { requireCityContext } from "../../middleware/rbac";
-import { Role } from "../../../generated/prisma";
+import { Role, TwinbinBinStatus } from "../../../generated/prisma";
 import { HttpError } from "../../utils/errors";
 import { validateBody } from "../../utils/validation";
 import { assertModuleAccess } from "../../middleware/rbac";
 import { getModuleIdByName } from "../moduleRegistry";
 import { normalizeModuleKey } from "../moduleMetadata";
 import crypto from "crypto";
+import { getQcScope } from "../../utils/qcScope";
 
 const router = Router();
 const MODULE_KEY = "LITTERBINS";
 const PROXIMITY_SECRET = process.env.PROXIMITY_TOKEN_SECRET || "twinbin-proximity-secret";
 const PROXIMITY_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+function buildScopeFilters(scope: { zoneIds: string[]; wardIds: string[] }) {
+  const zoneFilter =
+    scope.zoneIds.length === 0
+      ? undefined
+      : {
+          OR: [{ zoneId: { in: scope.zoneIds } }, { zoneId: null }]
+        };
+  const wardFilter =
+    scope.wardIds.length === 0
+      ? undefined
+      : {
+          OR: [{ wardId: { in: scope.wardIds } }, { wardId: null }]
+        };
+  return { zoneFilter, wardFilter };
+}
 
 router.use(authenticate, requireCityContext());
 
@@ -70,14 +87,25 @@ router.post("/bins/request", validateBody(requestSchema), async (req, res, next)
     await assertModuleAccess(req, res, moduleId, [Role.EMPLOYEE]);
 
     const payload = req.body as z.infer<typeof requestSchema>;
-    await ensureGeoValid(cityId, payload.zoneId, payload.wardId);
+
+    // Resolve zone/ward from payload or employee city scope
+    const employeeCity = await prisma.userCity.findFirst({
+      where: { userId, cityId, role: Role.EMPLOYEE },
+      select: { zoneIds: true, wardIds: true }
+    });
+    const resolvedZoneId = payload.zoneId || employeeCity?.zoneIds?.[0];
+    const resolvedWardId = payload.wardId || employeeCity?.wardIds?.[0];
+    if (!resolvedZoneId || !resolvedWardId) {
+      throw new HttpError(400, "Zone and ward are required for a bin request");
+    }
+    await ensureGeoValid(cityId, resolvedZoneId, resolvedWardId);
 
     const bin = await prisma.litterBin.create({
       data: {
         cityId,
         requestedById: userId,
-        zoneId: payload.zoneId || null,
-        wardId: payload.wardId || null,
+        zoneId: resolvedZoneId,
+        wardId: resolvedWardId,
         areaName: payload.areaName,
         areaType: payload.areaType as any,
         locationName: payload.locationName,
@@ -87,7 +115,7 @@ router.post("/bins/request", validateBody(requestSchema), async (req, res, next)
         condition: payload.condition as any,
         latitude: payload.latitude,
         longitude: payload.longitude,
-        status: "PENDING_QC"
+        status: TwinbinBinStatus.PENDING_QC
       }
     });
 
@@ -124,15 +152,46 @@ router.get("/bins/pending", async (req, res, next) => {
     // allow only QC users who are assigned to the Twinbin module in this city
     await assertModuleAccess(req, res, moduleId, [Role.QC]);
 
+    const moduleRoles = await prisma.userModuleRole.findMany({
+      where: { userId: qcId, cityId, moduleId, role: Role.QC },
+      select: { zoneIds: true, wardIds: true }
+    });
+    const scope = {
+      zoneIds: Array.from(new Set(moduleRoles.flatMap((r) => r.zoneIds || []))),
+      wardIds: Array.from(new Set(moduleRoles.flatMap((r) => r.wardIds || [])))
+    };
+    const { zoneFilter, wardFilter } = buildScopeFilters(scope);
+    const where: any = {
+      cityId,
+      status: TwinbinBinStatus.PENDING_QC,
+      ...(zoneFilter ? zoneFilter : {}),
+      ...(wardFilter ? wardFilter : {})
+    };
+
+    const latest = await prisma.litterBin.findFirst({
+      where: { cityId },
+      orderBy: { createdAt: "desc" },
+      select: { id: true, cityId: true, zoneId: true, wardId: true, status: true, createdAt: true }
+    });
+
+    console.info("[twinbin][pending] latest", latest);
+    console.info("[twinbin][pending] qc scope", { qcId, cityId, zoneIds: scope.zoneIds, wardIds: scope.wardIds });
+    console.info("[twinbin][pending] where", where);
+
     const bins = await prisma.litterBin.findMany({
-      where: { cityId, status: "PENDING_QC" },          // strict city + status filter
+      where,
       orderBy: { createdAt: "desc" },
       include: {
         requestedBy: { select: { id: true, name: true, email: true } } // requester details for display
       }
     });
 
-    console.info("[twinbin] pending bins", { cityId, qcId, count: bins.length }); // temp trace
+    console.info("[twinbin] pending bins", {
+      cityId,
+      qcId,
+      count: bins.length,
+      sample: bins.slice(0, 2).map((b) => ({ id: b.id, zoneId: b.zoneId, wardId: b.wardId }))
+    }); // temp trace
 
     res.json({
       bins: bins.map((b: typeof bins[number]) => ({
@@ -162,7 +221,12 @@ router.post("/bins/:id/approve", validateBody(approveSchema), async (req, res, n
     const { assignedEmployeeIds = [] } = req.body as z.infer<typeof approveSchema>;
     const bin = await prisma.litterBin.findUnique({ where: { id: req.params.id } });
     if (!bin || bin.cityId !== cityId) throw new HttpError(404, "Bin not found");
-    if (bin.status !== "PENDING_QC") throw new HttpError(400, "Bin not pending");
+    const scope = await getQcScope({ userId, cityId, moduleId });
+    if (!scope.zoneIds.length || !scope.wardIds.length) throw new HttpError(403, "No zone/ward scope assigned");
+    if (!bin.zoneId || !bin.wardId || !scope.zoneIds.includes(bin.zoneId) || !scope.wardIds.includes(bin.wardId)) {
+      throw new HttpError(403, "Bin not in QC scope");
+    }
+    if (bin.status !== TwinbinBinStatus.PENDING_QC) throw new HttpError(400, "Bin not pending");
 
     if (assignedEmployeeIds.length) {
       const employees = await prisma.userCity.findMany({
@@ -174,7 +238,7 @@ router.post("/bins/:id/approve", validateBody(approveSchema), async (req, res, n
     const updated = await prisma.litterBin.update({
       where: { id: bin.id },
       data: {
-        status: "APPROVED",
+        status: TwinbinBinStatus.APPROVED,
         approvedByQcId: userId,
         assignedEmployeeIds
       }
@@ -195,11 +259,16 @@ router.post("/bins/:id/reject", async (req, res, next) => {
 
     const bin = await prisma.litterBin.findUnique({ where: { id: req.params.id } });
     if (!bin || bin.cityId !== cityId) throw new HttpError(404, "Bin not found");
-    if (bin.status !== "PENDING_QC") throw new HttpError(400, "Bin not pending");
+    const scope = await getQcScope({ userId, cityId, moduleId });
+    if (!scope.zoneIds.length || !scope.wardIds.length) throw new HttpError(403, "No zone/ward scope assigned");
+    if (!bin.zoneId || !bin.wardId || !scope.zoneIds.includes(bin.zoneId) || !scope.wardIds.includes(bin.wardId)) {
+      throw new HttpError(403, "Bin not in QC scope");
+    }
+    if (bin.status !== TwinbinBinStatus.PENDING_QC) throw new HttpError(400, "Bin not pending");
 
     const updated = await prisma.litterBin.update({
       where: { id: bin.id },
-      data: { status: "REJECTED", approvedByQcId: userId, assignedEmployeeIds: [] }
+      data: { status: TwinbinBinStatus.REJECTED, approvedByQcId: userId, assignedEmployeeIds: [] }
     });
 
     res.json({ bin: updated });
@@ -234,7 +303,7 @@ router.get("/bins/assigned", async (req, res, next) => {
     await assertModuleAccess(req, res, moduleId, [Role.EMPLOYEE]);
 
     const bins = await prisma.litterBin.findMany({
-      where: { cityId, status: "APPROVED", assignedEmployeeIds: { has: userId } },
+      where: { cityId, status: TwinbinBinStatus.APPROVED, assignedEmployeeIds: { has: userId } },
       orderBy: { createdAt: "desc" },
       include: {
         reports: {
@@ -273,7 +342,7 @@ router.get("/bins/:id/report-context", async (req, res, next) => {
 
     const bin = await prisma.litterBin.findUnique({ where: { id: req.params.id } });
     if (!bin || bin.cityId !== cityId) throw new HttpError(404, "Bin not found");
-    if (bin.status !== "APPROVED") throw new HttpError(400, "Bin not approved");
+    if (bin.status !== TwinbinBinStatus.APPROVED) throw new HttpError(400, "Bin not approved");
     if (!bin.assignedEmployeeIds.includes(userId)) throw new HttpError(403, "Not assigned to this bin");
     if (!bin.latitude || !bin.longitude) throw new HttpError(400, "Bin location unavailable");
 
@@ -349,7 +418,7 @@ router.post("/bins/:id/visit", validateBody(visitSchema), async (req, res, next)
 
     const bin = await prisma.litterBin.findUnique({ where: { id: req.params.id } });
     if (!bin || bin.cityId !== cityId) throw new HttpError(404, "Bin not found");
-    if (bin.status !== "APPROVED") throw new HttpError(400, "Bin not approved");
+    if (bin.status !== TwinbinBinStatus.APPROVED) throw new HttpError(400, "Bin not approved");
     if (!bin.assignedEmployeeIds.includes(userId)) throw new HttpError(403, "Not assigned to this bin");
 
     const payload = req.body as z.infer<typeof visitSchema>;
@@ -380,11 +449,34 @@ router.post("/bins/:id/visit", validateBody(visitSchema), async (req, res, next)
 router.get("/visits/pending", async (req, res, next) => {
   try {
     const cityId = req.auth!.cityId!;
+    const qcId = req.auth!.sub!;
     const moduleId = await getModuleIdByName(MODULE_KEY);
     await assertModuleAccess(req, res, moduleId, [Role.QC]);
 
+    const moduleRoles = await prisma.userModuleRole.findMany({
+      where: { userId: qcId, cityId, moduleId, role: Role.QC },
+      select: { zoneIds: true, wardIds: true }
+    });
+    const scope = {
+      zoneIds: Array.from(new Set(moduleRoles.flatMap((r) => r.zoneIds || []))),
+      wardIds: Array.from(new Set(moduleRoles.flatMap((r) => r.wardIds || [])))
+    };
+    const { zoneFilter, wardFilter } = buildScopeFilters(scope);
+    const where: any = {
+      cityId,
+      status: "PENDING_QC",
+      bin: {
+        ...(zoneFilter ? zoneFilter : {}),
+        ...(wardFilter ? wardFilter : {})
+      }
+    };
+    if (!zoneFilter && !wardFilter) delete where.bin;
+
+    console.info("[twinbin][visits][pending] scope", scope);
+    console.info("[twinbin][visits][pending] where", where);
+
     const visits = await prisma.litterBinVisitReport.findMany({
-      where: { cityId, status: "PENDING_QC" },
+      where,
       orderBy: { createdAt: "desc" },
       include: {
         bin: true,
@@ -410,8 +502,22 @@ router.post("/visits/:id/approve", async (req, res, next) => {
     const moduleId = await getModuleIdByName(MODULE_KEY);
     await assertModuleAccess(req, res, moduleId, [Role.QC]);
 
-    const visit = await prisma.litterBinVisitReport.findUnique({ where: { id: req.params.id } });
+    const visit = await prisma.litterBinVisitReport.findUnique({
+      where: { id: req.params.id },
+      include: { bin: true }
+    });
     if (!visit || visit.cityId !== cityId) throw new HttpError(404, "Visit not found");
+    const scope = await getQcScope({ userId, cityId, moduleId });
+    if (
+      !scope.zoneIds.length ||
+      !scope.wardIds.length ||
+      !visit.bin?.zoneId ||
+      !visit.bin?.wardId ||
+      !scope.zoneIds.includes(visit.bin.zoneId) ||
+      !scope.wardIds.includes(visit.bin.wardId)
+    ) {
+      throw new HttpError(403, "Visit not in QC scope");
+    }
     if (visit.status !== "PENDING_QC") throw new HttpError(400, "Visit not pending");
 
     const updated = await prisma.litterBinVisitReport.update({
@@ -432,8 +538,22 @@ router.post("/visits/:id/reject", async (req, res, next) => {
     const moduleId = await getModuleIdByName(MODULE_KEY);
     await assertModuleAccess(req, res, moduleId, [Role.QC]);
 
-    const visit = await prisma.litterBinVisitReport.findUnique({ where: { id: req.params.id } });
+    const visit = await prisma.litterBinVisitReport.findUnique({
+      where: { id: req.params.id },
+      include: { bin: true }
+    });
     if (!visit || visit.cityId !== cityId) throw new HttpError(404, "Visit not found");
+    const scope = await getQcScope({ userId, cityId, moduleId });
+    if (
+      !scope.zoneIds.length ||
+      !scope.wardIds.length ||
+      !visit.bin?.zoneId ||
+      !visit.bin?.wardId ||
+      !scope.zoneIds.includes(visit.bin.zoneId) ||
+      !scope.wardIds.includes(visit.bin.wardId)
+    ) {
+      throw new HttpError(403, "Visit not in QC scope");
+    }
     if (visit.status !== "PENDING_QC") throw new HttpError(400, "Visit not pending");
 
     const updated = await prisma.litterBinVisitReport.update({
@@ -458,8 +578,22 @@ router.post("/visits/:id/action-required", validateBody(actionRequiredSchema), a
     const moduleId = await getModuleIdByName(MODULE_KEY);
     await assertModuleAccess(req, res, moduleId, [Role.QC]);
 
-    const visit = await prisma.litterBinVisitReport.findUnique({ where: { id: req.params.id } });
+    const visit = await prisma.litterBinVisitReport.findUnique({
+      where: { id: req.params.id },
+      include: { bin: true }
+    });
     if (!visit || visit.cityId !== cityId) throw new HttpError(404, "Visit not found");
+    const scope = await getQcScope({ userId, cityId, moduleId });
+    if (
+      !scope.zoneIds.length ||
+      !scope.wardIds.length ||
+      !visit.bin?.zoneId ||
+      !visit.bin?.wardId ||
+      !scope.zoneIds.includes(visit.bin.zoneId) ||
+      !scope.wardIds.includes(visit.bin.wardId)
+    ) {
+      throw new HttpError(403, "Visit not in QC scope");
+    }
 
     const updated = await prisma.litterBinVisitReport.update({
       where: { id: visit.id },
@@ -624,12 +758,35 @@ router.post("/bins/:id/report", validateBody(binReportSchema), async (req, res, 
 router.get("/reports/pending", async (req, res, next) => {
   try {
     const cityId = req.auth!.cityId!;
+    const qcId = req.auth!.sub!;
     const moduleId = await getModuleIdByName(MODULE_KEY);
     forbidCityAdminOrCommissioner(req);
     await assertModuleAccess(req, res, moduleId, [Role.QC]);
 
+    const moduleRoles = await prisma.userModuleRole.findMany({
+      where: { userId: qcId, cityId, moduleId, role: Role.QC },
+      select: { zoneIds: true, wardIds: true }
+    });
+    const scope = {
+      zoneIds: Array.from(new Set(moduleRoles.flatMap((r) => r.zoneIds || []))),
+      wardIds: Array.from(new Set(moduleRoles.flatMap((r) => r.wardIds || [])))
+    };
+    const { zoneFilter, wardFilter } = buildScopeFilters(scope);
+    const where: any = {
+      cityId,
+      status: "SUBMITTED",
+      bin: {
+        ...(zoneFilter ? zoneFilter : {}),
+        ...(wardFilter ? wardFilter : {})
+      }
+    };
+    if (!zoneFilter && !wardFilter) delete where.bin;
+
+    console.info("[twinbin][reports][pending] scope", scope);
+    console.info("[twinbin][reports][pending] where", where);
+
     const reports = await prisma.litterBinReport.findMany({
-      where: { cityId, status: "SUBMITTED" },
+      where,
       orderBy: { createdAt: "desc" },
       include: {
         bin: {
@@ -666,8 +823,22 @@ async function updateBinReportStatus(
     forbidCityAdminOrCommissioner(req);
     await assertModuleAccess(req, res, moduleId, [Role.QC]);
 
-    const report = await prisma.litterBinReport.findUnique({ where: { id: req.params.id } });
+    const report = await prisma.litterBinReport.findUnique({
+      where: { id: req.params.id },
+      include: { bin: true }
+    });
     if (!report || report.cityId !== cityId) throw new HttpError(404, "Report not found");
+    const scope = await getQcScope({ userId, cityId, moduleId });
+    if (
+      !scope.zoneIds.length ||
+      !scope.wardIds.length ||
+      !report.bin?.zoneId ||
+      !report.bin?.wardId ||
+      !scope.zoneIds.includes(report.bin.zoneId) ||
+      !scope.wardIds.includes(report.bin.wardId)
+    ) {
+      throw new HttpError(403, "Report not in QC scope");
+    }
     if (report.status !== "SUBMITTED") throw new HttpError(400, "Report not pending review");
 
     const updated = await prisma.litterBinReport.update({

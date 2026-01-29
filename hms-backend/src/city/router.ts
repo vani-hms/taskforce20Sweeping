@@ -7,9 +7,10 @@ import { validateBody } from "../utils/validation";
 import { Prisma, Role, $Enums } from "../../generated/prisma";
 import { HttpError } from "../utils/errors";
 import { hashPassword } from "../auth/password";
-import { getModuleLabel, normalizeModuleKey } from "../modules/moduleMetadata";
+import { CANONICAL_MODULE_KEYS, getModuleLabel, isCanonicalModuleKey, normalizeModuleKey } from "../modules/moduleMetadata";
 import { resolveCanWrite } from "../utils/moduleAccess";
 import { syncCityModules } from "../utils/cityModuleSync";
+import { getQcScope } from "../utils/qcScope";
 
 const router = Router();
 router.use(authenticate, requireCityContext());
@@ -25,16 +26,19 @@ router.get(
       const cityId = req.auth!.cityId!;
       await syncCityModules(cityId);
       const cityModules = await prisma.cityModule.findMany({
-        where: { cityId },
+        where: { cityId, module: { name: { in: CANONICAL_MODULE_KEYS as any } } },
         include: { module: true },
         orderBy: { module: { name: "asc" } }
       });
-      const modules = cityModules.map((m) => ({
-        id: m.moduleId,
-        key: normalizeModuleKey(m.module.name),
-        name: getModuleLabel(m.module.name),
-        enabled: m.enabled
-      }));
+      const modules = cityModules.map((m) => {
+        const key = normalizeModuleKey(m.module.name);
+        return {
+          id: m.moduleId,
+          key,
+          name: getModuleLabel(key),
+          enabled: m.enabled
+        };
+      });
       res.json(modules);
     } catch (err) {
       next(err);
@@ -198,10 +202,39 @@ const moduleAssignmentSchema = z
   .array(
     z.object({
       moduleId: z.string().uuid(),
-      canWrite: z.boolean()
+      canWrite: z.boolean(),
+      zoneIds: z.array(z.string().uuid()).optional(),
+      wardIds: z.array(z.string().uuid()).optional()
     })
   )
   .default([]);
+
+async function validateZoneWardScope(cityId: string, zoneIds?: string[], wardIds?: string[]) {
+  const uniqueZones = Array.from(new Set(zoneIds || []));
+  const uniqueWards = Array.from(new Set(wardIds || []));
+
+  if (uniqueZones.length) {
+    const zones = await prisma.geoNode.findMany({ where: { id: { in: uniqueZones }, cityId, level: "ZONE" as any } });
+    if (zones.length !== uniqueZones.length) throw new HttpError(400, "Invalid zones for this city");
+  }
+
+  if (uniqueWards.length) {
+    const wards = await prisma.geoNode.findMany({ where: { id: { in: uniqueWards }, cityId, level: "WARD" as any } });
+    if (wards.length !== uniqueWards.length) throw new HttpError(400, "Invalid wards for this city");
+  }
+
+  if (uniqueZones.length && uniqueWards.length) {
+    const wardParents = await prisma.geoNode.findMany({
+      where: { id: { in: uniqueWards } },
+      select: { id: true, parentId: true }
+    });
+    const zoneSet = new Set(uniqueZones);
+    const invalidWard = wardParents.find((w) => w.parentId && !zoneSet.has(w.parentId));
+    if (invalidWard) throw new HttpError(400, "Ward not under selected zone");
+  }
+
+  return { zoneIds: uniqueZones, wardIds: uniqueWards };
+}
 
 const userSchema = z.object({
   email: z.string().email(),
@@ -211,13 +244,15 @@ const userSchema = z.object({
   role: z.nativeEnum(Role).refine((r) => ["COMMISSIONER", "ACTION_OFFICER", "QC", "EMPLOYEE"].includes(r as any), {
     message: "Invalid role"
   }),
-  modules: moduleAssignmentSchema
+  modules: moduleAssignmentSchema,
+  zoneIds: z.array(z.string().uuid()).optional(),
+  wardIds: z.array(z.string().uuid()).optional()
 });
 
 router.post("/users", validateBody(userSchema), async (req, res, next) => {
   try {
     const cityId = req.auth!.cityId!;
-    const { email, name, password, role, modules } = req.body as z.infer<typeof userSchema>;
+    const { email, name, password, role, modules, zoneIds, wardIds } = req.body as z.infer<typeof userSchema>;
     const cityModules = await validateCityModules(cityId, modules);
 
     let user = await prisma.user.findUnique({ where: { email } });
@@ -235,24 +270,52 @@ router.post("/users", validateBody(userSchema), async (req, res, next) => {
       throw new HttpError(400, "User already assigned to this city with this role");
     }
 
+    const baseScope = await validateZoneWardScope(cityId, zoneIds, wardIds);
+    if (role === Role.QC && (!baseScope.zoneIds.length || !baseScope.wardIds.length)) {
+      throw new HttpError(400, "QC users must have zoneIds and wardIds assigned");
+    }
+
     await prisma.$transaction(async (tx) => {
       await tx.userCity.create({
         data: {
           userId: user.id,
           cityId,
-          role
+          role,
+          zoneIds: baseScope.zoneIds,
+          wardIds: baseScope.wardIds
         }
       });
 
       if (cityModules.length) {
+        const modulePayloads = await Promise.all(
+          cityModules.map(async (cm) => {
+            const input = modules.find((m) => m.moduleId === cm.moduleId);
+            const moduleScope =
+              role === Role.QC
+                ? await validateZoneWardScope(cityId, input?.zoneIds, input?.wardIds)
+                : { zoneIds: [], wardIds: [] };
+            const effectiveScope =
+              role === Role.QC && moduleScope.zoneIds.length && moduleScope.wardIds.length
+                ? moduleScope
+                : role === Role.QC
+                  ? baseScope
+                  : { zoneIds: [], wardIds: [] };
+            if (role === Role.QC && (!effectiveScope.zoneIds.length || !effectiveScope.wardIds.length)) {
+              throw new HttpError(400, "QC module assignment requires zoneIds and wardIds");
+            }
+            return {
+              userId: user.id,
+              cityId,
+              moduleId: cm.moduleId,
+              role,
+              canWrite: resolveCanWrite(role, input?.canWrite ?? false),
+              zoneIds: effectiveScope.zoneIds,
+              wardIds: effectiveScope.wardIds
+            };
+          })
+        );
         await tx.userModuleRole.createMany({
-          data: cityModules.map((cm) => ({
-            userId: user.id,
-            cityId,
-            moduleId: cm.moduleId,
-            role,
-            canWrite: resolveCanWrite(role, modules.find((m) => m.moduleId === cm.moduleId)?.canWrite ?? false)
-          }))
+          data: modulePayloads
         });
       }
     });
@@ -268,7 +331,9 @@ router.get("/users", async (req, res, next) => {
     const cityId = req.auth!.cityId!;
     const users = await prisma.userCity.findMany({
       where: { cityId },
-      include: { user: { include: { modules: { where: { cityId }, include: { module: true } } } } },
+      include: {
+        user: { include: { modules: { where: { cityId }, include: { module: true } } } }
+      },
       orderBy: { createdAt: "asc" }
     });
     res.json({
@@ -278,12 +343,18 @@ router.get("/users", async (req, res, next) => {
         email: uc.user.email,
         role: uc.role,
         createdAt: uc.createdAt,
-        modules: uc.user.modules.map((m) => ({
-          id: m.moduleId,
-          key: normalizeModuleKey(m.module.name),
-          name: getModuleLabel(m.module.name),
-          canWrite: m.canWrite
-        }))
+        zoneIds: uc.zoneIds || [],
+        wardIds: uc.wardIds || [],
+        modules: uc.user.modules
+          .filter((m) => isCanonicalModuleKey(m.module.name))
+          .map((m) => ({
+            id: m.moduleId,
+            key: normalizeModuleKey(m.module.name),
+            name: getModuleLabel(m.module.name),
+            canWrite: m.canWrite,
+            zoneIds: m.zoneIds || [],
+            wardIds: m.wardIds || []
+          }))
       }))
     });
   } catch (err) {
@@ -339,12 +410,30 @@ router.get("/employees", async (req, res, next) => {
       orderBy: { createdAt: "asc" }
     });
 
+    let qcScopes: Map<string, { zoneIds: string[]; wardIds: string[] }> = new Map();
+    if (isQc) {
+      const entries = await Promise.all(
+        Array.from(qcModuleIds).map(async (mid) => [mid, await getQcScope({ userId: req.auth!.sub!, cityId, moduleId: mid })] as const)
+      );
+      qcScopes = new Map(entries);
+    }
+
     const filtered = isCityAdmin
       ? records
       : records.filter((uc) => {
         if (uc.userId === req.auth!.sub) return false; // QC should not list self
-        const mods = uc.user.modules.map((m) => m.moduleId);
-        return mods.some((mid) => qcModuleIds.has(mid));
+        const employeeZones = uc.zoneIds || [];
+        const employeeWards = uc.wardIds || [];
+
+        return uc.user.modules.some((m) => {
+          if (moduleFilterId && m.moduleId !== moduleFilterId) return false;
+          if (!qcModuleIds.has(m.moduleId)) return false;
+          const scope = qcScopes.get(m.moduleId);
+          if (!scope || !scope.zoneIds.length || !scope.wardIds.length) return false;
+          const zoneMatch = scope.zoneIds.some((z) => employeeZones.includes(z));
+          const wardMatch = scope.wardIds.some((w) => employeeWards.includes(w));
+          return zoneMatch && wardMatch;
+        });
       });
 
     const zoneIds = filtered.flatMap((f) => (f as any).zoneIds || []);
@@ -361,14 +450,16 @@ router.get("/employees", async (req, res, next) => {
         name: uc.user.name,
         email: uc.user.email,
         role: uc.role,
-        modules: uc.user.modules.map((m) => ({
-          id: m.moduleId,
-          key: normalizeModuleKey(m.module.name),
-          name: getModuleLabel(m.module.name),
-          canWrite: m.canWrite
-        })),
-        zones: ((uc as any).zoneIds || []).map((z: string) => geoMap[z]).filter(Boolean),
-        wards: ((uc as any).wardIds || []).map((w: string) => geoMap[w]).filter(Boolean),
+        modules: uc.user.modules
+          .filter((m) => isCanonicalModuleKey(m.module.name))
+          .map((m) => ({
+            id: m.moduleId,
+            key: normalizeModuleKey(m.module.name),
+            name: getModuleLabel(m.module.name),
+            canWrite: m.canWrite
+          })),
+        zones: (uc.zoneIds || []).map((z: string) => geoMap[z]).filter(Boolean),
+        wards: (uc.wardIds || []).map((w: string) => geoMap[w]).filter(Boolean),
         createdAt: uc.createdAt
       }))
     });
@@ -399,13 +490,15 @@ const userUpdateSchema = z.object({
     .refine((r) => !r || ["COMMISSIONER", "ACTION_OFFICER", "QC", "EMPLOYEE"].includes(r), {
       message: "Invalid role"
     }),
-  modules: moduleAssignmentSchema.optional()
+  modules: moduleAssignmentSchema.optional(),
+  zoneIds: z.array(z.string().uuid()).optional(),
+  wardIds: z.array(z.string().uuid()).optional()
 });
 
 router.patch("/users/:userId", validateBody(userUpdateSchema), async (req, res, next) => {
   try {
     const cityId = req.auth!.cityId!;
-    const { name, role, modules } = req.body as z.infer<typeof userUpdateSchema>;
+    const { name, role, modules, zoneIds, wardIds } = req.body as z.infer<typeof userUpdateSchema>;
     const userId = req.params.userId;
 
     const uc = await prisma.userCity.findFirst({ where: { userId, cityId } });
@@ -415,28 +508,67 @@ router.patch("/users/:userId", validateBody(userUpdateSchema), async (req, res, 
     if (name) {
       await prisma.user.update({ where: { id: userId }, data: { name } });
     }
+    const desiredBaseZoneIds = zoneIds ?? ((uc as any).zoneIds || []);
+    const desiredBaseWardIds = wardIds ?? ((uc as any).wardIds || []);
+    const baseScope = await validateZoneWardScope(cityId, desiredBaseZoneIds, desiredBaseWardIds);
+    if (!modules && newRole === Role.QC && (!baseScope.zoneIds.length || !baseScope.wardIds.length)) {
+      throw new HttpError(400, "QC users must have zoneIds and wardIds assigned");
+    }
+
     if (role && role !== uc.role) {
       await prisma.userCity.update({ where: { id: uc.id }, data: { role } });
     }
 
+    if (zoneIds || wardIds) {
+      await prisma.userCity.update({
+        where: { id: uc.id },
+        data: { zoneIds: baseScope.zoneIds, wardIds: baseScope.wardIds }
+      });
+    }
+
     if (modules) {
       const cityModules = await validateCityModules(cityId, modules);
+      const existingModules = await prisma.userModuleRole.findMany({ where: { userId, cityId } });
       const operations: any[] = [prisma.userModuleRole.deleteMany({ where: { userId, cityId } })];
+      const modulePayloads = await Promise.all(
+        cityModules.map(async (cm) => {
+          const input = modules.find((m) => m.moduleId === cm.moduleId);
+          const requestedScope =
+            newRole === Role.QC
+              ? await validateZoneWardScope(cityId, input?.zoneIds, input?.wardIds)
+              : { zoneIds: [], wardIds: [] };
+          const previous = existingModules.find((m) => m.moduleId === cm.moduleId);
+          const effectiveScope =
+            newRole === Role.QC
+              ? requestedScope.zoneIds.length && requestedScope.wardIds.length
+                ? requestedScope
+                : baseScope.zoneIds.length && baseScope.wardIds.length
+                  ? baseScope
+                  : previous && previous.zoneIds?.length && previous.wardIds?.length
+                    ? { zoneIds: previous.zoneIds, wardIds: previous.wardIds }
+                    : { zoneIds: [], wardIds: [] }
+              : { zoneIds: [], wardIds: [] };
+
+          if (newRole === Role.QC && (!effectiveScope.zoneIds.length || !effectiveScope.wardIds.length)) {
+            throw new HttpError(400, "QC module assignment requires zoneIds and wardIds");
+          }
+
+          return {
+            userId,
+            cityId,
+            moduleId: cm.moduleId,
+            role: newRole,
+            canWrite: resolveCanWrite(
+              newRole,
+              modules.find((m) => m.moduleId === cm.moduleId)?.canWrite ?? false
+            ),
+            zoneIds: effectiveScope.zoneIds,
+            wardIds: effectiveScope.wardIds
+          };
+        })
+      );
       if (cityModules.length) {
-        operations.push(
-          prisma.userModuleRole.createMany({
-            data: cityModules.map((cm) => ({
-              userId,
-              cityId,
-              moduleId: cm.moduleId,
-              role: newRole,
-              canWrite: resolveCanWrite(
-                newRole,
-                modules.find((m) => m.moduleId === cm.moduleId)?.canWrite ?? false
-              )
-            }))
-          })
-        );
+        operations.push(prisma.userModuleRole.createMany({ data: modulePayloads }));
       }
       await prisma.$transaction(operations);
     } else if (role && role !== uc.role) {
@@ -446,14 +578,64 @@ router.patch("/users/:userId", validateBody(userUpdateSchema), async (req, res, 
           assignments.map((m) =>
             prisma.userModuleRole.update({
               where: { id: m.id },
-              data: { role: newRole, canWrite: resolveCanWrite(newRole, m.canWrite) }
+              data: {
+                role: newRole,
+                canWrite: resolveCanWrite(newRole, m.canWrite),
+                zoneIds:
+                  newRole === Role.QC && baseScope.zoneIds.length && baseScope.wardIds.length ? baseScope.zoneIds : [],
+                wardIds:
+                  newRole === Role.QC && baseScope.zoneIds.length && baseScope.wardIds.length ? baseScope.wardIds : []
+              }
+            })
+          )
+        );
+      }
+    } else if ((zoneIds || wardIds) && (uc.role === Role.QC || newRole === Role.QC)) {
+      // Update existing QC module scopes to keep them in sync with city-level scope when explicit module payload not provided
+      const assignments = await prisma.userModuleRole.findMany({ where: { userId, cityId, role: Role.QC } });
+      if (assignments.length && baseScope.zoneIds.length && baseScope.wardIds.length) {
+        await prisma.$transaction(
+          assignments.map((m) =>
+            prisma.userModuleRole.update({
+              where: { id: m.id },
+              data: { zoneIds: baseScope.zoneIds, wardIds: baseScope.wardIds }
             })
           )
         );
       }
     }
 
-    res.json({ success: true });
+    // Reload user with scopes to ensure persistence and return explicit arrays
+    const refreshed = await prisma.userCity.findFirst({
+      where: { userId, cityId },
+      include: { user: { include: { modules: { where: { cityId }, include: { module: true } } } } }
+    });
+    if (!refreshed) throw new HttpError(404, "User not found after update");
+    if (newRole === Role.QC || refreshed.role === Role.QC) {
+      if (!(refreshed.zoneIds || []).length || !(refreshed.wardIds || []).length) {
+        throw new HttpError(400, "QC users must retain zone/ward scope");
+      }
+    }
+
+    res.json({
+      success: true,
+      user: {
+        id: refreshed.userId,
+        role: refreshed.role,
+        zoneIds: refreshed.zoneIds || [],
+        wardIds: refreshed.wardIds || [],
+        modules: refreshed.user.modules
+          .filter((m) => isCanonicalModuleKey(m.module.name))
+          .map((m) => ({
+            id: m.moduleId,
+            key: normalizeModuleKey(m.module.name),
+            name: getModuleLabel(m.module.name),
+            canWrite: m.canWrite,
+            zoneIds: m.zoneIds || [],
+            wardIds: m.wardIds || []
+          }))
+      }
+    });
   } catch (err) {
     next(err);
   }
@@ -505,9 +687,7 @@ router.get("/registration-requests", async (req, res, next) => {
 
 const approvalSchema = z.object({
   role: z.enum(["EMPLOYEE", "QC", "ACTION_OFFICER"]),
-  moduleKeys: z.array(z.string().min(1)).min(1),
-  zoneIds: z.array(z.string().uuid()).optional(),
-  wardIds: z.array(z.string().uuid()).optional()
+  moduleKeys: z.array(z.string().min(1)).min(1)
 });
 
 router.post("/registration-requests/:id/approve", validateBody(approvalSchema), async (req, res, next) => {
@@ -517,21 +697,25 @@ router.post("/registration-requests/:id/approve", validateBody(approvalSchema), 
     const roles = req.auth!.roles || [];
     if (!roles.includes(Role.CITY_ADMIN)) throw new HttpError(403, "Forbidden");
 
-    const { role, moduleKeys, zoneIds, wardIds } = req.body as z.infer<typeof approvalSchema>;
+    const { role, moduleKeys } = req.body as z.infer<typeof approvalSchema>;
 
     const request = await prisma.userRegistrationRequest.findUnique({ where: { id: req.params.id } });
     if (!request || request.cityId !== cityId) throw new HttpError(404, "Request not found");
     if (request.status !== "PENDING") throw new HttpError(400, "Request already processed");
 
-    // Validate zones/wards belong to city
-    const zoneList = zoneIds?.length
-      ? await prisma.geoNode.findMany({ where: { id: { in: zoneIds }, cityId, level: "ZONE" as any } })
-      : [];
-    if (zoneIds && zoneList.length !== zoneIds.length) throw new HttpError(400, "Invalid zones for this city");
-    const wardList = wardIds?.length
-      ? await prisma.geoNode.findMany({ where: { id: { in: wardIds }, cityId, level: "WARD" as any } })
-      : [];
-    if (wardIds && wardList.length !== wardIds.length) throw new HttpError(400, "Invalid wards for this city");
+    // Pull zone/ward from registration (must be present)
+    if (!request.zoneId || !request.wardId) {
+      throw new HttpError(400, "Registration request missing zone/ward");
+    }
+
+    const zoneId = request.zoneId!;
+    const wardId = request.wardId!;
+
+    const zone = await prisma.geoNode.findUnique({ where: { id: zoneId } });
+    if (!zone || zone.cityId !== cityId || zone.level !== "ZONE") throw new HttpError(400, "Invalid zone for this city");
+    const ward = await prisma.geoNode.findUnique({ where: { id: wardId } });
+    if (!ward || ward.cityId !== cityId || ward.level !== "WARD") throw new HttpError(400, "Invalid ward for this city");
+    if (ward.parentId !== zoneId) throw new HttpError(400, "Ward not under selected zone");
 
     // Resolve modules by key and ensure enabled for city
     const moduleNames = moduleKeys.map((k: string) => normalizeModuleKey(k));
@@ -558,8 +742,8 @@ router.post("/registration-requests/:id/approve", validateBody(approvalSchema), 
         userId: createdUser.id,
         cityId,
         role: role as any,
-        zoneIds: zoneIds || [],
-        wardIds: wardIds || []
+        zoneIds: [zoneId],
+        wardIds: [wardId]
       } as any
     });
 
@@ -569,7 +753,9 @@ router.post("/registration-requests/:id/approve", validateBody(approvalSchema), 
         cityId,
         moduleId: m.id,
         role: role as any,
-        canWrite: false
+        canWrite: false,
+        zoneIds: role === "QC" ? [zoneId] : [],
+        wardIds: role === "QC" ? [wardId] : []
       }))
     });
 

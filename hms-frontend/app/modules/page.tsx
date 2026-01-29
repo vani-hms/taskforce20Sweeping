@@ -4,17 +4,11 @@ import Link from "next/link";
 import { Protected } from "@components/Guards";
 import { useAuth } from "@hooks/useAuth";
 import { moduleLabel } from "@lib/labels";
-
-function routeForModule(key: string) {
-  const normalized = key.toLowerCase();
-  if (normalized === "litterbins") return "twinbin";
-  if (normalized === "sweeping") return "modules"; // no dedicated UI yet
-  return normalized;
-}
+import { canonicalizeModules, routeForModule } from "@utils/modules";
 
 export default function ModulesLanding() {
   const { user } = useAuth();
-  const modules = user?.modules || [];
+  const deduped = canonicalizeModules(user?.modules || []);
   const hasQc = user?.roles?.includes("QC");
 
   return (
@@ -27,7 +21,7 @@ export default function ModulesLanding() {
           </div>
         ) : (
           <div className="grid grid-2">
-            {modules.map((m) => (
+            {deduped.map((m) => (
               <div className="card card-hover" key={m.key}>
                 <h3>{moduleLabel(m.key, m.name)}</h3>
                 <p className="muted">Access records and tasks for this module.</p>

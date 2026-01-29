@@ -25,7 +25,7 @@ export default function TwinbinQcReviewScreen({ route, navigation }: Props) {
     setError("");
     try {
       const [empRes, zonesRes, wardsRes] = await Promise.all([
-        listEmployees("TWINBIN"),
+        listEmployees("LITTERBINS"),
         listGeo("ZONE"),
         listGeo("WARD")
       ]);

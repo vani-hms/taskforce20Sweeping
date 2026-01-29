@@ -51,6 +51,9 @@ export const AuthApi = {
     phone: string;
     aadharNumber: string;
     password: string;
+    zoneId: string;
+    wardId: string;
+    cityId?: string;
   }) =>
     apiFetch<{ success: boolean; message: string }>("/auth/register-request", {
       method: "POST",
@@ -89,6 +92,12 @@ export const GeoApi = {
   remove: (id: string) => apiFetch<{ success: boolean }>(`/city/geo/${id}`, { method: "DELETE" })
 };
 
+export const PublicGeoApi = {
+  cities: () => apiFetch<{ cities: { id: string; name: string }[] }>("/public/cities"),
+  zones: (cityId: string) => apiFetch<{ zones: { id: string; name: string }[] }>(`/public/cities/${cityId}/zones`),
+  wards: (zoneId: string) => apiFetch<{ wards: { id: string; name: string }[] }>(`/public/zones/${zoneId}/wards`)
+};
+
 export const CityUserApi = {
   list: () =>
     apiFetch<{
@@ -98,7 +107,9 @@ export const CityUserApi = {
         email: string;
         role: string;
         createdAt: string;
-        modules: { id: string; key: string; name: string; canWrite: boolean }[];
+        modules: { id: string; key: string; name: string; canWrite: boolean; zoneIds?: string[]; wardIds?: string[] }[];
+        zoneIds?: string[];
+        wardIds?: string[];
       }[];
     }>("/city/users"),
   create: (body: {
@@ -106,11 +117,19 @@ export const CityUserApi = {
     email: string;
     password: string;
     role: string;
-    modules: { moduleId: string; canWrite: boolean }[];
+    zoneIds?: string[];
+    wardIds?: string[];
+    modules: { moduleId: string; canWrite: boolean; zoneIds?: string[]; wardIds?: string[] }[];
   }) => apiFetch("/city/users", { method: "POST", body: JSON.stringify(body) }),
   update: (
     id: string,
-    body: { name?: string; role?: string; modules?: { moduleId: string; canWrite: boolean }[] }
+    body: {
+      name?: string;
+      role?: string;
+      zoneIds?: string[];
+      wardIds?: string[];
+      modules?: { moduleId: string; canWrite: boolean; zoneIds?: string[]; wardIds?: string[] }[];
+    }
   ) => apiFetch<{ success: boolean }>(`/city/users/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
   remove: (id: string) => apiFetch<{ success: boolean }>(`/city/users/${id}`, { method: "DELETE" })
 };
@@ -187,7 +206,7 @@ export const RegistrationApi = {
     apiFetch<{
       requests: { id: string; name: string; email: string; phone: string; aadhaar: string; status: string; createdAt: string }[];
     }>("/city/registration-requests"),
-  approve: (id: string, body: { role: "EMPLOYEE" | "QC" | "ACTION_OFFICER"; moduleKeys: string[]; zoneIds?: string[]; wardIds?: string[] }) =>
+  approve: (id: string, body: { role: "EMPLOYEE" | "QC" | "ACTION_OFFICER"; moduleKeys: string[] }) =>
     apiFetch<{ success: boolean }>(`/city/registration-requests/${id}/approve`, {
       method: "POST",
       body: JSON.stringify(body)

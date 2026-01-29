@@ -1,49 +1,57 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../../../navigation";
 import { SweepingResHome, SweepingComHome } from "../../sweeping";
 import { useAuthContext } from "../../../auth/AuthProvider";
 import { View, Text } from "react-native";
+import { normalizeModuleKey } from "../moduleUtils";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Module">;
 
 export default function ModuleHomeWrapper({ route, navigation }: Props) {
   const { moduleKey } = route.params;
-  const key = moduleKey.toUpperCase();
+  const key = normalizeModuleKey(moduleKey);
   const { auth } = useAuthContext();
   const roles = auth.status === "authenticated" ? auth.roles || [] : [];
   const assignments = auth.status === "authenticated" ? auth.modules || [] : [];
-  const assigned = assignments.find((m) => m.key === key);
+  const assigned = assignments.find((m) => normalizeModuleKey(m.key) === key);
+  const hasRouted = useRef(false);
 
-  if (!assigned) {
-     return (
-       <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 24, backgroundColor: "#f5f7fb" }}>
-         <Text style={{ fontSize: 16, fontWeight: "600", marginBottom: 8 }}>Module access required</Text>
-         <Text style={{ color: "#4b5563", textAlign: "center" }}>
-           You are not assigned to this module. Please check with your administrator.
-         </Text>
-       </View>
-     );
-  }
+  useEffect(() => {
+    if (hasRouted.current) return;
+    if (!assigned) return;
+
+    if (key === "LITTERBINS") {
+      hasRouted.current = true;
+      navigation.navigate(roles.includes("QC") ? "TwinbinQcHome" : "TwinbinHome");
+      return;
+    }
+    if (key === "TASKFORCE") {
+      hasRouted.current = true;
+      navigation.navigate(roles.includes("QC") ? "TaskforceQcReports" : "TaskforceHome");
+      return;
+    }
+    if (key === "CTU_GVP_TRANSFORMATION") {
+      hasRouted.current = true;
+      navigation.navigate(roles.includes("QC") ? "TaskforceQcReports" : "TaskforceHome");
+      return;
+    }
+  }, [assigned, key, navigation, roles]);
 
   if (key === "SWEEP_RES") return <SweepingResHome navigation={navigation} />;
   if (key === "SWEEP_COM") return <SweepingComHome navigation={navigation} />;
-  if (key === "TWINBIN") {
-    if (roles.includes("QC")) {
-      navigation.navigate("TwinbinQcHome");
-    } else {
-      navigation.navigate("TwinbinHome");
-    }
-    return null;
+
+  if (hasRouted.current) return null;
+  if (!assigned) {
+    return (
+      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 24, backgroundColor: "#f5f7fb" }}>
+        <Text style={{ fontSize: 16, fontWeight: "600", marginBottom: 8 }}>Module access required</Text>
+        <Text style={{ color: "#4b5563", textAlign: "center" }}>
+          You are not assigned to this module. Please check with your administrator.
+        </Text>
+      </View>
+    );
   }
-  if (key === "TASKFORCE") {
-    if (roles.includes("QC")) {
-      navigation.navigate("TaskforceQcReports");
-    } else {
-      navigation.navigate("TaskforceHome");
-    }
-    return null;
-  }
-  navigation.navigate("TaskforceHome");
+
   return null;
 }

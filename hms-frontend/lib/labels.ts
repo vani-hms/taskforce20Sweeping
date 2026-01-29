@@ -16,10 +16,7 @@ export function roleLabel(role: Role | string) {
 export const MODULE_LABELS: Record<string, string> = {
   TASKFORCE: "CTU / GVP Transformation",
   LITTERBINS: "Litter Bins",
-  TWINBIN: "Litter Bins",
   SWEEPING: "Sweeping",
-  SWEEP_RES: "Sweeping",
-  SWEEP_COM: "Sweeping",
   TOILET: "Cleanliness of Toilets"
 };
 

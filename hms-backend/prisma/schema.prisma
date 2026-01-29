@@ -120,6 +120,8 @@ model UserModuleRole {
   role      Role
   createdAt DateTime @default(now())
   canWrite  Boolean  @default(false)
+  zoneIds   String[] @default([])
+  wardIds   String[] @default([])
   city      City     @relation(fields: [cityId], references: [id], onDelete: Cascade)
   module    Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)

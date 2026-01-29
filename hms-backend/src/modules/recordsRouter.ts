@@ -4,7 +4,7 @@ import { requireCityContext, assertModuleAccess } from "../middleware/rbac";
 import { prisma } from "../prisma";
 import { HttpError } from "../utils/errors";
 import { Role } from "../../generated/prisma";
-import { getModuleLabel, normalizeModuleKey } from "./moduleMetadata";
+import { getModuleLabel, isCanonicalModuleKey, normalizeModuleKey } from "./moduleMetadata";
 import { getModuleIdByName } from "./moduleRegistry";
 
 const router = Router();
@@ -13,17 +13,14 @@ router.use(authenticate, requireCityContext());
 const MODULE_MODEL_MAP: Record<string, keyof typeof prisma> = {
   SWEEPING: "sweepingRecord",
   LITTERBINS: "litterBinRecord",
-  TASKFORCE: "taskforceRecord",
-  // legacy aliases
-  SWEEP_RES: "sweepingRecord",
-  SWEEP_COM: "sweepingRecord",
-  TWINBIN: "litterBinRecord"
+  TASKFORCE: "taskforceRecord"
 };
 
 router.get("/:moduleKey/records", async (req, res, next) => {
   try {
     const cityId = req.auth!.cityId!;
     const moduleKey = normalizeModuleKey(req.params.moduleKey || "");
+    if (!isCanonicalModuleKey(moduleKey)) throw new HttpError(400, "Invalid module key");
     const modelName = MODULE_MODEL_MAP[moduleKey];
     if (!modelName) throw new HttpError(400, "Invalid module key");
 

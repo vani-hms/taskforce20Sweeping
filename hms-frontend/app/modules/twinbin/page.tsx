@@ -8,7 +8,6 @@ import { ApiError, TwinbinApi } from "@lib/apiClient";
 type Summary = {
   total: number;
   assigned: number;
-  pending: number;
   requests: number;
 };
 
@@ -21,18 +20,14 @@ type AssignedBin = {
 };
 
 export default function TwinbinEmployeeHome() {
-  const [summary, setSummary] = useState<Summary>({ total: 0, assigned: 0, pending: 0, requests: 0 });
+  const [summary, setSummary] = useState<Summary>({ total: 0, assigned: 0, requests: 0 });
   const [assigned, setAssigned] = useState<AssignedBin[]>([]);
   const [error, setError] = useState("");
 
   useEffect(() => {
     const load = async () => {
       try {
-        const [assignedRes, pendingRes, myReqRes] = await Promise.all([
-          TwinbinApi.assigned(),
-          TwinbinApi.pending(),
-          TwinbinApi.myRequests()
-        ]);
+        const [assignedRes, myReqRes] = await Promise.all([TwinbinApi.assigned(), TwinbinApi.myRequests()]);
         const assignedBins = (assignedRes.bins || []).map((b: any) => ({
           id: b.id,
           areaName: b.areaName,
@@ -42,9 +37,8 @@ export default function TwinbinEmployeeHome() {
         }));
         setAssigned(assignedBins);
         setSummary({
-          total: (pendingRes.bins?.length || 0) + (assignedRes.bins?.length || 0),
+          total: (assignedRes.bins?.length || 0) + (myReqRes.bins?.length || 0),
           assigned: assignedRes.bins?.length || 0,
-          pending: pendingRes.bins?.length || 0,
           requests: myReqRes.bins?.length || 0
         });
       } catch (err) {
@@ -56,7 +50,7 @@ export default function TwinbinEmployeeHome() {
 
   return (
     <Protected>
-      <ModuleGuard module="TWINBIN" roles={["EMPLOYEE", "CITY_ADMIN", "QC", "ACTION_OFFICER", "HMS_SUPER_ADMIN"]}>
+      <ModuleGuard module="LITTERBINS" roles={["EMPLOYEE", "CITY_ADMIN", "ACTION_OFFICER", "HMS_SUPER_ADMIN"]}>
         <div className="page dashboard">
           <Header />
           {error && <div className="alert error">{error}</div>}
@@ -137,20 +131,19 @@ function Header() {
   return (
     <header className="page-header">
       <div>
-        <p className="eyebrow">Module · Twinbin</p>
-        <h1>Twinbin – City Operations</h1>
-        <p className="muted">Monitor, register, and service litter bins across your city.</p>
+        <p className="eyebrow">Module · Litter Bins</p>
+        <h1>Litter Bins — Employee Workspace</h1>
+        <p className="muted">Monitor, register, and service litter bins assigned to you.</p>
       </div>
-      <div className="badge ghost">Employee Workspace</div>
+      <div className="badge ghost">Employee</div>
     </header>
   );
 }
 
 function KpiRow({ summary }: { summary: Summary }) {
   const items = [
-    { label: "Total bins in scope", value: summary.total },
+    { label: "Total in scope", value: summary.total },
     { label: "Assigned to you", value: summary.assigned },
-    { label: "Pending approvals", value: summary.pending },
     { label: "Your requests", value: summary.requests }
   ];
   return (

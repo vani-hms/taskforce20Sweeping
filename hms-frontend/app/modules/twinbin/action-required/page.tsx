@@ -28,7 +28,7 @@ export default function TwinbinActionRequiredPage() {
 
   return (
     <Protected>
-      <ModuleGuard module="TWINBIN" roles={["ACTION_OFFICER"]}>
+      <ModuleGuard module="LITTERBINS" roles={["ACTION_OFFICER"]}>
         <div className="page">
           <h1>Twinbin - Action Required</h1>
           {error && <div className="alert error">{error}</div>}

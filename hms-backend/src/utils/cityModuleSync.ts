@@ -9,7 +9,7 @@ export async function syncCityModules(cityId: string) {
   const [modules, existing, qcUsers] = await prisma.$transaction([
     prisma.module.findMany({ select: { id: true, name: true }, where: { name: { in: CANONICAL_MODULE_KEYS as any } } }),
     prisma.cityModule.findMany({ where: { cityId }, select: { moduleId: true } }),
-    prisma.userCity.findMany({ where: { cityId, role: "QC" }, select: { userId: true } })
+    prisma.userCity.findMany({ where: { cityId, role: "QC" }, select: { userId: true, zoneIds: true, wardIds: true } })
   ]);
 
   if (!modules.length) return modules;
@@ -35,12 +35,28 @@ export async function syncCityModules(cityId: string) {
     });
     const existingSet = new Set(existingRoles.map((r) => `${r.userId}:${r.moduleId}`));
 
-    const toCreate: { userId: string; cityId: string; moduleId: string; role: "QC"; canWrite: boolean }[] = [];
-    qcIds.forEach((userId) => {
+    const toCreate: {
+      userId: string;
+      cityId: string;
+      moduleId: string;
+      role: "QC";
+      canWrite: boolean;
+      zoneIds: string[];
+      wardIds: string[];
+    }[] = [];
+    qcUsers.forEach(({ userId, zoneIds, wardIds }) => {
       enabledModules.forEach((moduleId) => {
         const key = `${userId}:${moduleId}`;
         if (!existingSet.has(key)) {
-          toCreate.push({ userId, cityId, moduleId, role: "QC", canWrite: false });
+          toCreate.push({
+            userId,
+            cityId,
+            moduleId,
+            role: "QC",
+            canWrite: false,
+            zoneIds: zoneIds || [],
+            wardIds: wardIds || []
+          });
         }
       });
     });
@@ -73,7 +89,10 @@ export async function syncAllCityModules() {
   }
 
   // Ensure QC user module roles across all cities for enabled modules
-  const qcUsers = await prisma.userCity.findMany({ where: { role: "QC" }, select: { userId: true, cityId: true } });
+  const qcUsers = await prisma.userCity.findMany({
+    where: { role: "QC" },
+    select: { userId: true, cityId: true, zoneIds: true, wardIds: true }
+  });
   if (qcUsers.length) {
     const moduleIds = modules.map((m) => m.id);
     const existing = await prisma.userModuleRole.findMany({
@@ -81,12 +100,28 @@ export async function syncAllCityModules() {
       select: { userId: true, cityId: true, moduleId: true }
     });
     const existingSet = new Set(existing.map((e) => `${e.userId}:${e.cityId}:${e.moduleId}`));
-    const toCreate: { userId: string; cityId: string; moduleId: string; role: "QC"; canWrite: boolean }[] = [];
-    qcUsers.forEach(({ userId, cityId }) => {
+    const toCreate: {
+      userId: string;
+      cityId: string;
+      moduleId: string;
+      role: "QC";
+      canWrite: boolean;
+      zoneIds: string[];
+      wardIds: string[];
+    }[] = [];
+    qcUsers.forEach(({ userId, cityId, zoneIds, wardIds }) => {
       moduleIds.forEach((moduleId) => {
         const key = `${userId}:${cityId}:${moduleId}`;
         if (!existingSet.has(key)) {
-          toCreate.push({ userId, cityId, moduleId, role: "QC", canWrite: false });
+          toCreate.push({
+            userId,
+            cityId,
+            moduleId,
+            role: "QC",
+            canWrite: false,
+            zoneIds: zoneIds || [],
+            wardIds: wardIds || []
+          });
         }
       });
     });

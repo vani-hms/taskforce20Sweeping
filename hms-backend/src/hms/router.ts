@@ -18,7 +18,7 @@ const citySchema = z.object({
   ulbCode: z.string().min(1)
 });
 
-import { CANONICAL_MODULE_KEYS, normalizeModuleKey } from "../modules/moduleMetadata";
+import { CANONICAL_MODULE_KEYS, isCanonicalModuleKey, normalizeModuleKey } from "../modules/moduleMetadata";
 
 const DEFAULT_MODULES = [...CANONICAL_MODULE_KEYS];
 
@@ -72,11 +72,13 @@ router.get("/cities", async (_req, res, next) => {
               email: c.users.find((u) => u.role === Role.CITY_ADMIN)?.user.email || ""
             }
           : null,
-        modules: c.modules.map((m) => ({
-          id: m.moduleId,
-          name: (m as any).module.name,
-          enabled: m.enabled
-        }))
+        modules: c.modules
+          .filter((m) => isCanonicalModuleKey((m as any).module.name))
+          .map((m) => ({
+            id: m.moduleId,
+            name: (m as any).module.name,
+            enabled: m.enabled
+          }))
       }))
     });
   } catch (err) {

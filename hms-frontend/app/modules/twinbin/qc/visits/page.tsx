@@ -73,7 +73,7 @@ export default function TwinbinQcVisitsPage() {
 
   return (
     <Protected>
-      <ModuleGuard module="TWINBIN" roles={["QC"]}>
+      <ModuleGuard module="LITTERBINS" roles={["QC"]}>
         <div className="page">
           <h1>Twinbin - Visit Reports (Pending QC)</h1>
           {error && <div className="alert error">{error}</div>}

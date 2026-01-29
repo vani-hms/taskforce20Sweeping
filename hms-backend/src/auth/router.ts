@@ -7,7 +7,7 @@ import { validateBody } from "../utils/validation";
 import { HttpError } from "../utils/errors";
 import { Prisma, Role } from "../../generated/prisma";
 import { GeoLevel } from "../../generated/prisma";
-import { getModuleLabel, normalizeModuleKey } from "../modules/moduleMetadata";
+import { CANONICAL_MODULE_KEYS, getModuleLabel, isCanonicalModuleKey, normalizeModuleKey } from "../modules/moduleMetadata";
 import { getRoleLabel } from "../utils/labels";
 import { resolveCanWrite } from "../utils/moduleAccess";
 
@@ -61,6 +61,7 @@ router.post("/login", validateBody(loginSchema), async (req, res, next) => {
     // Build module claims (active city only)
     let moduleClaims = typedUser.modules
       .filter((m) => !activeCityId || m.cityId === activeCityId)
+      .filter((m) => isCanonicalModuleKey(m.module.name))
       .map((m) => ({
         moduleId: m.moduleId,
         key: normalizeModuleKey(m.module.name),
@@ -73,7 +74,7 @@ router.post("/login", validateBody(loginSchema), async (req, res, next) => {
     // City admins inherit access to all enabled city modules
     if (activeCityId && effectiveRoles.includes(Role.CITY_ADMIN)) {
       const cityModules = await prisma.cityModule.findMany({
-        where: { cityId: activeCityId, enabled: true },
+        where: { cityId: activeCityId, enabled: true, module: { name: { in: CANONICAL_MODULE_KEYS as any } } },
         include: { module: true },
         orderBy: { createdAt: "asc" }
       });
@@ -194,8 +195,8 @@ const registrationSchema = z.object({
   email: z.string().email(),
   password: z.string().min(6),
   cityId: z.string().uuid(),
-  zoneId: z.string().uuid().optional(),
-  wardId: z.string().uuid().optional(),
+  zoneId: z.string().uuid(),
+  wardId: z.string().uuid(),
   requestedModules: z.array(z.string()).min(1)
 });
 
@@ -207,19 +208,15 @@ router.post("/request-registration", validateBody(registrationSchema), async (re
     const city = await prisma.city.findUnique({ where: { id: cityId } });
     if (!city) throw new HttpError(404, "City not found");
 
-    if (zoneId) {
-      const zone = await prisma.geoNode.findUnique({ where: { id: zoneId } });
-      if (!zone || zone.cityId !== cityId || zone.level !== (GeoLevel as any).ZONE) {
-        throw new HttpError(400, "Invalid zone for city");
-      }
+    const zone = await prisma.geoNode.findUnique({ where: { id: zoneId } });
+    if (!zone || zone.cityId !== cityId || zone.level !== (GeoLevel as any).ZONE) {
+      throw new HttpError(400, "Invalid zone for city");
     }
-    if (wardId) {
-      const ward = await prisma.geoNode.findUnique({ where: { id: wardId } });
-      if (!ward || ward.cityId !== cityId || ward.level !== (GeoLevel as any).WARD) {
-        throw new HttpError(400, "Invalid ward for city");
-      }
-      if (zoneId && ward.parentId !== zoneId) throw new HttpError(400, "Ward not under selected zone");
+    const ward = await prisma.geoNode.findUnique({ where: { id: wardId } });
+    if (!ward || ward.cityId !== cityId || ward.level !== (GeoLevel as any).WARD) {
+      throw new HttpError(400, "Invalid ward for city");
     }
+    if (ward.parentId !== zoneId) throw new HttpError(400, "Ward not under selected zone");
 
     const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) throw new HttpError(400, "User already exists");
@@ -235,8 +232,8 @@ router.post("/request-registration", validateBody(registrationSchema), async (re
         email,
         passwordHash: hashed,
         cityId,
-        zoneId: zoneId || null,
-        wardId: wardId || null,
+        zoneId,
+        wardId,
         requestedModules: normalizedModules,
         status: "PENDING"
       }
@@ -253,17 +250,29 @@ const publicRegistrationSchema = z.object({
   email: z.string().email(),
   phone: z.string().min(6),
   aadharNumber: z.string().min(6),
-  password: z.string().min(6)
+  password: z.string().min(6),
+  zoneId: z.string().uuid(),
+  wardId: z.string().uuid()
 });
 
 router.post("/register-request", validateBody(publicRegistrationSchema), async (req, res, next) => {
   try {
-    const { ulbCode, name, email, phone, aadharNumber, password } = req.body as z.infer<
+    const { ulbCode, name, email, phone, aadharNumber, password, zoneId, wardId } = req.body as z.infer<
       typeof publicRegistrationSchema
     >;
 
     const city = await prisma.city.findFirst({ where: { ulbCode } });
     if (!city) throw new HttpError(400, "Invalid ULB Code");
+
+    const zone = await prisma.geoNode.findUnique({ where: { id: zoneId } });
+    if (!zone || zone.cityId !== city.id || zone.level !== (GeoLevel as any).ZONE) {
+      throw new HttpError(400, "Invalid zone for city");
+    }
+    const ward = await prisma.geoNode.findUnique({ where: { id: wardId } });
+    if (!ward || ward.cityId !== city.id || ward.level !== (GeoLevel as any).WARD) {
+      throw new HttpError(400, "Invalid ward for city");
+    }
+    if (ward.parentId !== zoneId) throw new HttpError(400, "Ward not under selected zone");
 
     const pending = await prisma.userRegistrationRequest.findFirst({
       where: { cityId: city.id, email, status: "PENDING" }
@@ -280,6 +289,8 @@ router.post("/register-request", validateBody(publicRegistrationSchema), async (
         email,
         passwordHash,
         status: "PENDING",
+        zoneId,
+        wardId,
         requestedModules: []
       }
     });

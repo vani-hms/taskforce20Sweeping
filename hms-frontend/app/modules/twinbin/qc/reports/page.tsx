@@ -84,7 +84,7 @@ export default function TwinbinQcReportsPage() {
 
   return (
     <Protected>
-      <ModuleGuard module="TWINBIN" roles={["QC"]}>
+      <ModuleGuard module="LITTERBINS" roles={["QC"]}>
         <div className="page">
           <StyleInjector />
           <h1>Twinbin Reports - Pending</h1>

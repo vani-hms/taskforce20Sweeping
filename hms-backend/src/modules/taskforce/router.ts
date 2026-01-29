@@ -7,6 +7,7 @@ import { validateBody } from "../../utils/validation";
 import { Role } from "../../../generated/prisma";
 import { HttpError } from "../../utils/errors";
 import { getModuleIdByName } from "../moduleRegistry";
+import { getQcScope } from "../../utils/qcScope";
 
 const router = Router();
 router.use(authenticate, requireCityContext());
@@ -113,13 +114,24 @@ router.post("/feeder-points/request", validateBody(feederRequestSchema), async (
 router.get("/feeder-points/pending", async (req, res, next) => {
   try {
     const cityId = req.auth!.cityId!;
+    const qcId = req.auth!.sub!;
     const moduleId = await getModuleIdByName(MODULE_KEY);
     forbidCityAdminOrCommissioner(req);
     await assertModuleAccess(req, res, moduleId, [Role.QC]);
     await ensureModuleEnabled(cityId, moduleId);
 
+    const scope = await getQcScope({ userId: qcId, cityId, moduleId });
+    if (!scope.zoneIds.length || !scope.wardIds.length) {
+      return res.json({ feederPoints: [] });
+    }
+
     const feederPoints = await prisma.taskforceFeederPoint.findMany({
-      where: { cityId, status: "PENDING_QC" },
+      where: {
+        cityId,
+        status: "PENDING_QC",
+        zoneId: { in: scope.zoneIds },
+        wardId: { in: scope.wardIds }
+      },
       orderBy: { createdAt: "desc" },
       include: { requestedBy: { select: { id: true, name: true, email: true } } }
     });
@@ -133,13 +145,23 @@ router.get("/feeder-points/pending", async (req, res, next) => {
 router.get("/feeder-points/requests", async (req, res, next) => {
   try {
     const cityId = req.auth!.cityId!;
+    const qcId = req.auth!.sub!;
     const moduleId = await getModuleIdByName(MODULE_KEY);
     forbidCityAdminOrCommissioner(req);
     await assertModuleAccess(req, res, moduleId, [Role.QC]);
     await ensureModuleEnabled(cityId, moduleId);
 
+    const scope = await getQcScope({ userId: qcId, cityId, moduleId });
+    if (!scope.zoneIds.length || !scope.wardIds.length) {
+      return res.json({ feederPoints: [] });
+    }
+
     const feederPoints = await prisma.taskforceFeederPoint.findMany({
-      where: { cityId },
+      where: {
+        cityId,
+        zoneId: { in: scope.zoneIds },
+        wardId: { in: scope.wardIds }
+      },
       orderBy: { createdAt: "desc" },
       include: { requestedBy: { select: { id: true, name: true, email: true } } }
     });
@@ -188,6 +210,17 @@ router.post("/feeder-points/:id/approve", validateBody(approveSchema), async (re
 
     const feederPoint = await prisma.taskforceFeederPoint.findUnique({ where: { id: req.params.id } });
     if (!feederPoint || feederPoint.cityId !== cityId) throw new HttpError(404, "Feeder point not found");
+    const scope = await getQcScope({ userId, cityId, moduleId });
+    if (
+      !scope.zoneIds.length ||
+      !scope.wardIds.length ||
+      !feederPoint.zoneId ||
+      !feederPoint.wardId ||
+      !scope.zoneIds.includes(feederPoint.zoneId) ||
+      !scope.wardIds.includes(feederPoint.wardId)
+    ) {
+      throw new HttpError(403, "Feeder point not in QC scope");
+    }
     if (feederPoint.status !== "PENDING_QC") throw new HttpError(400, "Feeder point not pending QC");
 
     const {
@@ -229,6 +262,17 @@ router.post("/feeder-points/:id/reject", async (req, res, next) => {
 
     const feederPoint = await prisma.taskforceFeederPoint.findUnique({ where: { id: req.params.id } });
     if (!feederPoint || feederPoint.cityId !== cityId) throw new HttpError(404, "Feeder point not found");
+    const scope = await getQcScope({ userId, cityId, moduleId });
+    if (
+      !scope.zoneIds.length ||
+      !scope.wardIds.length ||
+      !feederPoint.zoneId ||
+      !feederPoint.wardId ||
+      !scope.zoneIds.includes(feederPoint.zoneId) ||
+      !scope.wardIds.includes(feederPoint.wardId)
+    ) {
+      throw new HttpError(403, "Feeder point not in QC scope");
+    }
     if (feederPoint.status !== "PENDING_QC") throw new HttpError(400, "Feeder point not pending QC");
 
     const updated = await prisma.taskforceFeederPoint.update({
@@ -253,6 +297,17 @@ router.post("/feeder-points/:id/action-required", async (req, res, next) => {
 
     const feederPoint = await prisma.taskforceFeederPoint.findUnique({ where: { id: req.params.id } });
     if (!feederPoint || feederPoint.cityId !== cityId) throw new HttpError(404, "Feeder point not found");
+    const scope = await getQcScope({ userId, cityId, moduleId });
+    if (
+      !scope.zoneIds.length ||
+      !scope.wardIds.length ||
+      !feederPoint.zoneId ||
+      !feederPoint.wardId ||
+      !scope.zoneIds.includes(feederPoint.zoneId) ||
+      !scope.wardIds.includes(feederPoint.wardId)
+    ) {
+      throw new HttpError(403, "Feeder point not in QC scope");
+    }
     if (feederPoint.status !== "PENDING_QC") throw new HttpError(400, "Feeder point not pending QC");
 
     const updated = await prisma.taskforceFeederPoint.update({
@@ -334,13 +389,26 @@ router.post("/feeder-points/:id/report", validateBody(reportSchema), async (req,
 router.get("/reports/pending", async (req, res, next) => {
   try {
     const cityId = req.auth!.cityId!;
+    const qcId = req.auth!.sub!;
     const moduleId = await getModuleIdByName(MODULE_KEY);
     forbidCityAdminOrCommissioner(req);
     await assertModuleAccess(req, res, moduleId, [Role.QC]);
     await ensureModuleEnabled(cityId, moduleId);
 
+    const scope = await getQcScope({ userId: qcId, cityId, moduleId });
+    if (!scope.zoneIds.length || !scope.wardIds.length) {
+      return res.json({ reports: [] });
+    }
+
     const reports = await prisma.taskforceFeederReport.findMany({
-      where: { cityId, status: "SUBMITTED" },
+      where: {
+        cityId,
+        status: "SUBMITTED",
+        feederPoint: {
+          zoneId: { in: scope.zoneIds },
+          wardId: { in: scope.wardIds }
+        }
+      },
       orderBy: { createdAt: "desc" },
       include: {
         feederPoint: {
@@ -378,8 +446,22 @@ async function updateReportStatus(
     await assertModuleAccess(req, res, moduleId, [Role.QC]);
     await ensureModuleEnabled(cityId, moduleId);
 
-    const report = await prisma.taskforceFeederReport.findUnique({ where: { id: req.params.id } });
+    const report = await prisma.taskforceFeederReport.findUnique({
+      where: { id: req.params.id },
+      include: { feederPoint: true }
+    });
     if (!report || report.cityId !== cityId) throw new HttpError(404, "Report not found");
+    const scope = await getQcScope({ userId, cityId, moduleId });
+    if (
+      !scope.zoneIds.length ||
+      !scope.wardIds.length ||
+      !report.feederPoint?.zoneId ||
+      !report.feederPoint?.wardId ||
+      !scope.zoneIds.includes(report.feederPoint.zoneId) ||
+      !scope.wardIds.includes(report.feederPoint.wardId)
+    ) {
+      throw new HttpError(403, "Report not in QC scope");
+    }
     if (report.status !== "SUBMITTED") throw new HttpError(400, "Report not pending review");
 
     const updated = await prisma.taskforceFeederReport.update({

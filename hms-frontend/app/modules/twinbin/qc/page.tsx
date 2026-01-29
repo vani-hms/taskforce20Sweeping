@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Protected, ModuleGuard } from "@components/Guards";
-import { ApiError, TwinbinApi, EmployeesApi, GeoApi } from "@lib/apiClient";
+import { ApiError, TwinbinApi, EmployeesApi, GeoApi, CityUserApi } from "@lib/apiClient";
+import { useAuth } from "@hooks/useAuth";
 
 type Bin = {
   id: string;
@@ -40,6 +41,9 @@ export default function TwinbinQcPage() {
   const [activeTab, setActiveTab] = useState<"pending" | "approved">("pending");
   const [zoneMap, setZoneMap] = useState<Record<string, string>>({});
   const [wardMap, setWardMap] = useState<Record<string, string>>({});
+  const [qcZoneNames, setQcZoneNames] = useState<string[]>([]);
+  const [qcWardNames, setQcWardNames] = useState<string[]>([]);
+  const { user } = useAuth();
 
   const activeBin = useMemo(() => bins.find((b) => b.id === reviewId) || null, [bins, reviewId]);
   const employeeMap = useMemo(() => Object.fromEntries(employees.map((e) => [e.id, e])), [employees]);
@@ -48,17 +52,26 @@ export default function TwinbinQcPage() {
     setLoading(true);
     setError("");
     try {
-      const [binRes, empRes, zoneRes, wardRes] = await Promise.all([
+      const [binRes, empRes, zoneRes, wardRes, usersRes] = await Promise.all([
         TwinbinApi.pending(),
-        EmployeesApi.list("TWINBIN"),
+        EmployeesApi.list("LITTERBINS"),
         GeoApi.list("ZONE"),
-        GeoApi.list("WARD")
+        GeoApi.list("WARD"),
+        CityUserApi.list()
       ]);
       setBins(binRes.bins || []);
       const emps = (empRes.employees || []).filter((e: any) => e.role === "EMPLOYEE");
       setEmployees(emps.map((e: any) => ({ id: e.id, name: e.name, email: e.email })));
-      setZoneMap(Object.fromEntries((zoneRes.nodes || []).map((n: any) => [n.id, n.name])));
-      setWardMap(Object.fromEntries((wardRes.nodes || []).map((n: any) => [n.id, n.name])));
+      const zones = Object.fromEntries((zoneRes.nodes || []).map((n: any) => [n.id, n.name]));
+      const wards = Object.fromEntries((wardRes.nodes || []).map((n: any) => [n.id, n.name]));
+      setZoneMap(zones);
+      setWardMap(wards);
+
+      const me = (usersRes.users || []).find((u: any) => u.id === user?.id);
+      const zoneNames = (me?.zoneIds || []).map((id: string) => zones[id] || id);
+      const wardNames = (me?.wardIds || []).map((id: string) => wards[id] || id);
+      setQcZoneNames(zoneNames);
+      setQcWardNames(wardNames);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Failed to load data");
     } finally {
@@ -130,10 +143,18 @@ export default function TwinbinQcPage() {
 
   return (
     <Protected>
-      <ModuleGuard module="TWINBIN" roles={["QC"]}>
+      <ModuleGuard module="LITTERBINS" roles={["QC"]}>
         <div className="page">
           <div className="flex-between" style={{ marginBottom: 12 }}>
             <h1>Twinbin - QC</h1>
+            <div className="text-right text-sm text-slate-600">
+              <div>
+                Zones: {qcZoneNames.length ? qcZoneNames.join(", ") : "All zones"}
+              </div>
+              <div>
+                Wards: {qcWardNames.length ? qcWardNames.join(", ") : "All wards"}
+              </div>
+            </div>
             <div>
               <a className="btn btn-secondary btn-sm" href="/modules/twinbin/qc/visits">
                 Pending Visit Reports

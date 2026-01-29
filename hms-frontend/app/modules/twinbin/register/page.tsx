@@ -104,7 +104,7 @@ export default function TwinbinRegisterPage() {
 
   return (
     <Protected>
-      <ModuleGuard module="TWINBIN" roles={["EMPLOYEE"]}>
+      <ModuleGuard module="LITTERBINS" roles={["EMPLOYEE"]}>
         <div className="page">
           <h1>Register Litter Bin</h1>
           <form className="form card" onSubmit={submit}>

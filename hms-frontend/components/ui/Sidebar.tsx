@@ -4,6 +4,8 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useMemo } from "react";
 import { useAuth } from "@hooks/useAuth";
+import { canonicalizeModules, routeForModule } from "@utils/modules";
+import { moduleLabel } from "@lib/labels";
 import type { Role } from "../../types/auth";
 
 function titleCase(text: string) {
@@ -19,14 +21,14 @@ export default function Sidebar() {
   const { user, logout, loading } = useAuth();
 
   const moduleLinks = useMemo(() => {
-    if (!user?.modules?.length) return [];
-    const isQc = !!user.roles?.includes("QC");
-    return user.modules.map((m) => {
-      const key = (m.key || "").toUpperCase();
-      const basePath = key === "LITTERBINS" ? "litterbins" : key === "TWINBIN" ? "litterbins" : (m.key || "").toLowerCase();
-      const href = key === "LITTERBINS" && isQc ? "/modules/litterbins/qc" : `/modules/${basePath}`;
+    const canonical = canonicalizeModules(user?.modules || []);
+    if (!canonical.length) return [];
+    const isQc = !!user?.roles?.includes("QC");
+    return canonical.map((m) => {
+      const path = routeForModule(m.key);
+      const href = m.key === "LITTERBINS" && isQc ? "/modules/litterbins/qc" : `/modules/${path}`;
       return {
-        label: titleCase(m.name || m.key),
+        label: moduleLabel(m.key, m.name || m.key),
         href
       };
     });

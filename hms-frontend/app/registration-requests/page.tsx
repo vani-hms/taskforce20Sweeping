@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from "react";
-import { CityModulesApi, GeoApi, RegistrationApi } from "@lib/apiClient";
+import { CityModulesApi, RegistrationApi } from "@lib/apiClient";
 
 type Request = {
   id: string;
@@ -18,16 +18,12 @@ const ROLE_OPTIONS: Array<"EMPLOYEE" | "QC" | "ACTION_OFFICER"> = ["EMPLOYEE", "
 export default function RegistrationRequestsPage() {
   const [requests, setRequests] = useState<Request[]>([]);
   const [modules, setModules] = useState<{ id: string; key: string; name: string }[]>([]);
-  const [zones, setZones] = useState<{ id: string; name: string }[]>([]);
-  const [wards, setWards] = useState<{ id: string; name: string; parentId?: string | null }[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [modal, setModal] = useState<{
     requestId: string;
     role: "EMPLOYEE" | "QC" | "ACTION_OFFICER" | "";
     moduleIds: Set<string>;
-    zoneIds: Set<string>;
-    wardIds: Set<string>;
   } | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -35,16 +31,9 @@ export default function RegistrationRequestsPage() {
     setLoading(true);
     setError("");
     try {
-      const [reqs, mods, zonesData, wardsData] = await Promise.all([
-        RegistrationApi.listRequests(),
-        CityModulesApi.list(),
-        GeoApi.list("ZONE"),
-        GeoApi.list("WARD")
-      ]);
+      const [reqs, mods] = await Promise.all([RegistrationApi.listRequests(), CityModulesApi.list()]);
       setRequests(reqs.requests || []);
       setModules(mods);
-      setZones((zonesData.nodes || []).map((z: any) => ({ id: z.id, name: z.name })));
-      setWards((wardsData.nodes || []).map((w: any) => ({ id: w.id, name: w.name, parentId: w.parentId || null })));
     } catch {
       setError("Failed to load registration requests");
     } finally {
@@ -60,9 +49,7 @@ export default function RegistrationRequestsPage() {
     setModal({
       requestId: req.id,
       role: "",
-      moduleIds: new Set<string>(),
-      zoneIds: new Set<string>(),
-      wardIds: new Set<string>()
+      moduleIds: new Set<string>()
     });
 
   const closeModal = () => setModal(null);
@@ -81,9 +68,7 @@ export default function RegistrationRequestsPage() {
     try {
       await RegistrationApi.approve(modal.requestId, {
         role: modal.role as any,
-        moduleKeys: modules.filter((m) => modal.moduleIds.has(m.id)).map((m) => m.key.toUpperCase()),
-        zoneIds: Array.from(modal.zoneIds),
-        wardIds: Array.from(modal.wardIds)
+        moduleKeys: modules.filter((m) => modal.moduleIds.has(m.id)).map((m) => m.key.toUpperCase())
       });
       closeModal();
       await load();
@@ -175,40 +160,6 @@ export default function RegistrationRequestsPage() {
                     {m.name}
                   </label>
                 ))}
-              </div>
-
-              <label>Zones (optional)</label>
-              <div className="pill-grid">
-                {zones.map((z) => (
-                  <label key={z.id} className="pill">
-                    <input
-                      type="checkbox"
-                      checked={modal.zoneIds.has(z.id)}
-                      onChange={() =>
-                        setModal((mod) => (mod ? { ...mod, zoneIds: toggleSet(mod.zoneIds, z.id) } : mod))
-                      }
-                    />{" "}
-                    {z.name}
-                  </label>
-                ))}
-              </div>
-
-              <label>Wards (optional)</label>
-              <div className="pill-grid">
-                {wards
-                  .filter((w) => modal.zoneIds.size === 0 || (w.parentId && modal.zoneIds.has(w.parentId)))
-                  .map((w) => (
-                    <label key={w.id} className="pill">
-                      <input
-                        type="checkbox"
-                        checked={modal.wardIds.has(w.id)}
-                        onChange={() =>
-                          setModal((mod) => (mod ? { ...mod, wardIds: toggleSet(mod.wardIds, w.id) } : mod))
-                        }
-                      />{" "}
-                      {w.name}
-                    </label>
-                  ))}
               </div>
             </div>
             <div className="modal-footer">

@@ -1,17 +1,24 @@
 'use client';
 
-import TwinbinPage from "../twinbin/page";
-import { useAuth } from "@hooks/useAuth";
 import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@hooks/useAuth";
 
 export default function LitterbinsLanding() {
-  // reuse existing twinbin dashboard; module key is already handled server-side
   const { user } = useAuth();
+  const router = useRouter();
 
-  // guard: users must have the module; fallback is already handled in TwinbinPage
   useEffect(() => {
-    // no-op hook to keep client component boundary
-  }, [user]);
+    if (!user) return;
+    const roles = user.roles || [];
+    if (roles.includes("QC")) {
+      router.replace("/modules/twinbin/qc");
+    } else if (roles.includes("EMPLOYEE") || roles.includes("ACTION_OFFICER") || roles.includes("CITY_ADMIN")) {
+      router.replace("/modules/twinbin");
+    } else {
+      router.replace("/modules");
+    }
+  }, [user, router]);
 
-  return <TwinbinPage />;
+  return null;
 }

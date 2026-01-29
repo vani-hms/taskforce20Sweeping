@@ -12,11 +12,14 @@ export class ApiError extends Error {
 
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const token = await getToken();
+  console.log("[api] token", token ? "present" : "missing");
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
-    ...(token ? { Authorization: `Bearer ${token}` } : {})
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...((init.headers || {}) as Record<string, string>)
   };
   const res = await fetch(`${API_BASE_URL}${path}`, { ...init, headers });
+  console.log("[api] response", res.status, path);
   if (!res.ok) {
     const text = await res.text();
     throw new ApiError(res.status, text || res.statusText);
@@ -71,6 +74,33 @@ export async function approveRegistrationRequest(
     throw new ApiError(res.status, text || res.statusText);
   }
   return res.json() as Promise<{ success: boolean }>;
+}
+
+export async function fetchPublicCities() {
+  const res = await fetch(`${API_BASE_URL}/public/cities`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" }
+  });
+  if (!res.ok) throw new ApiError(res.status, await res.text());
+  return res.json() as Promise<{ cities: { id: string; name: string; ulbCode?: string }[] }>;
+}
+
+export async function fetchPublicZones(cityId: string) {
+  const res = await fetch(`${API_BASE_URL}/public/cities/${cityId}/zones`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" }
+  });
+  if (!res.ok) throw new ApiError(res.status, await res.text());
+  return res.json() as Promise<{ zones: { id: string; name: string }[] }>;
+}
+
+export async function fetchPublicWards(zoneId: string) {
+  const res = await fetch(`${API_BASE_URL}/public/zones/${zoneId}/wards`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" }
+  });
+  if (!res.ok) throw new ApiError(res.status, await res.text());
+  return res.json() as Promise<{ wards: { id: string; name: string }[] }>;
 }
 
 export async function requestTwinbinBin(body: {
@@ -276,12 +306,15 @@ async function authHeader() {
 }
 
 export async function submitRegistration(body: {
-  ulbCode: string;
+  ulbCode?: string;
   name: string;
   email: string;
   phone: string;
   aadharNumber: string;
   password: string;
+  cityId?: string;
+  zoneId?: string;
+  wardId?: string;
 }) {
   return request<{ success: boolean; message: string }>("/auth/register-request", {
     method: "POST",

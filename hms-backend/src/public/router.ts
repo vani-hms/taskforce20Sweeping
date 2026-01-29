@@ -6,7 +6,7 @@ const router = Router();
 
 router.get("/cities", async (_req, res, next) => {
   try {
-    const cities = await prisma.city.findMany({ where: { enabled: true }, select: { id: true, name: true } });
+    const cities = await prisma.city.findMany({ where: { enabled: true }, select: { id: true, name: true, ulbCode: true } });
     res.json({ cities });
   } catch (err) {
     next(err);

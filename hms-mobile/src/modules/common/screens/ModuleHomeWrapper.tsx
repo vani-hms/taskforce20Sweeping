@@ -42,6 +42,13 @@ export default function ModuleHomeWrapper({ route, navigation }: Props) {
   if (key === "SWEEP_COM") return <SweepingComHome navigation={navigation} />;
 
   if (hasRouted.current) return null;
+  if (auth.status === "Loading") {
+    return (
+      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: "#f5f7fb" }}>
+        <Text>Loading...</Text>
+      </View>
+    );
+  }
   if (!assigned) {
     return (
       <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 24, backgroundColor: "#f5f7fb" }}>

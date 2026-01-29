@@ -245,24 +245,31 @@ router.post("/request-registration", validateBody(registrationSchema), async (re
 });
 
 const publicRegistrationSchema = z.object({
-  ulbCode: z.string().min(1),
+  ulbCode: z.string().min(1).optional(),
   name: z.string().min(1),
   email: z.string().email(),
   phone: z.string().min(6),
   aadharNumber: z.string().min(6),
   password: z.string().min(6),
   zoneId: z.string().uuid(),
-  wardId: z.string().uuid()
+  wardId: z.string().uuid(),
+  cityId: z.string().uuid().optional()
 });
 
 router.post("/register-request", validateBody(publicRegistrationSchema), async (req, res, next) => {
   try {
-    const { ulbCode, name, email, phone, aadharNumber, password, zoneId, wardId } = req.body as z.infer<
+    const { ulbCode, name, email, phone, aadharNumber, password, zoneId, wardId, cityId } = req.body as z.infer<
       typeof publicRegistrationSchema
     >;
 
-    const city = await prisma.city.findFirst({ where: { ulbCode } });
-    if (!city) throw new HttpError(400, "Invalid ULB Code");
+    let city;
+    if (cityId) {
+      city = await prisma.city.findUnique({ where: { id: cityId } });
+    } else if (ulbCode) {
+      city = await prisma.city.findFirst({ where: { ulbCode } });
+    }
+
+    if (!city) throw new HttpError(400, "Invalid City or ULB Code");
 
     const zone = await prisma.geoNode.findUnique({ where: { id: zoneId } });
     if (!zone || zone.cityId !== city.id || zone.level !== (GeoLevel as any).ZONE) {

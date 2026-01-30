@@ -23,17 +23,22 @@ export default function ModuleHomeWrapper({ route, navigation }: Props) {
 
     if (key === "LITTERBINS") {
       hasRouted.current = true;
-      navigation.navigate(roles.includes("QC") ? "TwinbinQcHome" : "TwinbinHome");
+      navigation.navigate((roles || []).includes("QC") ? "TwinbinQcHome" : "TwinbinHome");
       return;
     }
     if (key === "TASKFORCE") {
       hasRouted.current = true;
-      navigation.navigate(roles.includes("QC") ? "TaskforceQcReports" : "TaskforceHome");
+      navigation.navigate((roles || []).includes("QC") ? "TaskforceQcReports" : "TaskforceHome");
       return;
     }
     if (key === "CTU_GVP_TRANSFORMATION") {
       hasRouted.current = true;
-      navigation.navigate(roles.includes("QC") ? "TaskforceQcReports" : "TaskforceHome");
+      navigation.navigate((roles || []).includes("QC") ? "TaskforceQcReports" : "TaskforceHome");
+      return;
+    }
+    if (key === "TOILET") {
+      hasRouted.current = true;
+      navigation.navigate((roles || []).includes("QC") ? "ToiletQcTabs" : "ToiletEmployeeTabs");
       return;
     }
   }, [assigned, key, navigation, roles]);
@@ -42,7 +47,7 @@ export default function ModuleHomeWrapper({ route, navigation }: Props) {
   if (key === "SWEEP_COM") return <SweepingComHome navigation={navigation} />;
 
   if (hasRouted.current) return null;
-  if (auth.status === "Loading") {
+  if (auth.status === "loading") {
     return (
       <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: "#f5f7fb" }}>
         <Text>Loading...</Text>

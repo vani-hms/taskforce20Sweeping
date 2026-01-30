@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, ActivityIndicator, Alert, SafeAreaView } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { RootStackParamList } from "../../navigation/types";
-import { ToiletApi } from "../../api/modules";
+import { RootStackParamList } from "../../../navigation/types";
+import { ToiletApi } from "../../../api/modules";
 
 type Props = NativeStackScreenProps<RootStackParamList, "ToiletReview">;
 
@@ -105,19 +105,19 @@ export default function ToiletReviewScreen({ route, navigation }: Props) {
                 </View>
 
                 <Text style={styles.sectionTitle}>FIELD RESULTS</Text>
-                {inspection.answers.map((ans: any, idx: number) => (
-                    <View key={ans.id} style={styles.ansCard}>
+                {Object.entries(inspection.answers || {}).map(([questionText, data]: [string, any], idx: number) => (
+                    <View key={idx} style={styles.ansCard}>
                         <View style={styles.ansRow}>
-                            <Text style={styles.ansText}>{idx + 1}. {ans.question.text}</Text>
-                            <Text style={[styles.badge, ans.value === "YES" ? styles.badgeYes : styles.badgeNo]}>
-                                {ans.value.toUpperCase()}
+                            <Text style={styles.ansText}>{questionText}</Text>
+                            <Text style={[styles.badge, (data.answer === "YES" || data.answer === "Continuous") ? styles.badgeYes : styles.badgeNo]}>
+                                {String(data.answer).toUpperCase()}
                             </Text>
                         </View>
 
                         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.photoList}>
-                            {ans.photos.map((p: any) => (
-                                <View key={p.id} style={styles.photoWrap}>
-                                    <Image source={{ uri: p.url }} style={styles.photo} />
+                            {(data.photos || []).map((photo: string, pIdx: number) => (
+                                <View key={pIdx} style={styles.photoWrap}>
+                                    <Image source={{ uri: photo }} style={styles.photo} />
                                 </View>
                             ))}
                         </ScrollView>
@@ -137,12 +137,6 @@ export default function ToiletReviewScreen({ route, navigation }: Props) {
                             onPress={() => handleDecision("REJECTED")}
                         >
                             <Text style={[styles.btnText, { color: '#991b1b' }]}>REJECT</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={[styles.btn, styles.btnAction]}
-                            onPress={() => handleDecision("ACTION_REQUIRED" as any)}
-                        >
-                            <Text style={[styles.btnText, { color: '#854d0e' }]}>ACTION REQUIRED</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={[styles.btn, styles.btnApprove]}

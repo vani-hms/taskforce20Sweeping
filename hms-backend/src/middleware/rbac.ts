@@ -15,6 +15,7 @@ export function requireCityContext() {
 
 // Basic role guard (with HMS bypass)
 export function requireRoles(roles: Role[]) {
+
   return (req: Request, _res: Response, next: NextFunction) => {
     if (!req.auth) return next(new HttpError(401, "Unauthenticated"));
     if (req.auth.roles.includes("HMS_SUPER_ADMIN" as Role)) return next();

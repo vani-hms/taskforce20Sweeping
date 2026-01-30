@@ -40,7 +40,7 @@ export default function AllToiletsTab() {
 
     const loadToilets = async () => {
         try {
-            const res = await ToiletApi.listToilets();
+            const res = await ToiletApi.listAllToilets();
             setToilets(res.toilets || []);
         } catch (err) {
             console.error(err);
@@ -52,14 +52,14 @@ export default function AllToiletsTab() {
     const loadZones = async () => {
         try {
             const res = await ToiletApi.getZones();
-            setZones(res.zones || []);
+            setZones(res.nodes || []);
         } catch (err) { console.error(err); }
     };
 
     const loadWards = async (zoneId: string) => {
         try {
             const res = await ToiletApi.getWardsByZone(zoneId);
-            setWards(res.wards || []);
+            setWards(res.nodes || []);
         } catch (err) { console.error(err); }
     };
 
@@ -197,13 +197,13 @@ export default function AllToiletsTab() {
     return (
         <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-                <h2 style={{ margin: 0 }}>All Registered Toilets ({filteredToilets.length})</h2>
+                <h2 style={{ margin: 0 }}>All Registered Cleanliness of Toilets ({filteredToilets.length})</h2>
                 <a
                     href="/modules/toilet/bulk-import"
                     className="btn btn-primary"
                     style={{ fontSize: 14, padding: '10px 20px', textDecoration: 'none' }}
                 >
-                    📥 Bulk Import Toilets
+                    📥 Import / Register Toilets
                 </a>
             </div>
 

@@ -16,7 +16,7 @@ router.get("/cities", async (_req, res, next) => {
 router.get("/cities/:cityId/zones", async (req, res, next) => {
   try {
     const { cityId } = req.params;
-    const city = await prisma.city.findUnique({ where: { id: cityId } });
+    const city = await prisma.city.findUnique({ where: { id: cityId as string } });
     if (!city) throw new HttpError(404, "City not found");
     const zones = await prisma.geoNode.findMany({
       where: { cityId, level: "ZONE" },
@@ -31,7 +31,7 @@ router.get("/cities/:cityId/zones", async (req, res, next) => {
 router.get("/zones/:zoneId/wards", async (req, res, next) => {
   try {
     const { zoneId } = req.params;
-    const zone = await prisma.geoNode.findUnique({ where: { id: zoneId } });
+    const zone = await prisma.geoNode.findUnique({ where: { id: zoneId as string } });
     if (!zone || zone.level !== "ZONE") throw new HttpError(404, "Zone not found");
     const wards = await prisma.geoNode.findMany({
       where: { parentId: zoneId, level: "WARD" },

@@ -26,4 +26,15 @@ export type RootStackParamList = {
   TaskforceFeederDetail: { feeder: any };
   TaskforceQcReports: undefined;
   TaskforceQcReportReview: { report: any };
+  // Toilet
+  ToiletHome: undefined;
+  ToiletEmployeeTabs: undefined;
+  ToiletQcTabs: undefined;
+  ToiletInspection: { toilet: any };
+  ToiletReview: { inspection: any };
+  ToiletRegister: undefined;
+  ToiletMyRequests: undefined;
+  ToiletPendingRegistration: undefined;
+  ToiletMaster: undefined;
+  ToiletHelp: undefined;
 };

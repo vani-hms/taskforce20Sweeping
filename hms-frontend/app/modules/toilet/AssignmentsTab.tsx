@@ -26,12 +26,12 @@ export default function AssignmentsTab() {
         try {
             const [emp, toi, z] = await Promise.all([
                 ToiletApi.listEmployees(),
-                ToiletApi.listToilets(),
+                ToiletApi.listAllToilets(),
                 ToiletApi.getZones()
             ]);
             setEmployees(emp.employees || []);
             setToilets(toi.toilets || []);
-            setZones(z.zones || []);
+            setZones(z.nodes || []);
         } catch (err) {
             console.error(err);
         } finally {
@@ -46,7 +46,7 @@ export default function AssignmentsTab() {
         }
         const loadWards = async () => {
             const res = await ToiletApi.getWardsByZone(selectedZone);
-            setWards(res.wards || []);
+            setWards(res.nodes || []);
         };
         loadWards();
     }, [selectedZone]);
@@ -78,7 +78,7 @@ export default function AssignmentsTab() {
         setAssigning(true);
         try {
             await ToiletApi.bulkAssignToilets(selectedEmployee, selectedToilets, category);
-            alert(`Successfully assigned ${selectedToilets.length} toilet(s) as ${category} to employee`);
+            alert(`Successfully assigned ${selectedToilets.length} asset(s) as ${category} to employee`);
             setSelectedEmployee("");
             setSelectedToilets([]);
             await loadData();
@@ -95,7 +95,7 @@ export default function AssignmentsTab() {
 
     return (
         <div>
-            <h2 style={{ marginBottom: 24 }}>Assign Toilets to Employees</h2>
+            <h2 style={{ marginBottom: 24 }}>Assign Cleanliness of Toilets</h2>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 24 }}>
                 {/* Employee Selection */}
@@ -119,7 +119,7 @@ export default function AssignmentsTab() {
                                 <p style={{ fontWeight: 600, marginBottom: 4 }}>{emp.name}</p>
                                 <p style={{ fontSize: 12, color: '#64748b' }}>{emp.email}</p>
                                 <p style={{ fontSize: 12, color: '#3b82f6', marginTop: 4 }}>
-                                    Currently assigned: {emp.toiletsAssigned} toilet(s)
+                                    Currently assigned: {emp.toiletsAssigned} asset(s)
                                 </p>
                             </div>
                         ))}
@@ -129,7 +129,7 @@ export default function AssignmentsTab() {
                 {/* Toilet Selection */}
                 <div className="card">
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                        <h3>Select Toilets to Assign</h3>
+                        <h3>Select Assets to Assign</h3>
                         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
                             <select
                                 value={selectedZone}
@@ -165,13 +165,13 @@ export default function AssignmentsTab() {
                                 onClick={selectByWard}
                                 disabled={!selectedWard}
                             >
-                                🎯 Select Ward Toilets
+                                🎯 Select Ward Assets
                             </button>
                         </div>
                         {selectedEmployee && (
                             <div style={{ textAlign: 'right' }}>
                                 <p style={{ fontSize: 14, color: '#64748b' }}>
-                                    Selected: <strong>{selectedToilets.length}</strong> toilet(s)
+                                    Selected: <strong>{selectedToilets.length}</strong> asset(s)
                                 </p>
                                 <button
                                     onClick={handleAssign}

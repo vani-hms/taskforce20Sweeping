@@ -1,23 +1,21 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, SafeAreaView, StatusBar, RefreshControl } from "react-native";
-import { ToiletApi } from "../../api/modules";
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, SafeAreaView, StatusBar, RefreshControl, Alert } from "react-native";
+import { ToiletApi } from "../../../api/modules";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { RootStackParamList } from "../../navigation/types";
+import { RootStackParamList } from "../../../navigation/types";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
-export default function ToiletMyRequestsScreen({ navigation }: { navigation: Nav }) {
-    const [requests, setRequests] = useState<any[]>([]);
+export default function ToiletMasterScreen({ navigation }: { navigation: Nav }) {
+    const [toilets, setToilets] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
 
     const load = async (isRef = false) => {
         if (!isRef) setLoading(true);
         try {
-            // Need a backend endpoint for my requests
-            const res = await ToiletApi.listMyRequests();
-            // For now, let's assume this returns all pending, we might need a "my" filter on backend
-            setRequests(res.toilets || []);
+            const res = await ToiletApi.listToilets();
+            setToilets(res.toilets || []);
         } catch (e) {
         } finally {
             setLoading(false);
@@ -29,17 +27,17 @@ export default function ToiletMyRequestsScreen({ navigation }: { navigation: Nav
 
     const renderItem = ({ item }: { item: any }) => (
         <View style={styles.card}>
-            <View style={styles.cardHeader}>
+            <View style={styles.cardInfo}>
                 <Text style={styles.name}>{item.name}</Text>
-                <View style={[styles.statusBadge, item.status === 'APPROVED' ? styles.bgApp : item.status === 'REJECTED' ? styles.bgRej : styles.bgPen]}>
-                    <Text style={styles.statusText}>{item.status}</Text>
-                </View>
+                <Text style={styles.ward}>{item.ward?.name || 'Unknown Ward'}</Text>
+                <Text style={styles.type}>{item.type} | {item.gender}</Text>
             </View>
-            <View style={styles.details}>
-                <Text style={styles.detailText}>📍 {item.ward?.name || 'Ward ID: ' + item.wardId}</Text>
-                <Text style={styles.detailText}>🚽 {item.type} | {item.gender}</Text>
-                <Text style={styles.dateText}>Requested on {new Date(item.createdAt).toLocaleDateString()}</Text>
-            </View>
+            <TouchableOpacity
+                style={styles.assignBtn}
+                onPress={() => Alert.alert("Assign", "Assign functionality would open a user selection list.")}
+            >
+                <Text style={styles.assignText}>ASSIGN</Text>
+            </TouchableOpacity>
         </View>
     );
 
@@ -48,9 +46,9 @@ export default function ToiletMyRequestsScreen({ navigation }: { navigation: Nav
             <StatusBar barStyle="dark-content" />
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => navigation.goBack()}><Text style={styles.backBtn}>←</Text></TouchableOpacity>
-                <Text style={styles.title}>My Toilet Requests</Text>
+                <Text style={styles.title}>Cleanliness of Toilets</Text>
                 <TouchableOpacity style={styles.addBtn} onPress={() => navigation.navigate("ToiletRegister")}>
-                    <Text style={styles.addBtnText}>+ NEW</Text>
+                    <Text style={styles.addBtnText}>+ ADD</Text>
                 </TouchableOpacity>
             </View>
 
@@ -58,15 +56,15 @@ export default function ToiletMyRequestsScreen({ navigation }: { navigation: Nav
                 <View style={styles.center}><ActivityIndicator size="large" color="#1d4ed8" /></View>
             ) : (
                 <FlatList
-                    data={requests}
+                    data={toilets}
                     renderItem={renderItem}
                     keyExtractor={item => item.id}
                     contentContainerStyle={styles.list}
                     refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(true); }} />}
                     ListEmptyComponent={
                         <View style={styles.empty}>
-                            <Text style={styles.emptyTitle}>No Requests Yet</Text>
-                            <Text style={styles.emptySub}>Tap "NEW" to request a toilet registration in your assigned ward.</Text>
+                            <Text style={styles.emptyTitle}>No Assets Found</Text>
+                            <Text style={styles.emptySub}>Register assets to see them in the master list.</Text>
                         </View>
                     }
                 />
@@ -81,20 +79,16 @@ const styles = StyleSheet.create({
     backBtn: { fontSize: 24, fontWeight: '700', color: '#1e293b' },
     title: { fontSize: 18, fontWeight: '900', color: '#0f172a' },
     addBtn: { backgroundColor: '#1d4ed8', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
-    addBtnText: { color: '#fff', fontSize: 12, fontWeight: '900' },
+    addBtnText: { color: '#fff', fontSize: 11, fontWeight: '900' },
     center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
     list: { padding: 16 },
-    card: { backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 12, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 10, elevation: 2 },
-    cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+    card: { backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 12, flexDirection: 'row', alignItems: 'center', shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 10, elevation: 2 },
+    cardInfo: { flex: 1 },
     name: { fontSize: 16, fontWeight: '800', color: '#1e293b' },
-    statusBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
-    statusText: { fontSize: 9, fontWeight: '900', color: '#fff' },
-    bgPen: { backgroundColor: '#f59e0b' },
-    bgApp: { backgroundColor: '#10b981' },
-    bgRej: { backgroundColor: '#ef4444' },
-    details: { gap: 4 },
-    detailText: { fontSize: 13, color: '#64748b', fontWeight: '600' },
-    dateText: { fontSize: 11, color: '#94a3b8', marginTop: 6, fontWeight: '700' },
+    ward: { fontSize: 13, color: '#64748b', fontWeight: '700', marginTop: 2 },
+    type: { fontSize: 11, color: '#94a3b8', fontWeight: '700', marginTop: 4 },
+    assignBtn: { backgroundColor: '#eff6ff', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 },
+    assignText: { color: '#1d4ed8', fontSize: 11, fontWeight: '900' },
     empty: { alignItems: 'center', marginTop: 100 },
     emptyTitle: { fontSize: 18, fontWeight: '900', color: '#1e293b' },
     emptySub: { fontSize: 14, color: '#94a3b8', marginTop: 8, paddingHorizontal: 40, textAlign: 'center' }

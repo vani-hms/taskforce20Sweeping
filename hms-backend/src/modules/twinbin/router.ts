@@ -22,14 +22,14 @@ function buildScopeFilters(scope: { zoneIds: string[]; wardIds: string[] }) {
     scope.zoneIds.length === 0
       ? undefined
       : {
-          OR: [{ zoneId: { in: scope.zoneIds } }, { zoneId: null }]
-        };
+        OR: [{ zoneId: { in: scope.zoneIds } }, { zoneId: null }]
+      };
   const wardFilter =
     scope.wardIds.length === 0
       ? undefined
       : {
-          OR: [{ wardId: { in: scope.wardIds } }, { wardId: null }]
-        };
+        OR: [{ wardId: { in: scope.wardIds } }, { wardId: null }]
+      };
   return { zoneFilter, wardFilter };
 }
 
@@ -219,7 +219,7 @@ router.post("/bins/:id/approve", validateBody(approveSchema), async (req, res, n
     await assertModuleAccess(req, res, moduleId, [Role.QC]);
 
     const { assignedEmployeeIds = [] } = req.body as z.infer<typeof approveSchema>;
-    const bin = await prisma.litterBin.findUnique({ where: { id: req.params.id } });
+    const bin = await prisma.litterBin.findUnique({ where: { id: req.params.id as string } });
     if (!bin || bin.cityId !== cityId) throw new HttpError(404, "Bin not found");
     const scope = await getQcScope({ userId, cityId, moduleId });
     if (!scope.zoneIds.length || !scope.wardIds.length) throw new HttpError(403, "No zone/ward scope assigned");
@@ -257,7 +257,7 @@ router.post("/bins/:id/reject", async (req, res, next) => {
     const moduleId = await getModuleIdByName(MODULE_KEY);
     await assertModuleAccess(req, res, moduleId, [Role.QC]);
 
-    const bin = await prisma.litterBin.findUnique({ where: { id: req.params.id } });
+    const bin = await prisma.litterBin.findUnique({ where: { id: req.params.id as string } });
     if (!bin || bin.cityId !== cityId) throw new HttpError(404, "Bin not found");
     const scope = await getQcScope({ userId, cityId, moduleId });
     if (!scope.zoneIds.length || !scope.wardIds.length) throw new HttpError(403, "No zone/ward scope assigned");
@@ -340,7 +340,7 @@ router.get("/bins/:id/report-context", async (req, res, next) => {
       throw new HttpError(400, "lat and lon query params are required");
     }
 
-    const bin = await prisma.litterBin.findUnique({ where: { id: req.params.id } });
+    const bin = await prisma.litterBin.findUnique({ where: { id: req.params.id as string } });
     if (!bin || bin.cityId !== cityId) throw new HttpError(404, "Bin not found");
     if (bin.status !== TwinbinBinStatus.APPROVED) throw new HttpError(400, "Bin not approved");
     if (!bin.assignedEmployeeIds.includes(userId)) throw new HttpError(403, "Not assigned to this bin");
@@ -416,7 +416,7 @@ router.post("/bins/:id/visit", validateBody(visitSchema), async (req, res, next)
     const moduleId = await getModuleIdByName(MODULE_KEY);
     await assertModuleAccess(req, res, moduleId, [Role.EMPLOYEE]);
 
-    const bin = await prisma.litterBin.findUnique({ where: { id: req.params.id } });
+    const bin = await prisma.litterBin.findUnique({ where: { id: req.params.id as string } });
     if (!bin || bin.cityId !== cityId) throw new HttpError(404, "Bin not found");
     if (bin.status !== TwinbinBinStatus.APPROVED) throw new HttpError(400, "Bin not approved");
     if (!bin.assignedEmployeeIds.includes(userId)) throw new HttpError(403, "Not assigned to this bin");
@@ -503,7 +503,7 @@ router.post("/visits/:id/approve", async (req, res, next) => {
     await assertModuleAccess(req, res, moduleId, [Role.QC]);
 
     const visit = await prisma.litterBinVisitReport.findUnique({
-      where: { id: req.params.id },
+      where: { id: req.params.id as string },
       include: { bin: true }
     });
     if (!visit || visit.cityId !== cityId) throw new HttpError(404, "Visit not found");
@@ -539,7 +539,7 @@ router.post("/visits/:id/reject", async (req, res, next) => {
     await assertModuleAccess(req, res, moduleId, [Role.QC]);
 
     const visit = await prisma.litterBinVisitReport.findUnique({
-      where: { id: req.params.id },
+      where: { id: req.params.id as string },
       include: { bin: true }
     });
     if (!visit || visit.cityId !== cityId) throw new HttpError(404, "Visit not found");
@@ -579,7 +579,7 @@ router.post("/visits/:id/action-required", validateBody(actionRequiredSchema), a
     await assertModuleAccess(req, res, moduleId, [Role.QC]);
 
     const visit = await prisma.litterBinVisitReport.findUnique({
-      where: { id: req.params.id },
+      where: { id: req.params.id as string },
       include: { bin: true }
     });
     if (!visit || visit.cityId !== cityId) throw new HttpError(404, "Visit not found");
@@ -641,7 +641,7 @@ router.post("/visits/:id/action-taken", validateBody(actionTakenSchema), async (
     const moduleId = await getModuleIdByName(MODULE_KEY);
     await assertModuleAccess(req, res, moduleId, [Role.ACTION_OFFICER]);
 
-    const visit = await prisma.litterBinVisitReport.findUnique({ where: { id: req.params.id } });
+    const visit = await prisma.litterBinVisitReport.findUnique({ where: { id: req.params.id as string } });
     if (!visit || visit.cityId !== cityId) throw new HttpError(404, "Visit not found");
     if (visit.actionStatus !== "ACTION_REQUIRED") throw new HttpError(400, "Visit not pending action");
 
@@ -706,7 +706,7 @@ router.post("/bins/:id/report", validateBody(binReportSchema), async (req, res, 
     forbidCityAdminOrCommissioner(req);
     await assertModuleAccess(req, res, moduleId, [Role.EMPLOYEE]);
 
-    const bin = await prisma.litterBin.findUnique({ where: { id: req.params.id } });
+    const bin = await prisma.litterBin.findUnique({ where: { id: req.params.id as string } });
     if (!bin || bin.cityId !== cityId) throw new HttpError(404, "Bin not found");
     if (bin.status !== "APPROVED") throw new HttpError(400, "Bin not approved");
     if (!bin.assignedEmployeeIds.includes(userId)) throw new HttpError(403, "Not assigned to this bin");
@@ -824,7 +824,7 @@ async function updateBinReportStatus(
     await assertModuleAccess(req, res, moduleId, [Role.QC]);
 
     const report = await prisma.litterBinReport.findUnique({
-      where: { id: req.params.id },
+      where: { id: req.params.id as string },
       include: { bin: true }
     });
     if (!report || report.cityId !== cityId) throw new HttpError(404, "Report not found");

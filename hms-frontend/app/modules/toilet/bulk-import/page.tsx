@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { ToiletApi } from '@lib/apiClient';
 import { useRouter } from 'next/navigation';
 
@@ -59,7 +59,6 @@ export default function BulkImportPage() {
     };
 
     const handleManualSubmit = async () => {
-        // Validate required fields
         if (!formData.name || !formData.wardId || !formData.latitude || !formData.longitude) {
             setError('Please fill all required fields (Name, Ward ID, Latitude, Longitude)');
             return;
@@ -69,26 +68,12 @@ export default function BulkImportPage() {
         setError('');
 
         try {
-            // Convert to CSV format for backend
             const csvData = `Name,Ward ID,Type,Gender,Code,Operator Name,Number of Seats,Latitude,Longitude,Address\n${formData.name},${formData.wardId},${formData.type},${formData.gender},${formData.code},${formData.operatorName},${formData.numberOfSeats},${formData.latitude},${formData.longitude},${formData.address}`;
-
             const response = await ToiletApi.bulkImport(csvData);
             setResult(response);
-
-            // Reset form
             setFormData({
-                name: '',
-                wardId: '',
-                type: 'CT',
-                gender: 'MALE',
-                code: '',
-                operatorName: '',
-                numberOfSeats: '',
-                latitude: '',
-                longitude: '',
-                address: ''
+                name: '', wardId: '', type: 'CT', gender: 'MALE', code: '', operatorName: '', numberOfSeats: '', latitude: '', longitude: '', address: ''
             });
-
             setTimeout(() => router.push('/modules/toilet'), 3000);
         } catch (err: any) {
             setError(err.message || 'Failed to save toilet');
@@ -98,10 +83,9 @@ export default function BulkImportPage() {
     };
 
     const downloadTemplate = () => {
-        const template = 'Name,Ward ID,Type,Gender,Code,Operator Name,Number of Seats,Latitude,Longitude,Address\n' +
-            'CT-Ward-5-Main,<your-ward-uuid>,CT,MALE,CT-001,ULB,5,28.6139,77.2090,Near Main Market\n' +
-            'PT-Station-Road,<your-ward-uuid>,PT,UNISEX,PT-002,Private,3,28.6140,77.2091,Station Road';
-
+        const template = 'Name,Zone Name,Ward Name,Type,Gender,Code,Operator Name,Number of Seats,Latitude,Longitude,Address\n' +
+            'CT-Ward-5-Main,Zone 1,Ward 5,CT,MALE,CT-001,ULB,5,28.6139,77.2090,Near Main Market\n' +
+            'PT-Station-Road,Zone 2,Ward 10,PT,UNISEX,PT-002,Private,3,28.6140,77.2091,Station Road';
         const blob = new Blob([template], { type: 'text/csv' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -111,375 +95,134 @@ export default function BulkImportPage() {
     };
 
     return (
-        <div className="page" style={{ maxWidth: 1200, margin: '0 auto', padding: 40 }}>
-            <div className="card">
-                <h2 style={{ marginBottom: 8, fontSize: 24, fontWeight: 900 }}>📥 Toilet Import</h2>
-                <p className="muted" style={{ marginBottom: 24, fontSize: 14 }}>
-                    Add toilets manually or import multiple toilets from a CSV file
-                </p>
-
-                {/* Tab Switcher */}
-                <div style={{ display: 'flex', gap: 8, marginBottom: 24, borderBottom: '2px solid #e2e8f0' }}>
-                    <button
-                        onClick={() => setActiveTab('MANUAL')}
-                        style={{
-                            padding: '12px 24px',
-                            fontSize: 14,
-                            fontWeight: 700,
-                            background: activeTab === 'MANUAL' ? '#1d4ed8' : 'transparent',
-                            color: activeTab === 'MANUAL' ? '#fff' : '#64748b',
-                            border: 'none',
-                            borderRadius: '8px 8px 0 0',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s'
-                        }}
-                    >
-                        ✏️ Manual Entry
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('CSV')}
-                        style={{
-                            padding: '12px 24px',
-                            fontSize: 14,
-                            fontWeight: 700,
-                            background: activeTab === 'CSV' ? '#1d4ed8' : 'transparent',
-                            color: activeTab === 'CSV' ? '#fff' : '#64748b',
-                            border: 'none',
-                            borderRadius: '8px 8px 0 0',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s'
-                        }}
-                    >
-                        📊 CSV Bulk Upload
-                    </button>
+        <div className="content page-centered">
+            <div className="card" style={{ maxWidth: 1000, width: '100%' }}>
+                <div className="card-header">
+                    <div>
+                        <h2 className="card-title">📥 Toilet Import</h2>
+                        <p className="muted text-sm">Add toilets manually or import multiple from CSV</p>
+                    </div>
+                    <div className="tab-bar">
+                        <button
+                            onClick={() => setActiveTab('MANUAL')}
+                            className={`tab ${activeTab === 'MANUAL' ? 'active' : ''}`}
+                        >
+                            ✏️ Manual Entry
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('CSV')}
+                            className={`tab ${activeTab === 'CSV' ? 'active' : ''}`}
+                        >
+                            📊 CSV Bulk Upload
+                        </button>
+                    </div>
                 </div>
 
-                {/* Manual Entry Tab */}
+                <div className="card-divider"></div>
+
                 {activeTab === 'MANUAL' && (
-                    <div>
-                        <div style={{ backgroundColor: '#dbeafe', padding: 12, borderRadius: 8, marginBottom: 24, borderLeft: '4px solid #3b82f6' }}>
-                            <p style={{ fontSize: 13, color: '#1e40af', margin: 0 }}>
-                                <strong>Manual Entry:</strong> Fill in the form below to add a single toilet. All imported toilets will be automatically approved.
-                            </p>
+                    <div className="form">
+                        <div className="alert info mb-3">
+                            <strong>Manual Entry:</strong> Fill in the form below. Imported toilets are auto-approved.
                         </div>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24 }}>
-                            {/* Name */}
-                            <div style={{ gridColumn: '1 / -1' }}>
-                                <label className="label" style={{ fontWeight: 700, marginBottom: 8 }}>
-                                    Toilet Name <span style={{ color: '#ef4444' }}>*</span>
-                                </label>
-                                <input
-                                    type="text"
-                                    value={formData.name}
-                                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                    className="input"
-                                    placeholder="e.g., CT-Ward-5-Main"
-                                />
-                            </div>
+                        <div className="grid grid-2">
+                            <InputField label="Toilet Name" required value={formData.name} onChange={(v: string) => setFormData({ ...formData, name: v })} placeholder="e.g., CT-Ward-5-Main" />
+                            <InputField label="Ward ID" required value={formData.wardId} onChange={(v: string) => setFormData({ ...formData, wardId: v })} placeholder="UUID from Wards list" />
 
-                            {/* Ward ID */}
-                            <div>
-                                <label className="label" style={{ fontWeight: 700, marginBottom: 8 }}>
-                                    Ward ID (UUID) <span style={{ color: '#ef4444' }}>*</span>
-                                </label>
-                                <input
-                                    type="text"
-                                    value={formData.wardId}
-                                    onChange={(e) => setFormData({ ...formData, wardId: e.target.value })}
-                                    className="input"
-                                    placeholder="Get from Wards list"
-                                />
-                            </div>
+                            <SelectField label="Type" required value={formData.type} onChange={(v: string) => setFormData({ ...formData, type: v })}>
+                                <option value="CT">CT (Community Toilet)</option>
+                                <option value="PT">PT (Public Toilet)</option>
+                            </SelectField>
 
-                            {/* Code */}
-                            <div>
-                                <label className="label" style={{ fontWeight: 700, marginBottom: 8 }}>
-                                    Code
-                                </label>
-                                <input
-                                    type="text"
-                                    value={formData.code}
-                                    onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-                                    className="input"
-                                    placeholder="e.g., CT-001"
-                                />
-                            </div>
+                            <SelectField label="Gender" required value={formData.gender} onChange={(v: string) => setFormData({ ...formData, gender: v })}>
+                                <option value="MALE">MALE</option>
+                                <option value="FEMALE">FEMALE</option>
+                                <option value="ALL">ALL (UNISEX)</option>
+                                <option value="DISABLED">DISABLED</option>
+                            </SelectField>
 
-                            {/* Type */}
-                            <div>
-                                <label className="label" style={{ fontWeight: 700, marginBottom: 8 }}>
-                                    Type <span style={{ color: '#ef4444' }}>*</span>
-                                </label>
-                                <select
-                                    value={formData.type}
-                                    onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                                    className="input"
-                                >
-                                    <option value="CT">CT (Community Toilet)</option>
-                                    <option value="PT">PT (Public Toilet)</option>
-                                </select>
-                            </div>
+                            <InputField label="Code" value={formData.code} onChange={(v: string) => setFormData({ ...formData, code: v })} placeholder="e.g., CT-001" />
+                            <InputField label="Operator Name" value={formData.operatorName} onChange={(v: string) => setFormData({ ...formData, operatorName: v })} placeholder="e.g., ULB, Private" />
 
-                            {/* Gender */}
-                            <div>
-                                <label className="label" style={{ fontWeight: 700, marginBottom: 8 }}>
-                                    Gender <span style={{ color: '#ef4444' }}>*</span>
-                                </label>
-                                <select
-                                    value={formData.gender}
-                                    onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
-                                    className="input"
-                                >
-                                    <option value="MALE">MALE</option>
-                                    <option value="FEMALE">FEMALE</option>
-                                    <option value="ALL">ALL (UNISEX)</option>
-                                </select>
-                            </div>
+                            <InputField label="Latitude" required value={formData.latitude} onChange={(v: string) => setFormData({ ...formData, latitude: v })} placeholder="e.g., 28.6139" />
+                            <InputField label="Longitude" required value={formData.longitude} onChange={(v: string) => setFormData({ ...formData, longitude: v })} placeholder="e.g., 77.2090" />
 
-                            {/* Latitude */}
-                            <div>
-                                <label className="label" style={{ fontWeight: 700, marginBottom: 8 }}>
-                                    Latitude <span style={{ color: '#ef4444' }}>*</span>
-                                </label>
-                                <input
-                                    type="text"
-                                    value={formData.latitude}
-                                    onChange={(e) => setFormData({ ...formData, latitude: e.target.value })}
-                                    className="input"
-                                    placeholder="e.g., 28.6139"
-                                />
-                            </div>
-
-                            {/* Longitude */}
-                            <div>
-                                <label className="label" style={{ fontWeight: 700, marginBottom: 8 }}>
-                                    Longitude <span style={{ color: '#ef4444' }}>*</span>
-                                </label>
-                                <input
-                                    type="text"
-                                    value={formData.longitude}
-                                    onChange={(e) => setFormData({ ...formData, longitude: e.target.value })}
-                                    className="input"
-                                    placeholder="e.g., 77.2090"
-                                />
-                            </div>
-
-                            {/* Operator Name */}
-                            <div>
-                                <label className="label" style={{ fontWeight: 700, marginBottom: 8 }}>
-                                    Operator Name
-                                </label>
-                                <input
-                                    type="text"
-                                    value={formData.operatorName}
-                                    onChange={(e) => setFormData({ ...formData, operatorName: e.target.value })}
-                                    className="input"
-                                    placeholder="e.g., ULB, Private"
-                                />
-                            </div>
-
-                            {/* Number of Seats */}
-                            <div>
-                                <label className="label" style={{ fontWeight: 700, marginBottom: 8 }}>
-                                    Number of Seats
-                                </label>
-                                <input
-                                    type="number"
-                                    value={formData.numberOfSeats}
-                                    onChange={(e) => setFormData({ ...formData, numberOfSeats: e.target.value })}
-                                    className="input"
-                                    placeholder="e.g., 5"
-                                />
-                            </div>
-
-                            {/* Address */}
-                            <div style={{ gridColumn: '1 / -1' }}>
-                                <label className="label" style={{ fontWeight: 700, marginBottom: 8 }}>
-                                    Address
-                                </label>
-                                <textarea
-                                    value={formData.address}
-                                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                                    className="input"
-                                    rows={2}
-                                    placeholder="Full address"
-                                    style={{ resize: 'vertical' }}
-                                />
-                            </div>
+                            <InputField label="Number of Seats" type="number" value={formData.numberOfSeats} onChange={(v: string) => setFormData({ ...formData, numberOfSeats: v })} placeholder="e.g., 5" />
                         </div>
 
-                        {/* Error/Success Display */}
-                        {error && (
-                            <div className="alert error" style={{ marginBottom: 20 }}>
-                                <strong>Error:</strong> {error}
-                            </div>
-                        )}
+                        <div className="form-field mt-2">
+                            <label>Address</label>
+                            <textarea
+                                className="textarea"
+                                rows={2}
+                                value={formData.address}
+                                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                                placeholder="Full address"
+                            />
+                        </div>
 
-                        {result && (
-                            <div className="alert success" style={{ marginBottom: 20 }}>
-                                <h4 style={{ fontWeight: 800, marginBottom: 8 }}>✓ Toilet Saved Successfully!</h4>
-                                <p style={{ marginBottom: 8 }}>
-                                    <strong>{result.count}</strong> toilet(s) added to database.
-                                </p>
-                                <p style={{ fontSize: 13, opacity: 0.9 }}>
-                                    Status: <strong>APPROVED</strong> (ready for assignment)
-                                </p>
-                                <p style={{ fontSize: 13, marginTop: 8 }}>Redirecting to toilet list...</p>
-                            </div>
-                        )}
-
-                        {/* Action Buttons */}
-                        <div style={{ display: 'flex', gap: 12 }}>
-                            <button
-                                onClick={handleManualSubmit}
-                                disabled={submitting}
-                                className="btn btn-primary"
-                                style={{ flex: 1, padding: 16, fontSize: 15, fontWeight: 700 }}
-                            >
+                        <div className="flex gap-2 mt-4">
+                            <button onClick={handleManualSubmit} disabled={submitting} className="btn btn-primary flex-1">
                                 {submitting ? '⏳ Saving...' : '💾 Save Toilet'}
                             </button>
-
-                            <button
-                                onClick={() => router.back()}
-                                className="btn btn-outline"
-                                style={{ padding: 16, fontSize: 15, fontWeight: 700 }}
-                            >
+                            <button onClick={() => router.back()} className="btn btn-outline">
                                 Cancel
                             </button>
                         </div>
                     </div>
                 )}
 
-                {/* CSV Upload Tab */}
                 {activeTab === 'CSV' && (
-                    <div>
-                        <div style={{ backgroundColor: '#fef3c7', padding: 12, borderRadius: 8, marginBottom: 24, borderLeft: '4px solid #f59e0b' }}>
-                            <p style={{ fontSize: 13, color: '#92400e', margin: 0 }}>
-                                <strong>Bulk Upload:</strong> Import multiple toilets at once from a CSV file. All imported toilets will be automatically approved.
-                            </p>
-                        </div>
-
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 24 }}>
-                            {/* Left: Instructions + Field Guide */}
-                            <div>
-                                {/* Instructions Section */}
-                                <div style={{ backgroundColor: '#f8fafc', padding: 20, borderRadius: 12, marginBottom: 20, borderLeft: '4px solid #3b82f6' }}>
-                                    <h3 style={{ fontSize: 15, fontWeight: 800, marginBottom: 12, color: '#1e293b' }}>📋 How to Upload</h3>
-                                    <ol style={{ marginLeft: 18, lineHeight: 1.7, color: '#475569', fontSize: 13 }}>
-                                        <li><strong>Download</strong> the CSV template</li>
-                                        <li><strong>Fill in</strong> your toilet data</li>
-                                        <li><strong>Upload</strong> the file below</li>
-                                        <li>All toilets will be <strong>auto-approved</strong></li>
-                                    </ol>
-                                </div>
-
-                                {/* Field Guide */}
-                                <div>
-                                    <h3 style={{ fontSize: 15, fontWeight: 800, marginBottom: 12 }}>📝 Field Guide</h3>
-                                    <div style={{ display: 'grid', gap: 8 }}>
-                                        <FieldRow label="Name" required description="Toilet name (e.g., CT-Ward-5-Main)" />
-                                        <FieldRow label="Ward ID" required description="UUID of the ward (get from Wards list)" />
-                                        <FieldRow label="Type" required description="CT (Community Toilet) or PT (Public Toilet)" />
-                                        <FieldRow label="Gender" required description="MALE, FEMALE, or ALL" />
-                                        <FieldRow label="Latitude" required description="GPS latitude (decimal, e.g., 28.6139)" />
-                                        <FieldRow label="Longitude" required description="GPS longitude (decimal, e.g., 77.2090)" />
-                                        <FieldRow label="Code" description="Unique code (e.g., CT-001)" />
-                                        <FieldRow label="Operator Name" description="Who operates it (e.g., ULB, Private)" />
-                                        <FieldRow label="Number of Seats" description="Number of seats (integer)" />
-                                        <FieldRow label="Address" description="Full address text" />
-                                    </div>
-                                </div>
+                    <div className="grid grid-2" style={{ alignItems: 'start' }}>
+                        <div className="flex col gap-4">
+                            <div className="alert info">
+                                <h4 className="font-bold mb-2">📋 Instructions</h4>
+                                <ol className="list text-sm pl-4" style={{ listStyle: 'decimal' }}>
+                                    <li>Download the template.</li>
+                                    <li>Fill in toilet data (Zone/Ward names are auto-created).</li>
+                                    <li>Upload the CSV below.</li>
+                                </ol>
                             </div>
 
-                            {/* Right: CSV Format Example */}
-                            <div>
-                                <h3 style={{ fontSize: 15, fontWeight: 800, marginBottom: 12 }}>📄 CSV Format Example</h3>
-                                <div style={{ backgroundColor: '#0f172a', padding: 16, borderRadius: 8, marginBottom: 16, overflowX: 'auto' }}>
-                                    <pre style={{ color: '#e2e8f0', fontSize: 11, fontFamily: 'monospace', margin: 0, lineHeight: 1.6 }}>
-                                        {`Name,Ward ID,Type,Gender,Code,Operator Name,Number of Seats,Latitude,Longitude,Address
-CT-Ward-5-Main,<ward-uuid>,CT,MALE,CT-001,ULB,5,28.6139,77.2090,Near Main Market
-PT-Station-Road,<ward-uuid>,PT,ALL,PT-002,Private,3,28.6140,77.2091,Station Road`}
-                                    </pre>
+                            <div className="card" style={{ border: '1px dashed var(--border-strong)', background: '#f8fafc' }}>
+                                <div className="form-field">
+                                    <label>Select CSV File</label>
+                                    <input type="file" accept=".csv" onChange={handleFileChange} className="input" />
+                                    {file && <p className="text-green-700 text-sm mt-2 font-bold">✓ {file.name}</p>}
                                 </div>
-
-                                <button
-                                    onClick={downloadTemplate}
-                                    className="btn btn-outline"
-                                    style={{ width: '100%', padding: 14, fontSize: 14, fontWeight: 700, marginBottom: 20 }}
-                                >
-                                    📥 Download CSV Template
+                                <button onClick={handleUpload} disabled={!file || uploading} className="btn btn-primary w-full mt-4">
+                                    {uploading ? '⏳ Uploading...' : '📤 Upload & Import'}
                                 </button>
+                                <button onClick={downloadTemplate} className="btn btn-secondary w-full mt-2">
+                                    📥 Download Template
+                                </button>
+                            </div>
+                        </div>
 
-                                {/* File Upload */}
-                                <div>
-                                    <label className="label" style={{ fontWeight: 700, marginBottom: 8 }}>Select CSV File</label>
-                                    <input
-                                        type="file"
-                                        accept=".csv"
-                                        onChange={handleFileChange}
-                                        className="input"
-                                        style={{ padding: 12 }}
-                                    />
-                                    {file && (
-                                        <p style={{ marginTop: 8, fontSize: 13, color: '#10b981', fontWeight: 600 }}>
-                                            ✓ File selected: {file.name}
-                                        </p>
-                                    )}
+                        <div>
+                            <h3 className="font-bold mb-3">📝 Field Guide</h3>
+                            <div className="table-grid">
+                                <div className="table-head" style={{ gridTemplateColumns: '1fr 2fr' }}>
+                                    <span>Field</span>
+                                    <span>Description</span>
                                 </div>
+                                <FieldRow label="Name *" desc="e.g. CT-Ward-5" />
+                                <FieldRow label="Zone & Ward *" desc="Names (e.g. 'Zone 1', 'Ward 10')" />
+                                <FieldRow label="Type *" desc="CT or PT" />
+                                <FieldRow label="Gender *" desc="MALE, FEMALE, ALL" />
+                                <FieldRow label="Lat/Lon *" desc="Decimal coordinates" />
+                                <FieldRow label="Code" desc="Optional unique code" />
                             </div>
                         </div>
+                    </div>
+                )}
 
-                        {/* Error/Success Display */}
-                        {error && (
-                            <div className="alert error" style={{ marginBottom: 20 }}>
-                                <strong>Error:</strong> {error}
-                            </div>
-                        )}
-
-                        {result && (
-                            <div className="alert success" style={{ marginBottom: 20 }}>
-                                <h4 style={{ fontWeight: 800, marginBottom: 8 }}>✓ Import Successful!</h4>
-                                <p style={{ marginBottom: 8 }}>
-                                    <strong>{result.count}</strong> toilets imported and saved to database.
-                                </p>
-                                <p style={{ fontSize: 13, opacity: 0.9 }}>
-                                    Status: <strong>APPROVED</strong> (ready for assignment)
-                                </p>
-                                <p style={{ fontSize: 13, marginTop: 8 }}>Redirecting to toilet list...</p>
-                            </div>
-                        )}
-
-                        {/* Action Buttons */}
-                        <div style={{ display: 'flex', gap: 12 }}>
-                            <button
-                                onClick={handleUpload}
-                                disabled={!file || uploading}
-                                className="btn btn-primary"
-                                style={{ flex: 1, padding: 16, fontSize: 15, fontWeight: 700 }}
-                            >
-                                {uploading ? '⏳ Uploading...' : '📤 Upload & Import'}
-                            </button>
-
-                            <button
-                                onClick={() => router.back()}
-                                className="btn btn-outline"
-                                style={{ padding: 16, fontSize: 15, fontWeight: 700 }}
-                            >
-                                Cancel
-                            </button>
-                        </div>
-
-                        {/* Post-Import Info */}
-                        <div style={{ marginTop: 24, padding: 16, backgroundColor: '#dbeafe', borderRadius: 12, borderLeft: '4px solid #3b82f6' }}>
-                            <h4 style={{ fontSize: 13, fontWeight: 800, marginBottom: 8, color: '#1e40af' }}>⚡ After Import</h4>
-                            <ul style={{ marginLeft: 18, lineHeight: 1.7, color: '#1e3a8a', fontSize: 12 }}>
-                                <li>All toilets will be <strong>APPROVED</strong> automatically</li>
-                                <li>Go to <strong>Assignments</strong> tab to assign employees</li>
-                                <li>Employees will see assigned toilets in their mobile app</li>
-                                <li>Inspections can start immediately after assignment</li>
-                            </ul>
-                        </div>
+                {error && <div className="alert error mt-4"><strong>Error:</strong> {error}</div>}
+                {result && (
+                    <div className="alert success mt-4">
+                        <h4 className="font-bold">✓ Success!</h4>
+                        <p>{result.count} toilets imported. Redirecting...</p>
                     </div>
                 )}
             </div>
@@ -487,15 +230,31 @@ PT-Station-Road,<ward-uuid>,PT,ALL,PT-002,Private,3,28.6140,77.2091,Station Road
     );
 }
 
-// Helper component for field rows
-function FieldRow({ label, required, description }: { label: string; required?: boolean; description: string }) {
+function InputField({ label, value, onChange, placeholder, required, type = 'text' }: any) {
     return (
-        <div style={{ display: 'flex', gap: 10, padding: 10, backgroundColor: '#fff', borderRadius: 6, border: '1px solid #e2e8f0' }}>
-            <div style={{ minWidth: 100 }}>
-                <span style={{ fontWeight: 700, fontSize: 12 }}>{label}</span>
-                {required && <span style={{ color: '#ef4444', marginLeft: 4 }}>*</span>}
-            </div>
-            <div style={{ flex: 1, fontSize: 12, color: '#64748b' }}>{description}</div>
+        <div className="form-field">
+            <label>{label} {required && <span className="text-red-600">*</span>}</label>
+            <input type={type} className="input" value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} />
+        </div>
+    );
+}
+
+function SelectField({ label, value, onChange, children, required }: any) {
+    return (
+        <div className="form-field">
+            <label>{label} {required && <span className="text-red-600">*</span>}</label>
+            <select className="select" value={value} onChange={e => onChange(e.target.value)}>
+                {children}
+            </select>
+        </div>
+    );
+}
+
+function FieldRow({ label, desc }: { label: string, desc: string }) {
+    return (
+        <div className="table-row" style={{ gridTemplateColumns: '1fr 2fr' }}>
+            <span className="font-bold text-sm">{label}</span>
+            <span className="text-slate-600 text-sm">{desc}</span>
         </div>
     );
 }

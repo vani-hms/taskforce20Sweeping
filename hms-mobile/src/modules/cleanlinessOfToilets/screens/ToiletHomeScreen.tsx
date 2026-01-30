@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, TouchableOpacity, FlatList, ActivityIndicator, StyleSheet, SafeAreaView, StatusBar, RefreshControl } from "react-native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { RootStackParamList } from "../../navigation/types";
-import { ToiletApi } from "../../api/modules";
-import { useAuthContext } from "../../auth/AuthProvider";
+import { RootStackParamList } from "../../../navigation/types";
+import { ToiletApi } from "../../../api/modules";
+import { useAuthContext } from "../../../auth/AuthProvider";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -14,7 +14,7 @@ export default function ToiletHomeScreen({ navigation }: { navigation: Nav }) {
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [error, setError] = useState("");
-    const isQc = auth.status === "authenticated" && auth.roles?.includes("QC");
+    const isQc = auth.status === "authenticated" && (auth.roles || []).includes("QC");
 
     const loadData = async (isRefresh = false) => {
         if (!isRefresh) setLoading(true);
@@ -68,8 +68,10 @@ export default function ToiletHomeScreen({ navigation }: { navigation: Nav }) {
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
                     <Text style={styles.backText}>←</Text>
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>QC Quality Audit</Text>
-                <View style={{ width: 40 }} />
+                <Text style={styles.headerTitle}>Cleanliness of Toilets</Text>
+                <TouchableOpacity onPress={() => navigation.navigate("ToiletHelp")}>
+                    <Text style={{ fontSize: 24 }}>❓</Text>
+                </TouchableOpacity>
             </View>
 
             {loading ? (
@@ -115,7 +117,7 @@ export default function ToiletHomeScreen({ navigation }: { navigation: Nav }) {
                     ListEmptyComponent={
                         <View style={styles.empty}>
                             <Text style={styles.emptyTitle}>All Caught Up!</Text>
-                            <Text style={styles.emptySub}>No pending toilet inspections for your assigned wards.</Text>
+                            <Text style={styles.emptySub}>No pending cleanliness of toilets inspections for your assigned wards.</Text>
                         </View>
                     }
                 />

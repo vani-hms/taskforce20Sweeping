@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, SafeAreaView, StatusBar, RefreshControl, Alert } from "react-native";
-import { ToiletApi } from "../../api/modules";
+import { ToiletApi } from "../../../api/modules";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { RootStackParamList } from "../../navigation/types";
+import { RootStackParamList } from "../../../navigation/types";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -26,13 +26,13 @@ export default function ToiletPendingRegistrationScreen({ navigation }: { naviga
     useEffect(() => { load(); }, []);
 
     const handleApprove = (id: string) => {
-        Alert.alert("Confirm", "Approve this toilet registration?", [
+        Alert.alert("Confirm", "Approve this registration?", [
             { text: "Cancel", style: "cancel" },
             {
                 text: "Approve", onPress: async () => {
                     try {
-                        await ToiletApi.approveToilet(id);
-                        Alert.alert("Success", "Toilet approved and added to master.");
+                        await ToiletApi.approveToilet(id, {});
+                        Alert.alert("Success", "Approved and added to master.");
                         load();
                     } catch (e) { Alert.alert("Error", "Approval failed."); }
                 }
@@ -83,7 +83,7 @@ export default function ToiletPendingRegistrationScreen({ navigation }: { naviga
             <StatusBar barStyle="dark-content" />
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => navigation.goBack()}><Text style={styles.backBtn}>←</Text></TouchableOpacity>
-                <Text style={styles.title}>Toilet Registration Requests</Text>
+                <Text style={styles.title}>Registration Requests</Text>
                 <View style={{ width: 40 }} />
             </View>
 
@@ -99,7 +99,7 @@ export default function ToiletPendingRegistrationScreen({ navigation }: { naviga
                     ListEmptyComponent={
                         <View style={styles.empty}>
                             <Text style={styles.emptyTitle}>No Pending Requests</Text>
-                            <Text style={styles.emptySub}>All toilet registration requests have been processed.</Text>
+                            <Text style={styles.emptySub}>All registration requests have been processed.</Text>
                         </View>
                     }
                 />

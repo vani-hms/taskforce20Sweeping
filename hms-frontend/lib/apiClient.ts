@@ -162,7 +162,7 @@ export const TaskforceApi = {
     apiFetch<{ activity: any }>(`/modules/taskforce/cases/${id}/activity`, {
       method: "POST",
       body: JSON.stringify(body)
-      }),
+    }),
   assigned: () =>
     apiFetch<{ feederPoints: any[] }>("/modules/taskforce/feeder-points/assigned"),
   feederRequests: () => apiFetch<{ feederPoints: any[] }>("/modules/taskforce/feeder-points/requests"),
@@ -186,12 +186,53 @@ export const TaskforceApi = {
 };
 
 export const ToiletApi = {
-  createForm: (body: { title: string; description?: string }) =>
-    apiFetch<{ form: any }>("/modules/toilet/forms", { method: "POST", body: JSON.stringify(body) }),
-  updateForm: (id: string, body: { title?: string; description?: string; status?: string }) =>
-    apiFetch<{ form: any }>(`/modules/toilet/forms/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
-  listForms: () => apiFetch<{ forms: any[] }>("/modules/toilet/forms"),
-  summary: () => apiFetch<{ summary: { status: string; count: number }[] }>("/modules/toilet/reports/summary")
+  // Stats & Dashboard
+  getDashboardStats: () => apiFetch<{ pendingReview: number; inspectionsDone: number }>("/modules/toilet/stats"),
+
+  // Master & Search
+  listToilets: () => apiFetch<{ toilets: any[] }>("/modules/toilet/assigned"),
+  listAllToilets: () => apiFetch<{ toilets: any[] }>("/modules/toilet/all"),
+  getToiletDetails: (id: string) => apiFetch<{ toilet: any }>(`/modules/toilet/${id}`),
+  summary: () => apiFetch<{ summary: { status: string; count: number }[] }>("/modules/toilet/reports/summary"),
+
+  // Registration & Approval
+  listPendingToilets: () => apiFetch<{ toilets: any[] }>("/modules/toilet/pending"),
+  approveToilet: (id: string, body: { assignedEmployeeIds?: string[] } = {}) =>
+    apiFetch(`/modules/toilet/${id}/approve`, { method: "POST", body: JSON.stringify(body) }),
+  rejectToilet: (id: string, reason: string) =>
+    apiFetch(`/modules/toilet/${id}/reject`, { method: "POST", body: JSON.stringify({ reason }) }),
+
+  bulkImport: (csvText: string) =>
+    apiFetch<{ count: number }>("/modules/toilet/bulk-import", {
+      method: "POST",
+      body: JSON.stringify({ csvText })
+    }),
+
+  // Operational
+  listInspections: (params?: { status?: string; employeeId?: string }) => {
+    const sp = new URLSearchParams();
+    if (params?.status) sp.append('status', params.status);
+    if (params?.employeeId) sp.append('employeeId', params.employeeId);
+    const query = sp.toString() ? `?${sp.toString()}` : "";
+    return apiFetch<{ inspections: any[] }>(`/modules/toilet/inspections${query}`);
+  },
+  getInspectionDetails: (id: string) => apiFetch<{ inspection: any }>(`/modules/toilet/inspections/${id}`),
+  submitInspection: (body: any) =>
+    apiFetch("/modules/toilet/inspections/submit", { method: "POST", body: JSON.stringify(body) }),
+  reviewInspection: (id: string, body: { status: string; comment?: string }) =>
+    apiFetch(`/modules/toilet/inspections/${id}/review`, { method: "POST", body: JSON.stringify(body) }),
+
+  // Geo Data Proxy
+  getZones: () => apiFetch<{ nodes: any[] }>("/city/geo?level=ZONE"),
+  getWardsByZone: (zoneId: string) => apiFetch<{ nodes: any[] }>(`/city/geo?level=WARD&parentId=${zoneId}`),
+
+  // Assignments
+  listEmployees: () => EmployeesApi.list("toilet"),
+  bulkAssignToilets: (employeeId: string, toiletIds: string[], category: string) =>
+    apiFetch("/modules/toilet/assignments/bulk", {
+      method: "POST",
+      body: JSON.stringify({ employeeId, toiletIds, category })
+    })
 };
 
 export const ModuleRecordsApi = {

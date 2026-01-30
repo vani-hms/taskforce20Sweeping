@@ -208,7 +208,7 @@ router.post("/feeder-points/:id/approve", validateBody(approveSchema), async (re
     await assertModuleAccess(req, res, moduleId, [Role.QC]);
     await ensureModuleEnabled(cityId, moduleId);
 
-    const feederPoint = await prisma.taskforceFeederPoint.findUnique({ where: { id: req.params.id } });
+    const feederPoint = await prisma.taskforceFeederPoint.findUnique({ where: { id: req.params.id as string } });
     if (!feederPoint || feederPoint.cityId !== cityId) throw new HttpError(404, "Feeder point not found");
     const scope = await getQcScope({ userId, cityId, moduleId });
     if (
@@ -260,7 +260,7 @@ router.post("/feeder-points/:id/reject", async (req, res, next) => {
     await assertModuleAccess(req, res, moduleId, [Role.QC]);
     await ensureModuleEnabled(cityId, moduleId);
 
-    const feederPoint = await prisma.taskforceFeederPoint.findUnique({ where: { id: req.params.id } });
+    const feederPoint = await prisma.taskforceFeederPoint.findUnique({ where: { id: req.params.id as string } });
     if (!feederPoint || feederPoint.cityId !== cityId) throw new HttpError(404, "Feeder point not found");
     const scope = await getQcScope({ userId, cityId, moduleId });
     if (
@@ -295,7 +295,7 @@ router.post("/feeder-points/:id/action-required", async (req, res, next) => {
     await assertModuleAccess(req, res, moduleId, [Role.QC]);
     await ensureModuleEnabled(cityId, moduleId);
 
-    const feederPoint = await prisma.taskforceFeederPoint.findUnique({ where: { id: req.params.id } });
+    const feederPoint = await prisma.taskforceFeederPoint.findUnique({ where: { id: req.params.id as string } });
     if (!feederPoint || feederPoint.cityId !== cityId) throw new HttpError(404, "Feeder point not found");
     const scope = await getQcScope({ userId, cityId, moduleId });
     if (
@@ -356,7 +356,7 @@ router.post("/feeder-points/:id/report", validateBody(reportSchema), async (req,
     await assertModuleAccess(req, res, moduleId, [Role.EMPLOYEE]);
     await ensureModuleEnabled(cityId, moduleId);
 
-    const feederPoint = await prisma.taskforceFeederPoint.findUnique({ where: { id: req.params.id } });
+    const feederPoint = await prisma.taskforceFeederPoint.findUnique({ where: { id: req.params.id as string } });
     if (!feederPoint || feederPoint.cityId !== cityId) throw new HttpError(404, "Feeder point not found");
     if (feederPoint.status !== "APPROVED") throw new HttpError(400, "Feeder point not approved");
     if (!feederPoint.assignedEmployeeIds.includes(userId)) {
@@ -447,7 +447,7 @@ async function updateReportStatus(
     await ensureModuleEnabled(cityId, moduleId);
 
     const report = await prisma.taskforceFeederReport.findUnique({
-      where: { id: req.params.id },
+      where: { id: req.params.id as string },
       include: { feederPoint: true }
     });
     if (!report || report.cityId !== cityId) throw new HttpError(404, "Report not found");
@@ -541,12 +541,12 @@ router.patch("/cases/:id", validateBody(statusSchema), async (req, res, next) =>
     await assertModuleAccess(req, res, moduleId, [Role.EMPLOYEE, Role.QC, Role.ACTION_OFFICER, Role.CITY_ADMIN]);
     await ensureModuleEnabled(cityId, moduleId);
 
-    const caseRecord = await prisma.taskforceCase.findUnique({ where: { id: req.params.id } });
+    const caseRecord = await prisma.taskforceCase.findUnique({ where: { id: req.params.id as string } });
     if (!caseRecord || caseRecord.cityId !== cityId) throw new HttpError(404, "Case not found");
 
     const { status, assignedTo } = req.body as z.infer<typeof statusSchema>;
     const updated = await prisma.taskforceCase.update({
-      where: { id: req.params.id },
+      where: { id: req.params.id as string },
       data: { status, assignedTo }
     });
 
@@ -602,7 +602,7 @@ router.post("/cases/:id/activity", validateBody(activitySchema), async (req, res
     await assertModuleAccess(req, res, moduleId, [Role.EMPLOYEE, Role.QC, Role.ACTION_OFFICER, Role.CITY_ADMIN]);
     await ensureModuleEnabled(cityId, moduleId);
 
-    const caseRecord = await prisma.taskforceCase.findUnique({ where: { id: req.params.id } });
+    const caseRecord = await prisma.taskforceCase.findUnique({ where: { id: req.params.id as string } });
     if (!caseRecord || caseRecord.cityId !== cityId) throw new HttpError(404, "Case not found");
 
     const { action, metadata } = req.body as z.infer<typeof activitySchema>;

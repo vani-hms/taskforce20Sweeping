@@ -374,13 +374,13 @@ router.get("/employees", async (req, res, next) => {
 
     const qcModuleIds = isQc
       ? new Set(
-          (
-            await prisma.userModuleRole.findMany({
-              where: { userId: req.auth!.sub, cityId },
-              select: { moduleId: true }
-            })
-          ).map((m) => m.moduleId)
-        )
+        (
+          await prisma.userModuleRole.findMany({
+            where: { userId: req.auth!.sub, cityId },
+            select: { moduleId: true }
+          })
+        ).map((m) => m.moduleId)
+      )
       : new Set<string>();
 
     // If moduleKey is provided, resolve it to moduleId and ensure QC has access

@@ -15,7 +15,7 @@ export default function ModulesLanding() {
     <Protected>
       <div className="page">
         <h1>Modules</h1>
-        {modules.length === 0 ? (
+        {deduped.length === 0 ? (
           <div className="card">
             <p className="muted">You are not assigned to any modules yet.</p>
           </div>

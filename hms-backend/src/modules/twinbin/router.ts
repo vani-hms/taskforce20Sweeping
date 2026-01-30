@@ -22,14 +22,14 @@ function buildScopeFilters(scope: { zoneIds: string[]; wardIds: string[] }) {
     scope.zoneIds.length === 0
       ? undefined
       : {
-          OR: [{ zoneId: { in: scope.zoneIds } }, { zoneId: null }]
-        };
+        OR: [{ zoneId: { in: scope.zoneIds } }, { zoneId: null }]
+      };
   const wardFilter =
     scope.wardIds.length === 0
       ? undefined
       : {
-          OR: [{ wardId: { in: scope.wardIds } }, { wardId: null }]
-        };
+        OR: [{ wardId: { in: scope.wardIds } }, { wardId: null }]
+      };
   return { zoneFilter, wardFilter };
 }
 
@@ -163,10 +163,16 @@ router.get("/bins/pending", async (req, res, next) => {
     const { zoneFilter, wardFilter } = buildScopeFilters(scope);
     const where: any = {
       cityId,
-      status: TwinbinBinStatus.PENDING_QC,
-      ...(zoneFilter ? zoneFilter : {}),
-      ...(wardFilter ? wardFilter : {})
+      status: TwinbinBinStatus.PENDING_QC
     };
+
+    const conditions: any[] = [];
+    if (zoneFilter) conditions.push(zoneFilter);
+    if (wardFilter) conditions.push(wardFilter);
+
+    if (conditions.length > 0) {
+      where.AND = conditions;
+    }
 
     const latest = await prisma.litterBin.findFirst({
       where: { cityId },
@@ -466,8 +472,10 @@ router.get("/visits/pending", async (req, res, next) => {
       cityId,
       status: "PENDING_QC",
       bin: {
-        ...(zoneFilter ? zoneFilter : {}),
-        ...(wardFilter ? wardFilter : {})
+        AND: [
+          ...(zoneFilter ? [zoneFilter] : []),
+          ...(wardFilter ? [wardFilter] : [])
+        ]
       }
     };
     if (!zoneFilter && !wardFilter) delete where.bin;
@@ -776,8 +784,10 @@ router.get("/reports/pending", async (req, res, next) => {
       cityId,
       status: "SUBMITTED",
       bin: {
-        ...(zoneFilter ? zoneFilter : {}),
-        ...(wardFilter ? wardFilter : {})
+        AND: [
+          ...(zoneFilter ? [zoneFilter] : []),
+          ...(wardFilter ? [wardFilter] : [])
+        ]
       }
     };
     if (!zoneFilter && !wardFilter) delete where.bin;

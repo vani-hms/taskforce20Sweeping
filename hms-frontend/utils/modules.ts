@@ -31,6 +31,6 @@ export function canonicalizeModules<T extends { key: string }>(modules: T[] = []
 
 export function routeForModule(key: CanonicalModuleKey) {
   if (key === "LITTERBINS") return "litterbins";
-  if (key === "SWEEPING") return "modules"; // placeholder until dedicated UI exists
+  if (key === "SWEEPING") return "sweeping"; // placeholder until dedicated UI exists
   return key.toLowerCase();
 }

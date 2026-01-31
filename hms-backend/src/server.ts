@@ -7,6 +7,7 @@ import cityRouter from "./city/router";
 import taskforceRouter from "./modules/taskforce/router";
 import toiletRouter from "./modules/toilet/router";
 import twinbinRouter from "./modules/twinbin/router";
+import sweepingRouter from "./modules/sweeping/router";
 import recordsRouter from "./modules/recordsRouter";
 import publicRouter from "./public/router";
 import { errorHandler } from "./middleware/errorHandler";
@@ -50,6 +51,7 @@ app.use("/modules", recordsRouter);
 app.use("/modules/taskforce", taskforceRouter);
 app.use("/modules/toilet", toiletRouter);
 app.use("/modules/twinbin", twinbinRouter);
+app.use("/modules/sweeping", sweepingRouter);
 
 app.use(errorHandler);
 

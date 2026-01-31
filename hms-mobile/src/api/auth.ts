@@ -36,6 +36,71 @@ export async function login(body: { email: string; password: string }) {
     }
   );
 }
+export async function listSweepingBeats() {
+  return request<{ beats: any[] }>("/modules/sweeping/employee/beats");
+}
+export async function submitSweepingInspection(body: {
+  sweepingBeatId: string;
+  latitude: number;
+  longitude: number;
+  answers: {
+    questionCode: string;
+    answer: boolean;
+    photos: string[];
+  }[];
+}) {
+  return request<{ inspection: any }>("/modules/sweeping/inspections/submit", {
+    method: "POST",
+    body: JSON.stringify(body)
+  });
+}
+export async function listSweepingQcInspections() {
+  return request<{ inspections: any[] }>("/modules/sweeping/qc/inspections");
+}
+export async function sweepingQcDecision(
+  inspectionId: string,
+  decision: "APPROVED" | "REJECTED" | "ACTION_REQUIRED"
+) {
+  return request<{ inspection: any }>(`/modules/sweeping/qc/inspections/${inspectionId}/decision`, {
+    method: "POST",
+    body: JSON.stringify({ decision })
+  });
+}
+export async function listSweepingActionRequired() {
+  return request<{ inspections: any[] }>("/modules/sweeping/action/required");
+}
+export async function submitSweepingAction(
+  inspectionId: string,
+  body: { remarks: string; photos: string[] }
+) {
+  return request<{ actionResponse: any }>(`/modules/sweeping/action/${inspectionId}/respond`, {
+    method: "POST",
+    body: JSON.stringify(body)
+  });
+}
+export async function uploadSweepingKml(wardId: string, file: FormData) {
+  const token = await getToken();
+  const res = await fetch(
+    `${API_BASE_URL}/modules/sweeping/admin/upload-kml/${wardId}`,
+    {
+      method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: file
+    }
+  );
+
+  if (!res.ok) throw new ApiError(res.status, await res.text());
+  return res.json();
+}
+export async function assignSweepingBeat(body: {
+  sweepingBeatId: string;
+  employeeId: string;
+}) {
+  return request<{ beat: any }>("/modules/sweeping/admin/assign-beat", {
+    method: "POST",
+    body: JSON.stringify(body)
+  });
+}
 
 export async function fetchCityInfo() {
   return request<{ city: { id: string; name: string } }>("/city/info");
@@ -54,6 +119,20 @@ export async function listGeo(level: "ZONE" | "WARD") {
     `/city/geo?level=${level}`
   );
 }
+export async function listQcSweepingBeats() {
+  return request<{ beats: any[] }>("/modules/sweeping/qc/beats");
+}
+
+export async function assignSweepingBeatQc(body: {
+  sweepingBeatId: string;
+  employeeId: string;
+}) {
+  return request<{ beat: any }>("/modules/sweeping/admin/assign-beat", {
+    method: "POST",
+    body: JSON.stringify(body)
+  });
+}
+
 
 export async function approveRegistrationRequest(
   id: string,

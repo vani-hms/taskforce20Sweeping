@@ -45,65 +45,66 @@ This adds the 30+ questions (CT/PT) that appear in the Mobile App. **Without thi
 npx ts-node scripts/seed-toilet-inspection-questions.ts
 ```
 
-### 4. Restart the Backend
-To make the new APIs live:
-```bash
-# If using pm2 (recommended)
-pm2 restart hms-backend
-
-# OR if running manually
-npm install  # Check for new dependencies
-npm run build
-npm start
-```
-
+### 📦 New Database Schema (Prisma)
+**3 New Models Added:**
+| Model | Description |
+|-------|-------------|
+| `Toilet` | Stores toilet locations (CT/PT), operator info, coordinates |
+| `ToiletInspection` | Daily inspection records with QC review |
+| `ToiletAssignment` | Employee-to-toilet assignment mapping |
+| `ToiletInspectionQuestion` | Configurable inspection questionnaire |
+**New Enums:**
+- `ToiletType`: CT, PT
+- `ToiletGender`: MALE, FEMALE, UNISEX, DISABLED
+- `ToiletStatus`: PENDING, APPROVED, REJECTED
+- `InspectionStatus`: SUBMITTED, APPROVED, REJECTED, ACTION_REQUIRED
 ---
-
-## 🔵 Step 2: Update the Web Portal
-
-Do this on the server where `hms-frontend` is hosted.
-
-### 1. Get the latest code
+### 🚀 How to Setup
 ```bash
-cd hms-frontend
-git pull origin main
-```
+cd hms-backend
+npx prisma db push    # Apply schema changes
+npx ts-node scripts/seed.ts  # Seed initial data (optional)
 
-### 2. Install & Build
-```bash
-npm install       # Install any new libraries
-npm run build     # Compile the Next.js app
-```
 
-### 3. Restart the Frontend
-```bash
-# If using pm2
-pm2 restart hms-frontend
 
-# OR manually
-npm start
-```
 
+
+### 📦 New Database Schema (Prisma)
+**3 New Models Added:**
+| Model | Description |
+|-------|-------------|
+| `Toilet` | Stores toilet locations (CT/PT), operator info, coordinates |
+| `ToiletInspection` | Daily inspection records with QC review |
+| `ToiletAssignment` | Employee-to-toilet assignment mapping |
+| `ToiletInspectionQuestion` | Configurable inspection questionnaire |
+**New Enums:**
+- `ToiletType`: CT, PT
+- `ToiletGender`: MALE, FEMALE, UNISEX, DISABLED
+- `ToiletStatus`: PENDING, APPROVED, REJECTED
+- `InspectionStatus`: SUBMITTED, APPROVED, REJECTED, ACTION_REQUIRED
 ---
+### 🚀 How to Setup
+```bash
+cd hms-backend
+npx prisma db push    # Apply schema changes
+npx ts-node scripts/seed.ts  # Seed initial data (optional)
+Enable Module:
 
-## 🟠 Step 3: Update the Mobile App
+Login as City Admin
+Go to Modules → Enable "Cleanliness of Toilets"
+Assign employees to toilets
+📁 Files Added/Modified
+Backend:
 
-Since the Mobile App logic hasn't changed much (just using the new APIs), you usually **don't** need to redeploy the `.apk` immediately unless you added new native libraries.
+hms-backend/prisma/schema.prisma
+ - New models
+hms-backend/src/modules/toilet/router.ts
+ - API endpoints
+Frontend:
 
-**However**, field employees must have the updated JS bundle.
-1.  If you are using **Expo EAS Update**:
-    ```bash
-    eas update --branch production
-    ```
-2.  If you manually distribute APKs:
-    *   Build a new APK and share it with the team.
+hms-frontend/app/modules/toilet/* - Web portal pages
+Mobile:
 
----
+hms-mobile/src/modules/toilet/* - Mobile app screens
 
-## ✅ Checklist for Success
-1.  [ ] Did `npx prisma migrate deploy` finish without errors?
-2.  [ ] Did you run `npx ts-node scripts/seed-toilet-inspection-questions.ts`?
-3.  [ ] Check the **Dashboard**: Do you see the "Cleanliness of Toilets" tab?
-4.  [ ] Check the **App**: Can you open an inspection and see the questions?
 
-If all "Yes", you are live! 🚀

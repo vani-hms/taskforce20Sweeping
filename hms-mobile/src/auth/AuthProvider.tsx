@@ -34,30 +34,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setAuth({ status: "guest" });
         return;
       }
-
       const decoded = decodeJwt(token);
-
-      const roles =
-        decoded.roles ||
-        decoded.modules?.flatMap((m: any) => m.roles || []) ||
-        [];
-
-      setSession({ token, roles, cityId: decoded.cityId, modules: decoded.modules });
-
+      setSession({ token, roles: decoded.roles, cityId: decoded.cityId, modules: decoded.modules });
       const info = await fetchCityInfo();
-
       setSession({
         token,
-        roles,
+        roles: decoded.roles,
         cityId: decoded.cityId,
         cityName: info.city.name,
         modules: decoded.modules
       });
-
       setAuth({
         status: "authenticated",
         cityName: info.city.name,
-        roles,
+        roles: decoded.roles,
         cityId: decoded.cityId,
         modules: decoded.modules
       });
@@ -74,35 +64,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const completeLogin = async (token: string, cityName?: string, modules?: ModuleAccess[]) => {
     await saveToken(token);
-
     const decoded = decodeJwt(token);
-
-    const roles =
-      decoded.roles ||
-      decoded.modules?.flatMap((m: any) => m.roles || []) ||
-      [];
-
-    setSession({ token, roles, cityId: decoded.cityId, cityName, modules: modules || decoded.modules });
-
+    setSession({ token, roles: decoded.roles, cityId: decoded.cityId, cityName, modules: modules || decoded.modules });
     if (!cityName) {
       try {
         const info = await fetchCityInfo();
         cityName = info.city.name;
-
         setSession({
           token,
-          roles,
+          roles: decoded.roles,
           cityId: decoded.cityId,
           cityName,
           modules: modules || decoded.modules
         });
-      } catch {}
+      } catch {
+        // ignore fallback failures
+      }
     }
-
     setAuth({
       status: "authenticated",
       cityName,
-      roles,
+      roles: decoded.roles,
       cityId: decoded.cityId,
       modules: modules || decoded.modules
     });

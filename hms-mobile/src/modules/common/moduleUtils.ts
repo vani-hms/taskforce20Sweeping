@@ -1,16 +1,8 @@
 import type { ModuleAccess } from "../../auth/session";
 
-
-  const LEGACY_MAP: Record<string, string> = {
-  TWINBIN: "LITTERBINS",
-
-  // 👇 ADD THIS
-  SWEEP_RES: "SWEEPING",
-  SWEEP_COM: "SWEEPING",
-  SWEEPING: "SWEEPING"
+const LEGACY_MAP: Record<string, string> = {
+  TWINBIN: "LITTERBINS"
 };
-
-
 
 export function normalizeModuleKey(key: string) {
   const upper = (key || "").trim().toUpperCase();

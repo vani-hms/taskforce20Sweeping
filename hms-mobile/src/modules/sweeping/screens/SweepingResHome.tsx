@@ -3,8 +3,6 @@ import { View, Text, ActivityIndicator, StyleSheet } from "react-native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../../../navigation";
 import { ModuleRecordsApi } from "../../../api/modules";
-import { getSession } from "../../../auth/session";
-
 
 type Nav = NativeStackNavigationProp<RootStackParamList, "Module">;
 
@@ -17,26 +15,6 @@ export default function SweepingResHome({ navigation }: { navigation: Nav }) {
 
   useEffect(() => {
     const load = async () => {
-      const session = getSession();
-      const roles = session.roles || [];
-
-      // 🎯 ROLE BASED REDIRECT
-      if (roles.includes("EMPLOYEE")) {
-        navigation.replace("SweepingBeats");
-        return;
-      }
-
-      if (roles.includes("QC")) {
-        navigation.replace("QcSweepingList");
-        return;
-      }
-
-      if (roles.includes("ACTION_OFFICER")) {
-        navigation.replace("ActionOfficerSweeping");
-        return;
-      }
-
-      // fallback dashboard info (admin view)
       setError("");
       try {
         const res = await ModuleRecordsApi.getRecords("SWEEP_RES");
@@ -47,10 +25,8 @@ export default function SweepingResHome({ navigation }: { navigation: Nav }) {
         setLoading(false);
       }
     };
-
     load();
   }, []);
-
 
   return (
     <View style={styles.container}>

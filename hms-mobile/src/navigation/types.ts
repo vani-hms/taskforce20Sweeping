@@ -26,15 +26,4 @@ export type RootStackParamList = {
   TaskforceFeederDetail: { feeder: any };
   TaskforceQcReports: undefined;
   TaskforceQcReportReview: { report: any };
-  SweepingBeats: undefined;
-  SweepingEmployee: undefined;
-  SweepingInspection: { beat: any };
-  QcSweepingList: undefined;
-  QcSweepingDetail: { inspection: any };
-  ActionOfficerSweeping: undefined;
-  QcBeatAssignment: undefined;
-  QcSweepingHome: undefined;
-
-
-
 };

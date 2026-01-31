@@ -4,7 +4,8 @@ export type Role =
   | "COMMISSIONER"
   | "ACTION_OFFICER"
   | "EMPLOYEE"
-  | "QC";
+  | "QC"
+  | "ULB_OFFICER";
 
 export type ModuleKey = string;
 export type ModuleName = ModuleKey;

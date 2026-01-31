@@ -1,10 +1,12 @@
 import React, { useMemo, useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, Switch, TextInput, Image, ScrollView } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, Switch, ScrollView, Image, TextInput } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import * as Location from "expo-location";
 import * as ImagePicker from "expo-image-picker";
 import { RootStackParamList } from "../../../navigation";
 import { submitTwinbinReport, ApiError, getTwinbinReportContext } from "../../../api/auth";
+import { Colors, Spacing, Typography, Layout, UI } from "../../../theme";
+import { MapPin, Camera, Navigation, AlertCircle, CheckCircle } from "lucide-react-native";
 
 type Props = NativeStackScreenProps<RootStackParamList, "TwinbinBinDetail">;
 
@@ -20,7 +22,7 @@ function haversineMeters(lat1: number, lon1: number, lat2: number, lon2: number)
   return R * c;
 }
 
-export default function TwinbinBinDetailScreen({ route }: Props) {
+export default function TwinbinBinDetailScreen({ route, navigation }: Props) {
   const { bin } = route.params;
   const [distance, setDistance] = useState<number | null>(null);
   const [proximityToken, setProximityToken] = useState<string | null>(null);
@@ -30,6 +32,7 @@ export default function TwinbinBinDetailScreen({ route }: Props) {
   const [error, setError] = useState("");
   const [lat, setLat] = useState<number | null>(null);
   const [lng, setLng] = useState<number | null>(null);
+
   const questions = [
     "Are adequate litter bins provided in the area?",
     "Are the litter bins properly fixed and securely installed?",
@@ -112,7 +115,9 @@ export default function TwinbinBinDetailScreen({ route }: Props) {
           Object.entries(answers).map(([k, v]) => [k, { answer: v.answer as "YES" | "NO", photoUrl: v.photoUrl }])
         )
       });
-      Alert.alert("Submitted", "Report submitted, awaiting QC review.");
+      Alert.alert("Submitted", "Report submitted to QC", [
+        { text: "OK", onPress: () => navigation.navigate("TwinbinAssigned") }
+      ]);
     } catch (err: any) {
       if (err instanceof ApiError) setSubmitError(err.message || "Failed to submit");
       else setSubmitError("Failed to submit");
@@ -140,131 +145,141 @@ export default function TwinbinBinDetailScreen({ route }: Props) {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 24 }}>
-      <Text style={styles.title}>Bin Detail</Text>
+    <ScrollView style={Layout.screenContainer} contentContainerStyle={{ paddingBottom: Spacing.xxl }}>
+      <Text style={[Typography.h2, { color: Colors.primary }]}>Bin Detail</Text>
+
       {bin.latestReport?.status ? (
-        <Text style={[styles.badge]}>{`Report Status: ${bin.latestReport.status}`}</Text>
+        <View style={styles.statusBadge}>
+          <Text style={{ color: Colors.primary, fontWeight: "700" }}>Report Status: {bin.latestReport.status}</Text>
+        </View>
       ) : (
-        <Text style={styles.muted}>Report not submitted yet.</Text>
+        <Text style={Typography.muted}>No report submitted yet.</Text>
       )}
-      <View style={styles.card}>
-        <Label label="Area" value={bin.areaName} />
-        <Label label="Area Type" value={bin.areaType} />
-        <Label label="Location" value={bin.locationName} />
-        <Label label="Road Type" value={bin.roadType} />
-        <Label label="Condition" value={bin.condition} />
-        <Label label="Fixed Properly" value={bin.isFixedProperly ? "Yes" : "No"} />
-        <Label label="Has Lid" value={bin.hasLid ? "Yes" : "No"} />
-        <Label label="Latitude" value={bin.latitude?.toString() || "-"} />
-        <Label label="Longitude" value={bin.longitude?.toString() || "-"} />
+
+      <View style={[Layout.card, { marginTop: Spacing.m }]}>
+        <LabelValue label="Area" value={bin.areaName} />
+        <LabelValue label="Location" value={bin.locationName} />
+        <LabelValue label="Condition" value={bin.condition} />
+        <LabelValue label="Fixed" value={bin.isFixedProperly ? "Yes" : "No"} />
+        <LabelValue label="Lid" value={bin.hasLid ? "Yes" : "No"} />
       </View>
-      <TouchableOpacity style={styles.button} onPress={fetchLocation} disabled={loading}>
-        {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Fetch My Location</Text>}
-      </TouchableOpacity>
-      <Text style={styles.muted}>
-        {distance === null ? "Distance not calculated" : `Distance: ${distance.toFixed(1)} m`}
-      </Text>
-      {error ? <Text style={styles.error}>{error}</Text> : null}
-      <Text style={styles.muted}>
-        {withinFence
-          ? "You are within 50 meters. You can submit a report."
-          : ctxMessage || "Fetch location to check proximity (50 m required)."}
-      </Text>
+
+      <View style={[Layout.card, { marginTop: Spacing.m }]}>
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+          <View>
+            <Text style={Typography.h3}>Verify Location</Text>
+            <Text style={Typography.caption}>You must be within 50m</Text>
+          </View>
+          <TouchableOpacity onPress={fetchLocation} disabled={loading} style={[UI.button, UI.buttonSecondary, { paddingVertical: 8 }]}>
+            {loading ? <ActivityIndicator color={Colors.primary} /> : <Navigation size={20} color={Colors.primary} />}
+          </TouchableOpacity>
+        </View>
+
+        <Text style={[Typography.body, { marginTop: Spacing.s }]}>
+          {distance === null ? "Distance not calculated" : `Distance: ${distance.toFixed(1)} m`}
+        </Text>
+
+        {error ? <Text style={{ color: Colors.danger, marginTop: 4 }}>{error}</Text> : null}
+
+        <Text style={{ marginTop: 4, color: withinFence ? Colors.success : Colors.textMuted }}>
+          {withinFence ? "✅ You are within range." : ctxMessage || "Fetch location to check."}
+        </Text>
+      </View>
+
       {withinFence ? (
-        <View style={[styles.card, { marginTop: 10 }]}>
+        <View style={{ marginTop: Spacing.l }}>
+          <Text style={[Typography.h3, { marginBottom: Spacing.m }]}>Inspection Checklist</Text>
           {questions.map((q, idx) => {
             const key = `q${idx + 1}`;
             const val = answers[key];
             return (
-              <View key={key} style={styles.block}>
-                <Text style={[styles.label, { marginBottom: 6 }]}>{q}</Text>
-                <View style={styles.row}>
-                  <View style={styles.choice}>
-                    <Text>Yes</Text>
-                    <Switch value={val.answer === "YES"} onValueChange={(v) => setAnswer(key, v ? "YES" : "NO")} />
-                  </View>
-                  <View style={styles.choice}>
-                    <Text>No</Text>
-                    <Switch value={val.answer === "NO"} onValueChange={(v) => setAnswer(key, v ? "NO" : "YES")} />
-                  </View>
+              <View key={key} style={[Layout.card, { marginBottom: Spacing.m }]}>
+                <Text style={[Typography.body, { marginBottom: Spacing.s, fontWeight: "600" }]}>{q}</Text>
+
+                <View style={styles.choiceRow}>
+                  <TouchableOpacity
+                    style={[styles.choiceBtn, val.answer === "YES" && styles.choiceSelectedYes]}
+                    onPress={() => setAnswer(key, "YES")}
+                  >
+                    <Text style={[styles.choiceText, val.answer === "YES" && { color: Colors.white }]}>YES</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.choiceBtn, val.answer === "NO" && styles.choiceSelectedNo]}
+                    onPress={() => setAnswer(key, "NO")}
+                  >
+                    <Text style={[styles.choiceText, val.answer === "NO" && { color: Colors.white }]}>NO</Text>
+                  </TouchableOpacity>
                 </View>
-                <TouchableOpacity style={[styles.button, { marginTop: 8 }]} onPress={() => pickPhoto(key)}>
-                  <Text style={styles.buttonText}>Capture Photo (optional)</Text>
+
+                {val.photoUrl ? (
+                  <Image source={{ uri: val.photoUrl }} style={styles.preview} />
+                ) : null}
+
+                <TouchableOpacity style={styles.cameraBtn} onPress={() => pickPhoto(key)}>
+                  <Camera size={16} color={Colors.primary} />
+                  <Text style={{ color: Colors.primary, fontWeight: "600" }}>{val.photoUrl ? "Retake Photo" : "Add Photo"}</Text>
                 </TouchableOpacity>
-                {val.photoUrl ? <Image source={{ uri: val.photoUrl }} style={styles.preview} /> : null}
               </View>
             );
           })}
+
+          {submitError ? <Text style={{ color: Colors.danger, marginBottom: Spacing.s }}>{submitError}</Text> : null}
+
+          <TouchableOpacity
+            style={[UI.button, withinFence ? UI.buttonPrimary : styles.disabledBtn]}
+            onPress={submit}
+            disabled={!withinFence || submitting}
+          >
+            <Text style={UI.buttonTextPrimary}>{submitting ? "Submitting..." : "Submit Report"}</Text>
+          </TouchableOpacity>
         </View>
       ) : null}
-      {submitError ? <Text style={styles.error}>{submitError}</Text> : null}
-      <TouchableOpacity
-        style={[styles.button, withinFence ? styles.buttonEnabled : styles.buttonDisabled]}
-        onPress={submit}
-        disabled={!withinFence || submitting}
-      >
-        <Text style={styles.buttonText}>{submitting ? "Submitting..." : "Submit Report"}</Text>
-      </TouchableOpacity>
     </ScrollView>
   );
 }
 
-function Label({ label, value }: { label: string; value: string }) {
+function LabelValue({ label, value }: { label: string; value: string }) {
   return (
     <View style={styles.labelRow}>
-      <Text style={styles.label}>{label}</Text>
-      <Text style={styles.value}>{value}</Text>
+      <Text style={[Typography.body, { color: Colors.textMuted }]}>{label}</Text>
+      <Text style={[Typography.body, { fontWeight: "600" }]}>{value}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f5f7fb", padding: 16 },
-  title: { fontSize: 22, fontWeight: "700", marginBottom: 12 },
-  card: {
-    backgroundColor: "#fff",
-    borderRadius: 10,
-    padding: 14,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: "#e2e8f0"
-  },
-  block: { marginBottom: 16 },
-  row: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginVertical: 6 },
-  choice: { flexDirection: "row", alignItems: "center", gap: 8 },
   labelRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 8 },
-  label: { color: "#475569", fontWeight: "600" },
-  value: { color: "#0f172a", fontWeight: "600" },
-  button: {
-    marginTop: 10,
-    backgroundColor: "#1d4ed8",
-    paddingVertical: 12,
-    borderRadius: 10,
-    alignItems: "center"
-  },
-  buttonEnabled: { backgroundColor: "#16a34a" },
-  buttonDisabled: { backgroundColor: "#94a3b8" },
-  buttonText: { color: "#fff", fontWeight: "700" },
-  muted: { color: "#4b5563", marginTop: 8 },
-  error: { color: "#dc2626", marginTop: 8 },
-  input: {
-    borderWidth: 1,
-    borderColor: "#e2e8f0",
-    borderRadius: 8,
-    padding: 10,
-    minHeight: 60,
-    marginTop: 6,
-    textAlignVertical: "top"
-  },
-  preview: { width: "100%", height: 160, marginTop: 8, borderRadius: 8 },
-  badge: {
+  statusBadge: {
     alignSelf: "flex-start",
-    backgroundColor: "#e0f2fe",
-    color: "#075985",
+    backgroundColor: Colors.primaryLight,
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 8,
-    marginBottom: 8,
-    fontWeight: "700"
-  }
+    marginVertical: 8
+  },
+  choiceRow: { flexDirection: "row", gap: Spacing.m, marginVertical: 8 },
+  choiceBtn: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    alignItems: "center"
+  },
+  choiceSelectedYes: { backgroundColor: Colors.success, borderColor: Colors.success },
+  choiceSelectedNo: { backgroundColor: Colors.danger, borderColor: Colors.danger },
+  choiceText: { fontWeight: "700", color: Colors.text },
+  cameraBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 8,
+    marginTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border
+  },
+  preview: { width: "100%", height: 160, borderRadius: 8, marginVertical: 8 },
+  disabledBtn: { backgroundColor: Colors.textMuted, paddingVertical: 12, borderRadius: 8, alignItems: "center" }
 });

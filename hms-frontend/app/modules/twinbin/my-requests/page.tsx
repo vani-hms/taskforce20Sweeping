@@ -44,31 +44,35 @@ export default function TwinbinMyRequestsPage() {
   return (
     <Protected>
       <ModuleGuard module="LITTERBINS" roles={["EMPLOYEE"]}>
-        <div className="page">
-          <h1>My Twinbin Requests</h1>
-          {error && <div className="alert error">{error}</div>}
+        <div className="content">
+          <header className="mb-6">
+            <p className="eyebrow">Litter Bins</p>
+            <h1>My Requests</h1>
+            <p className="muted">Track the status of bins you have registered.</p>
+          </header>
+
+          {error && <div className="alert alert-error mb-4">{error}</div>}
+
           {loading ? (
-            <div className="muted">Loading...</div>
+            <div className="card p-8 text-center muted">Loading requests...</div>
           ) : bins.length === 0 ? (
-            <div className="muted">No requests yet.</div>
+            <div className="card p-8 text-center muted">You have not submitted any requests yet.</div>
           ) : (
-            <div className="table-grid">
-              <div className="table-head">
-                <div>Area</div>
-                <div>Location</div>
-                <div>Condition</div>
-                <div>Status</div>
-                <div>Created</div>
-              </div>
+            <div className="grid grid-2">
               {bins.map((b) => (
-                <div className="table-row" key={b.id}>
-                  <div>{b.areaName}</div>
-                  <div>{b.locationName}</div>
-                  <div>{b.condition}</div>
-                  <div>
-                    <span className={`badge ${statusClass[b.status] || ""}`}>{b.status}</span>
+                <div key={b.id} className="card flex flex-col gap-3">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <div className="text-lg font-bold">{b.areaName}</div>
+                      <div className="muted text-sm">{b.locationName}</div>
+                    </div>
+                    <span className={statusClass[b.status] || "badge"}>{b.status.replace(/_/g, " ")}</span>
                   </div>
-                  <div>{new Date(b.createdAt).toLocaleString()}</div>
+
+                  <div className="flex justify-between items-center text-sm muted mt-2">
+                    <span>Condition: {b.condition}</span>
+                    <span>{new Date(b.createdAt).toLocaleDateString()}</span>
+                  </div>
                 </div>
               ))}
             </div>

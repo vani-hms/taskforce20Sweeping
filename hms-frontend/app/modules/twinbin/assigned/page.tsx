@@ -38,33 +38,40 @@ export default function TwinbinAssignedPage() {
   return (
     <Protected>
       <ModuleGuard module="LITTERBINS" roles={["EMPLOYEE"]}>
-        <div className="page">
-          <h1>Assigned Twinbin Bins</h1>
-          {error && <div className="alert error">{error}</div>}
+        <div className="content">
+          <header className="mb-6">
+            <p className="eyebrow">Litter Bins</p>
+            <h1>Assigned Bins</h1>
+            <p className="muted">View and manage bins assigned to you for inspection.</p>
+          </header>
+
+          {error && <div className="alert alert-error mb-4">{error}</div>}
+
           {loading ? (
-            <div className="muted">Loading...</div>
+            <div className="card p-8 text-center muted">Loading assigned bins...</div>
           ) : bins.length === 0 ? (
-            <div className="muted">No bins assigned to you.</div>
+            <div className="card p-8 text-center muted">No bins assigned to you at the moment.</div>
           ) : (
-            <div className="table-grid">
-              <div className="table-head">
-                <div>Area</div>
-                <div>Location</div>
-                <div>Condition</div>
-                <div>Assigned</div>
-                <div>Action</div>
-              </div>
+            <div className="grid grid-2">
               {bins.map((b) => (
-                <div className="table-row" key={b.id}>
-                  <div>{b.areaName}</div>
-                  <div>{b.locationName}</div>
-                  <div>{b.condition}</div>
-                  <div>{new Date(b.createdAt).toLocaleString()}</div>
-                  <div>
-                    <Link className="btn btn-primary btn-sm" href={`/modules/twinbin/assigned/${b.id}`}>
-                      Open
-                    </Link>
+                <div key={b.id} className="card card-hover flex flex-col gap-3">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <div className="text-lg font-bold">{b.areaName}</div>
+                      <div className="muted text-sm">{b.locationName || "Location N/A"}</div>
+                    </div>
+                    <span className="badge badge-info text-xs">{b.condition}</span>
                   </div>
+
+                  <div className="text-sm muted mt-1">
+                    Assigned: {new Date(b.createdAt).toLocaleDateString()}
+                  </div>
+
+                  <div className="card-divider"></div>
+
+                  <Link className="btn btn-primary w-full" href={`/modules/twinbin/assigned/${b.id}`}>
+                    Open & Report
+                  </Link>
                 </div>
               ))}
             </div>

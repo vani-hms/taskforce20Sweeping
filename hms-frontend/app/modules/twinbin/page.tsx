@@ -4,6 +4,30 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Protected, ModuleGuard } from "@components/Guards";
 import { ApiError, TwinbinApi } from "@lib/apiClient";
+import { useAuth } from "@hooks/useAuth";
+import AdminDashboard from "./components/AdminDashboard";
+import QCDashboard from "./components/QCDashboard";
+
+export default function TwinbinPage() {
+  const { user } = useAuth();
+  const roles = user?.roles || [];
+  const isAdmin = roles.includes("CITY_ADMIN") || roles.includes("ULB_OFFICER");
+  const isQC = roles.includes("QC");
+
+  return (
+    <Protected>
+      <ModuleGuard module="LITTERBINS" roles={["EMPLOYEE", "CITY_ADMIN", "ACTION_OFFICER", "HMS_SUPER_ADMIN", "ULB_OFFICER", "QC"]}>
+        {isAdmin ? (
+          <AdminDashboard />
+        ) : isQC ? (
+          <QCDashboard />
+        ) : (
+          <EmployeeDashboard />
+        )}
+      </ModuleGuard>
+    </Protected>
+  );
+}
 
 type Summary = {
   total: number;
@@ -19,7 +43,7 @@ type AssignedBin = {
   distanceMeters?: number;
 };
 
-export default function TwinbinEmployeeHome() {
+function EmployeeDashboard() {
   const [summary, setSummary] = useState<Summary>({ total: 0, assigned: 0, requests: 0 });
   const [assigned, setAssigned] = useState<AssignedBin[]>([]);
   const [error, setError] = useState("");
@@ -49,179 +73,121 @@ export default function TwinbinEmployeeHome() {
   }, []);
 
   return (
-    <Protected>
-      <ModuleGuard module="LITTERBINS" roles={["EMPLOYEE", "CITY_ADMIN", "ACTION_OFFICER", "HMS_SUPER_ADMIN"]}>
-        <div className="page dashboard">
-          <Header />
-          {error && <div className="alert error">{error}</div>}
+    <div className="content">
+      <header className="flex justify-between items-center mb-6">
+        <div>
+          <p className="eyebrow">Module · Litter Bins</p>
+          <h1>Employee Workspace</h1>
+          <p className="muted">Monitor, register, and service litter bins assigned to you.</p>
+        </div>
+        <div className="badge badge-info">Employee</div>
+      </header>
 
-          <KpiRow summary={summary} />
+      {error && <div className="alert alert-error mb-4">{error}</div>}
 
-          <section className="section">
-            <div className="section-head">
-              <div>
-                <h2>Actions</h2>
-                <p className="muted">Register new bins or review your submissions.</p>
-              </div>
-              <Link className="btn btn-primary" href="/modules/twinbin/register">
-                + Register New Bin
-              </Link>
-            </div>
-            <div className="action-grid">
-              <ActionCard
-                title="Assigned Bins"
-                description="Report visits and submit inspections for your assigned bins."
-                href="/modules/twinbin/assigned"
-                emphasis
-              />
-              <ActionCard
-                title="My Requests"
-                description="Track the approval status of bins you registered."
-                href="/modules/twinbin/my-requests"
-              />
-            </div>
-          </section>
+      <div className="grid grid-3 mb-6">
+        <KpiCard label="Total in Scope" value={summary.total.toString()} />
+        <KpiCard label="Assigned to You" value={summary.assigned.toString()} highlight />
+        <KpiCard label="Your Requests" value={summary.requests.toString()} />
+      </div>
 
-          <section className="section">
-            <div className="section-head">
-              <div>
-                <h2>Assigned Work</h2>
-                <p className="muted">Primary worklist ordered by urgency.</p>
-              </div>
-              <Link className="btn btn-secondary" href="/modules/twinbin/assigned">
-                View all
-              </Link>
+      <div className="grid gap-6">
+        <section className="card">
+          <div className="card-header">
+            <div>
+              <h2>Quick Actions</h2>
+              <p className="muted text-sm">Register new bins or review your submissions.</p>
             </div>
-            {assigned.length === 0 ? (
-              <div className="muted card">No assigned bins yet.</div>
-            ) : (
-              <div className="assigned-grid">
-                {assigned.map((b) => (
-                  <div key={b.id} className="bin-card">
-                    <div className="bin-top">
-                      <div>
-                        <div className="bin-title">{b.areaName}</div>
-                        <div className="muted">{b.locationName || "—"}</div>
-                      </div>
-                      <StatusChip status={b.status} />
+            <Link className="btn btn-primary" href="/modules/twinbin/register">
+              + Register New Bin
+            </Link>
+          </div>
+
+          <div className="grid grid-2">
+            <ActionCard
+              title="Assigned Bins"
+              desc="Report visits and submit inspections."
+              href="/modules/twinbin/assigned"
+              primary
+            />
+            <ActionCard
+              title="My Requests"
+              desc="Track approval status of registered bins."
+              href="/modules/twinbin/my-requests"
+            />
+          </div>
+        </section>
+
+        <section>
+          <div className="flex justify-between items-center mb-4">
+            <h2>Assigned Work</h2>
+            <Link className="btn btn-sm btn-ghost" href="/modules/twinbin/assigned">
+              View All ›
+            </Link>
+          </div>
+
+          {assigned.length === 0 ? (
+            <div className="card muted p-6 text-center">No assigned bins pending.</div>
+          ) : (
+            <div className="grid grid-2">
+              {assigned.map((b) => (
+                <div key={b.id} className="card card-hover flex flex-col gap-3">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <div className="text-lg">{b.areaName}</div>
+                      <div className="muted text-sm">{b.locationName || "—"}</div>
                     </div>
-                    <div className="bin-meta">
-                      <Badge tone={b.distanceMeters && b.distanceMeters <= 50 ? "success" : "warn"}>
-                        {b.distanceMeters ? `${b.distanceMeters.toFixed(1)} m away` : "Distance unavailable"}
-                      </Badge>
-                    </div>
-                    <div className="bin-actions">
-                      <Link className="btn btn-primary btn-sm" href={`/modules/twinbin/assigned/${b.id}`}>
-                        Open & Report
-                      </Link>
-                    </div>
+                    <Badge status={b.status} />
                   </div>
-                ))}
-              </div>
-            )}
-          </section>
-        </div>
-        <Style />
-      </ModuleGuard>
-    </Protected>
-  );
-}
 
-function Header() {
-  return (
-    <header className="page-header">
-      <div>
-        <p className="eyebrow">Module · Litter Bins</p>
-        <h1>Litter Bins — Employee Workspace</h1>
-        <p className="muted">Monitor, register, and service litter bins assigned to you.</p>
+                  <div className="flex items-center gap-2">
+                    <span className={`badge ${b.distanceMeters && b.distanceMeters <= 50 ? 'badge-success' : 'badge-warn'}`}>
+                      {b.distanceMeters ? `${b.distanceMeters.toFixed(1)}m away` : "Distance N/A"}
+                    </span>
+                  </div>
+
+                  <div className="flex justify-end mt-2">
+                    <Link className="btn btn-sm btn-primary" href={`/modules/twinbin/assigned/${b.id}`}>
+                      Open & Report
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
       </div>
-      <div className="badge ghost">Employee</div>
-    </header>
-  );
-}
-
-function KpiRow({ summary }: { summary: Summary }) {
-  const items = [
-    { label: "Total in scope", value: summary.total },
-    { label: "Assigned to you", value: summary.assigned },
-    { label: "Your requests", value: summary.requests }
-  ];
-  return (
-    <div className="kpi-row">
-      {items.map((k) => (
-        <div key={k.label} className="kpi-card">
-          <div className="muted">{k.label}</div>
-          <div className="kpi-value">{k.value}</div>
-        </div>
-      ))}
     </div>
   );
 }
 
-function ActionCard({
-  title,
-  description,
-  href,
-  emphasis
-}: {
-  title: string;
-  description: string;
-  href: string;
-  emphasis?: boolean;
-}) {
+function KpiCard({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
   return (
-    <div className={`action-card ${emphasis ? "action-primary" : ""}`}>
-      <div>
-        <h3>{title}</h3>
-        <p className="muted">{description}</p>
-      </div>
-      <Link className={emphasis ? "btn btn-primary" : "btn btn-secondary"} href={href}>
-        Open
-      </Link>
+    <div className={`card ${highlight ? 'border-primary' : ''}`}>
+      <div className="muted text-sm uppercase tracking-wider">{label}</div>
+      <div className={`text-3xl font-bold mt-1 ${highlight ? 'text-primary' : ''}`}>{value}</div>
     </div>
   );
 }
 
-function StatusChip({ status }: { status: string }) {
-  const tone =
-    status === "APPROVED" ? "success" : status === "PENDING_QC" ? "warn" : status === "REJECTED" ? "danger" : "info";
-  return <Badge tone={tone}>{status.replace(/_/g, " ")}</Badge>;
-}
-
-function Badge({ children, tone }: { children: React.ReactNode; tone: "success" | "warn" | "danger" | "info" }) {
-  return <span className={`chip chip-${tone}`}>{children}</span>;
-}
-
-function Style() {
+function ActionCard({ title, desc, href, primary }: any) {
   return (
-    <style>
-      {`
-      .dashboard { max-width: 1100px; margin: 0 auto; }
-      .page-header { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 16px; }
-      .eyebrow { text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; color: #64748b; margin: 0; }
-      .badge { padding: 6px 12px; border-radius: 999px; font-weight: 700; border: 1px solid #e2e8f0; }
-      .badge.ghost { background: #f8fafc; color: #0f172a; }
-      .kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 16px; }
-      .kpi-card { background: #0b1021; color: #e2e8f0; padding: 14px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
-      .kpi-value { font-size: 28px; font-weight: 800; margin-top: 4px; }
-      .section { margin-top: 18px; background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 16px; box-shadow: 0 10px 30px rgba(15,23,42,0.05); }
-      .section-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 12px; }
-      .action-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
-      .action-card { border: 1px dashed #cbd5e1; border-radius: 12px; padding: 14px; display: flex; justify-content: space-between; align-items: center; gap: 10px; background: #f8fafc; }
-      .action-primary { background: linear-gradient(135deg, #1d4ed8, #2563eb); color: #fff; border: none; box-shadow: 0 12px 30px rgba(37,99,235,0.25); }
-      .action-primary p { color: #e2e8f0; }
-      .assigned-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; }
-      .bin-card { border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; background: #fff; box-shadow: 0 8px 20px rgba(15,23,42,0.04); display: flex; flex-direction: column; gap: 8px; }
-      .bin-top { display: flex; justify-content: space-between; gap: 10px; }
-      .bin-title { font-weight: 700; font-size: 16px; color: #0f172a; }
-      .bin-meta { display: flex; gap: 8px; align-items: center; }
-      .chip { padding: 6px 10px; border-radius: 999px; font-weight: 700; font-size: 12px; }
-      .chip-success { background: #dcfce7; color: #166534; }
-      .chip-warn { background: #fef3c7; color: #92400e; }
-      .chip-danger { background: #fee2e2; color: #991b1b; }
-      .chip-info { background: #e0f2fe; color: #075985; }
-      .bin-actions { display: flex; justify-content: flex-end; }
-    `}
-    </style>
+    <Link href={href} className={`card card-hover flex justify-between items-center p-4 ${primary ? 'bg-primary-soft border-primary-soft' : ''}`}>
+      <div>
+        <h3 className={primary ? 'text-primary-strong' : ''}>{title}</h3>
+        <p className="muted text-sm mb-0">{desc}</p>
+      </div>
+      <div className={`btn btn-sm ${primary ? 'btn-primary' : 'btn-secondary'}`}>Open</div>
+    </Link>
   );
 }
+
+function Badge({ status }: { status: string }) {
+  let style = "badge-info";
+  if (status === "APPROVED") style = "badge-success";
+  if (status === "PENDING_QC") style = "badge-warn";
+  if (status === "REJECTED") style = "badge-error";
+
+  return <span className={`badge ${style}`}>{status.replace(/_/g, " ")}</span>;
+}
+// Removed inline Style component

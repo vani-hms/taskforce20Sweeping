@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet, FlatList } from "react-native";
+import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet, FlatList, Image } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../../../navigation";
 import { useAuthContext } from "../../../auth/AuthProvider";
@@ -7,6 +7,9 @@ import { fetchCityInfo } from "../../../api/auth";
 import { getSession } from "../../../auth/session";
 import { ModuleRecordsApi } from "../../../api/modules";
 import { listRegistrationRequests } from "../../../api/auth";
+import { normalizeModuleKey } from "../../common/moduleUtils";
+import { Colors, Spacing, Typography, Layout, UI } from "../../../theme";
+import { LayoutDashboard, Users, LogOut, ChevronRight, FileText } from "lucide-react-native";
 
 type Props = NativeStackScreenProps<RootStackParamList, "CityLanding">;
 
@@ -20,8 +23,27 @@ export default function CityLandingScreen({ route, navigation }: Props) {
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [requests, setRequests] = useState<{ id: string; name: string; status: string }[]>([]);
   const [requestsError, setRequestsError] = useState("");
-  const modules = auth.status === "authenticated" && auth.modules ? auth.modules : [];
-  const roles = auth.status === "authenticated" ? auth.roles || [] : [];
+
+  const rawModules = auth.status === "authenticated" && auth.modules ? auth.modules : [];
+
+  // Deduplicate modules
+  const modules = React.useMemo(() => {
+    const seen = new Set<string>();
+    return rawModules
+      .map((m) => {
+        let key = normalizeModuleKey(m.key);
+        // FORCE NORMALIZE: twinbin -> LITTERBINS
+        if (key === "TWINBIN") key = "LITTERBINS";
+
+        return { ...m, key, name: key === "LITTERBINS" ? "Litter Bins" : m.name };
+      })
+      .filter((m) => {
+        if (seen.has(m.key)) return false;
+        seen.add(m.key);
+        return true;
+      });
+  }, [rawModules]);
+  const roles = auth.status === "authenticated" && auth.roles ? auth.roles : [];
   const isQc = roles.includes("QC");
   const isCityAdmin = roles.includes("CITY_ADMIN");
 
@@ -82,115 +104,170 @@ export default function CityLandingScreen({ route, navigation }: Props) {
     navigation.navigate("Module", { moduleKey });
   };
 
+  if (loading) {
+    return (
+      <View style={[styles.container, { justifyContent: "center" }]}>
+        <ActivityIndicator size="large" color={Colors.primary} />
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
-      {loading ? (
-        <ActivityIndicator size="large" color="#1d4ed8" />
-      ) : (
-        <>
-          <Text style={styles.welcome}>WELCOME</Text>
+      <View style={styles.header}>
+        <View>
+          <Text style={styles.welcome}>Welcome</Text>
           <Text style={styles.city}>{cityName || "Your City"}</Text>
-          {error ? <Text style={styles.error}>{error}</Text> : null}
-          {modules.length === 0 ? (
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>You are not assigned to any module yet.</Text>
-              <Text style={styles.cardSubtitle}>Please contact your city administrator.</Text>
+        </View>
+        <TouchableOpacity onPress={handleLogout} style={styles.logoutBtn}>
+          <LogOut size={20} color={Colors.danger} />
+        </TouchableOpacity>
+      </View>
+
+      {error ? <View style={styles.errorBox}><Text style={styles.errorText}>{error}</Text></View> : null}
+
+      <FlatList
+        data={[
+          ...modules,
+          ...(isQc
+            ? [
+              {
+                key: "__employees__",
+                name: "Employees",
+                meta: "QC"
+              }
+            ]
+            : [])
+        ]}
+        keyExtractor={(item) => item.key}
+        contentContainerStyle={{ paddingBottom: Spacing.xl }}
+        ListEmptyComponent={
+          <View style={styles.emptyCard}>
+            <Text style={Typography.h3}>No modules assigned</Text>
+            <Text style={Typography.body}>Contact your administrator.</Text>
+          </View>
+        }
+        renderItem={({ item }) => (
+          <TouchableOpacity
+            style={Layout.card}
+            onPress={() => {
+              if (item.key === "__employees__") {
+                navigation.navigate("MyEmployees");
+              } else {
+                openModule(item.key);
+              }
+            }}
+          >
+            <View style={styles.cardRow}>
+              <View style={[styles.iconBox, { backgroundColor: item.key === "__employees__" ? Colors.secondary : Colors.primaryLight }]}>
+                {item.key === "__employees__" ? (
+                  <Users size={24} color={Colors.white} />
+                ) : (
+                  <LayoutDashboard size={24} color={Colors.primary} />
+                )}
+              </View>
+              <View style={styles.cardContent}>
+                <Text style={Typography.h3}>{item.name}</Text>
+                <Text style={Typography.caption}>
+                  {item.key === "__employees__" ? "View Employees" : `Records: ${counts[item.key] ?? 0}`}
+                </Text>
+              </View>
+              <ChevronRight size={20} color={Colors.textMuted} />
             </View>
-          ) : (
-            <FlatList
-              data={[
-                ...modules,
-                ...(isQc
-                  ? [
-                      {
-                        key: "__employees__",
-                        name: "Employees",
-                        meta: "QC"
-                      }
-                    ]
-                  : [])
-              ]}
-              keyExtractor={(item) => item.key}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={styles.card}
-                  onPress={() => {
-                    if (item.key === "__employees__") {
-                      navigation.navigate("MyEmployees");
-                    } else {
-                      openModule(item.key);
-                    }
-                  }}
-                >
-                  <Text style={styles.cardTitle}>{item.name || item.key}</Text>
-                  <Text style={styles.cardSubtitle}>
-                    {item.key === "__employees__" ? "View employees for your modules" : `Records: ${counts[item.key] ?? 0}`}
-                  </Text>
-                </TouchableOpacity>
-              )}
-              contentContainerStyle={{ paddingVertical: 12 }}
-            />
-          )}
-          {isCityAdmin && (
-            <View style={[styles.card, { marginTop: 8 }]}>
-              <Text style={styles.cardTitle}>Recent Registration Requests</Text>
-              {requestsError ? <Text style={styles.error}>{requestsError}</Text> : null}
-              {!requestsError && requests.length === 0 ? (
-                <Text style={styles.cardSubtitle}>No registration requests.</Text>
-              ) : null}
-              {!requestsError &&
-                requests.map((r) => (
-                  <View key={r.id} style={{ paddingVertical: 4 }}>
-                    <Text style={{ fontWeight: "600" }}>{r.name}</Text>
-                    <Text style={styles.cardSubtitle}>Status: {r.status}</Text>
-                  </View>
-                ))}
-              <TouchableOpacity
-                style={[styles.button, { marginTop: 8, backgroundColor: "#0ea5e9" }]}
-                onPress={() => navigation.navigate("RegistrationRequests")}
-              >
-                <Text style={styles.buttonText}>Manage Requests</Text>
-              </TouchableOpacity>
+          </TouchableOpacity>
+        )}
+        ItemSeparatorComponent={() => <View style={{ height: Spacing.m }} />}
+      />
+
+      {isCityAdmin && (
+        <View style={[Layout.card, { marginTop: Spacing.l }]}>
+          <View style={styles.cardRow}>
+            <FileText size={24} color={Colors.warning} />
+            <View style={styles.cardContent}>
+              <Text style={Typography.h3}>Registration Requests</Text>
             </View>
-          )}
-          {isQc ? (
-            <TouchableOpacity style={[styles.button, { marginTop: 12, backgroundColor: "#0ea5e9" }]} onPress={() => navigation.navigate("MyEmployees")}>
-              <Text style={styles.buttonText}>My Employees</Text>
-            </TouchableOpacity>
-          ) : null}
-        </>
+          </View>
+
+          {requestsError ? <Text style={styles.errorText}>{requestsError}</Text> : null}
+
+          {!requestsError && requests.map((r) => (
+            <View key={r.id} style={styles.reqRow}>
+              <Text style={Typography.body}>{r.name}</Text>
+              <Text style={[Typography.caption, { color: Colors.primary }]}>{r.status}</Text>
+            </View>
+          ))}
+
+          {requests.length === 0 && !requestsError ? <Text style={Typography.muted}>No pending requests</Text> : null}
+
+          <TouchableOpacity
+            style={[UI.button, UI.buttonPrimary, { marginTop: Spacing.m }]}
+            onPress={() => navigation.navigate("RegistrationRequests")}
+          >
+            <Text style={UI.buttonTextPrimary}>Manage Requests</Text>
+          </TouchableOpacity>
+        </View>
       )}
-      <TouchableOpacity style={styles.button} onPress={handleLogout}>
-        <Text style={styles.buttonText}>Logout</Text>
-      </TouchableOpacity>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, alignItems: "center", padding: 24, backgroundColor: "#f5f7fb" },
-  welcome: { fontSize: 28, fontWeight: "700", letterSpacing: 2, marginTop: 24 },
-  city: { fontSize: 22, marginTop: 8, color: "#1f2937", fontWeight: "600" },
-  error: { marginTop: 8, color: "#dc2626" },
-  card: {
-    width: "100%",
-    backgroundColor: "#fff",
-    borderRadius: 10,
-    padding: 16,
-    marginVertical: 6,
-    borderWidth: 1,
-    borderColor: "#e2e8f0"
+  container: Layout.screenContainer,
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: Spacing.xl,
+    marginTop: Spacing.m // Safe area top
   },
-  cardTitle: { fontSize: 16, fontWeight: "600" },
-  cardSubtitle: { fontSize: 14, color: "#4b5563", marginTop: 4 },
-  button: {
-    marginTop: 12,
-    backgroundColor: "#1d4ed8",
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 10,
-    width: "100%",
-    alignItems: "center"
+  welcome: {
+    ...Typography.caption,
+    textTransform: "uppercase",
+    letterSpacing: 1
   },
-  buttonText: { color: "#fff", fontWeight: "600" }
+  city: {
+    ...Typography.h1,
+    color: Colors.primary
+  },
+  logoutBtn: {
+    padding: Spacing.s,
+    backgroundColor: Colors.dangerBg,
+    borderRadius: 8
+  },
+  cardRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.m
+  },
+  iconBox: {
+    width: 48,
+    height: 48,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  cardContent: {
+    flex: 1
+  },
+  errorBox: {
+    backgroundColor: Colors.dangerBg,
+    padding: Spacing.m,
+    borderRadius: 8,
+    marginBottom: Spacing.m
+  },
+  errorText: {
+    color: Colors.danger,
+    fontSize: 14
+  },
+  emptyCard: {
+    alignItems: "center",
+    padding: Spacing.xl
+  },
+  reqRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingVertical: Spacing.s,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border
+  }
 });

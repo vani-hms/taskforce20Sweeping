@@ -1,5 +1,5 @@
 'use client';
 
-import TwinbinQcPage from "../../twinbin/qc/page";
+import TwinbinPage from "../../twinbin/page";
 
-export default TwinbinQcPage;
+export default TwinbinPage;

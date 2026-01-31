@@ -3,6 +3,8 @@ import { View, Text, ActivityIndicator, FlatList, StyleSheet, TouchableOpacity }
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { listTwinbinAssigned, ApiError } from "../../../api/auth";
 import { RootStackParamList } from "../../../navigation";
+import { Colors, Spacing, Typography, Layout } from "../../../theme";
+import { MapPin, AlertCircle, Calendar } from "lucide-react-native";
 
 type Props = NativeStackScreenProps<RootStackParamList, "TwinbinAssigned">;
 
@@ -30,28 +32,52 @@ export default function TwinbinAssignedScreen({ navigation }: Props) {
 
   if (loading) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#1d4ed8" />
+      <View style={[Layout.screenContainer, { justifyContent: "center" }]}>
+        <ActivityIndicator size="large" color={Colors.primary} />
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Assigned Twinbin Bins</Text>
-      {error ? <Text style={styles.error}>{error}</Text> : null}
-      {!bins.length ? (
-        <Text style={styles.muted}>No bins assigned to you.</Text>
+    <View style={Layout.screenContainer}>
+      {error ? (
+        <View style={styles.errorBox}>
+          <AlertCircle size={20} color={Colors.danger} />
+          <Text style={{ color: Colors.danger, marginLeft: 8 }}>{error}</Text>
+        </View>
+      ) : null}
+
+      {!bins.length && !error ? (
+        <View style={styles.emptyState}>
+          <Text style={Typography.h3}>No bins assigned</Text>
+          <Text style={Typography.body}>You don't have any pending bin inspections.</Text>
+        </View>
       ) : (
         <FlatList
           data={bins}
           keyExtractor={(item) => item.id}
+          contentContainerStyle={{ paddingBottom: Spacing.xl }}
           renderItem={({ item }) => (
-            <TouchableOpacity style={styles.card} onPress={() => navigation.navigate("TwinbinBinDetail", { bin: item })}>
-              <Text style={styles.cardTitle}>{item.areaName}</Text>
-              <Text style={styles.muted}>{item.locationName}</Text>
-              <Text style={styles.muted}>Condition: {item.condition}</Text>
-              <Text style={styles.meta}>{new Date(item.createdAt).toLocaleString()}</Text>
+            <TouchableOpacity
+              style={[Layout.card, { marginBottom: Spacing.m }]}
+              onPress={() => navigation.navigate("TwinbinBinDetail", { bin: item })}
+            >
+              <View style={styles.headerRow}>
+                <Text style={Typography.h3}>{item.areaName}</Text>
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>{item.condition || "Unknown"}</Text>
+                </View>
+              </View>
+
+              <View style={styles.infoRow}>
+                <MapPin size={16} color={Colors.textMuted} />
+                <Text style={Typography.muted}>{item.locationName}</Text>
+              </View>
+
+              <View style={styles.infoRow}>
+                <Calendar size={16} color={Colors.textMuted} />
+                <Text style={Typography.caption}>{new Date(item.createdAt).toLocaleDateString()}</Text>
+              </View>
             </TouchableOpacity>
           )}
         />
@@ -61,19 +87,41 @@ export default function TwinbinAssignedScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f5f7fb", padding: 16 },
-  center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: "#f5f7fb" },
-  title: { fontSize: 22, fontWeight: "700", marginBottom: 12 },
-  card: {
-    backgroundColor: "#fff",
-    borderRadius: 10,
-    padding: 14,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: "#e2e8f0"
+  errorBox: {
+    flexDirection: "row",
+    backgroundColor: Colors.dangerBg,
+    padding: Spacing.m,
+    borderRadius: 8,
+    marginBottom: Spacing.m,
+    alignItems: "center"
   },
-  cardTitle: { fontSize: 16, fontWeight: "700" },
-  muted: { color: "#4b5563", marginTop: 4 },
-  error: { color: "#dc2626", marginBottom: 8 },
-  meta: { color: "#475569", marginTop: 4, fontSize: 12 }
+  emptyState: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: Spacing.xl
+  },
+  headerRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: Spacing.s
+  },
+  infoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 4
+  },
+  badge: {
+    backgroundColor: Colors.primaryLight,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 4
+  },
+  badgeText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: Colors.primary
+  }
 });

@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, StyleSheet, ScrollView, Alert } from "react-native";
 import * as Location from "expo-location";
 import { listGeo, requestTwinbinBin, ApiError } from "../../../api/auth";
+import { Colors, Spacing, Typography, Layout, UI } from "../../../theme";
+import { MapPin, CheckSquare, Square, Navigation, CheckCircle } from "lucide-react-native";
 
 type GeoNode = { id: string; name: string; parentId?: string | null };
 
@@ -24,12 +26,14 @@ export default function TwinbinRegisterScreen({ navigation }: any) {
   const [loading, setLoading] = useState(false);
   const [locLoading, setLocLoading] = useState(false);
   const [error, setError] = useState("");
-  const [status, setStatus] = useState("");
 
   useEffect(() => {
     const loadGeo = async () => {
       try {
-        const [zonesRes, wardsRes] = await Promise.all([listGeo("ZONE"), listGeo("WARD")]);
+        const [zonesRes, wardsRes] = await Promise.all([
+          listGeo("ZONE").catch(() => ({ nodes: [] })),
+          listGeo("WARD").catch(() => ({ nodes: [] }))
+        ]);
         setZones(zonesRes.nodes || []);
         setWards(wardsRes.nodes || []);
       } catch {
@@ -47,7 +51,6 @@ export default function TwinbinRegisterScreen({ navigation }: any) {
   const fetchLocation = async () => {
     setLocLoading(true);
     setError("");
-    setStatus("");
     const { status: perm } = await Location.requestForegroundPermissionsAsync();
     if (perm !== "granted") {
       setError("Location permission denied");
@@ -77,7 +80,6 @@ export default function TwinbinRegisterScreen({ navigation }: any) {
     if (!canSubmit) return;
     setLoading(true);
     setError("");
-    setStatus("");
     try {
       await requestTwinbinBin({
         zoneId: form.zoneId || undefined,
@@ -92,7 +94,6 @@ export default function TwinbinRegisterScreen({ navigation }: any) {
         latitude: parseFloat(form.latitude),
         longitude: parseFloat(form.longitude)
       });
-      setStatus("Request submitted");
       Alert.alert("Success", "Request submitted", [
         { text: "OK", onPress: () => navigation.navigate("TwinbinMyRequests") }
       ]);
@@ -105,153 +106,150 @@ export default function TwinbinRegisterScreen({ navigation }: any) {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Register Litter Bin</Text>
+    <ScrollView style={Layout.screenContainer} contentContainerStyle={{ paddingBottom: Spacing.xxl }}>
+      <Text style={[Typography.h2, { color: Colors.primary }]}>New Bin Registration</Text>
+      <Text style={[Typography.body, { marginBottom: Spacing.l, color: Colors.textMuted }]}>
+        Fill in details to register a new litter bin.
+      </Text>
 
-      <Text style={styles.label}>Zone (optional)</Text>
-      <View style={styles.select}>
-        {zones.map((z) => (
-          <TouchableOpacity
-            key={z.id}
-            style={[styles.option, form.zoneId === z.id ? styles.optionActive : undefined]}
-            onPress={() => update("zoneId", form.zoneId === z.id ? "" : z.id)}
-          >
-            <Text style={form.zoneId === z.id ? styles.optionTextActive : styles.optionText}>{z.name}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+      <View style={[Layout.card, { marginBottom: Spacing.m }]}>
+        <InputLabel label="Area Name" />
+        <TextInput style={styles.input} value={form.areaName} onChangeText={(v) => update("areaName", v)} placeholder="e.g. Central Park Gate 1" />
 
-      <Text style={styles.label}>Ward (optional)</Text>
-      <View style={styles.select}>
-        {filteredWards.map((w) => (
-          <TouchableOpacity
-            key={w.id}
-            style={[styles.option, form.wardId === w.id ? styles.optionActive : undefined]}
-            onPress={() => update("wardId", form.wardId === w.id ? "" : w.id)}
-          >
-            <Text style={form.wardId === w.id ? styles.optionTextActive : styles.optionText}>{w.name}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+        <InputLabel label="Location Name" />
+        <TextInput style={styles.input} value={form.locationName} onChangeText={(v) => update("locationName", v)} placeholder="e.g. Near Bus Stop" />
 
-      <Text style={styles.label}>Area Type</Text>
-      <View style={styles.selectRow}>
-        {["RESIDENTIAL", "COMMERCIAL", "SLUM"].map((val) => (
-          <TouchableOpacity
-            key={val}
-            style={[styles.option, form.areaType === val ? styles.optionActive : undefined]}
-            onPress={() => update("areaType", val)}
-          >
-            <Text style={form.areaType === val ? styles.optionTextActive : styles.optionText}>{val}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+        <InputLabel label="Road Type" />
+        <TextInput style={styles.input} value={form.roadType} onChangeText={(v) => update("roadType", v)} placeholder="e.g. Arterial Road" />
 
-      <Text style={styles.label}>Area Name</Text>
-      <TextInput style={styles.input} value={form.areaName} onChangeText={(v) => update("areaName", v)} />
-
-      <Text style={styles.label}>Location Name</Text>
-      <TextInput style={styles.input} value={form.locationName} onChangeText={(v) => update("locationName", v)} />
-
-      <Text style={styles.label}>Road Type</Text>
-      <TextInput style={styles.input} value={form.roadType} onChangeText={(v) => update("roadType", v)} />
-
-      <View style={styles.row}>
-        <TouchableOpacity
-          style={[styles.checkbox, form.isFixedProperly ? styles.checkboxActive : undefined]}
-          onPress={() => update("isFixedProperly", !form.isFixedProperly)}
-        >
-          <Text style={styles.checkboxText}>Is bin fixed properly?</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.checkbox, form.hasLid ? styles.checkboxActive : undefined]}
-          onPress={() => update("hasLid", !form.hasLid)}
-        >
-          <Text style={styles.checkboxText}>Has lid?</Text>
-        </TouchableOpacity>
-      </View>
-
-      <Text style={styles.label}>Condition</Text>
-      <View style={styles.selectRow}>
-        {["GOOD", "DAMAGED"].map((val) => (
-          <TouchableOpacity
-            key={val}
-            style={[styles.option, form.condition === val ? styles.optionActive : undefined]}
-            onPress={() => update("condition", val)}
-          >
-            <Text style={form.condition === val ? styles.optionTextActive : styles.optionText}>{val}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      <View style={styles.row}>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.label}>Latitude</Text>
-          <TextInput style={styles.input} value={form.latitude} editable={false} />
-        </View>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.label}>Longitude</Text>
-          <TextInput style={styles.input} value={form.longitude} editable={false} />
+        <InputLabel label="Area Type" />
+        <View style={styles.selectRow}>
+          {["RESIDENTIAL", "COMMERCIAL", "SLUM"].map((val) => (
+            <SelectOption key={val} label={val} selected={form.areaType === val} onSelect={() => update("areaType", val)} />
+          ))}
         </View>
       </View>
-      <TouchableOpacity style={[styles.button, { backgroundColor: "#0ea5e9" }]} onPress={fetchLocation} disabled={locLoading}>
-        {locLoading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>📍 Fetch Live Location</Text>}
+
+      <View style={[Layout.card, { marginBottom: Spacing.m }]}>
+        <Text style={Typography.h3}>Geography</Text>
+
+        <InputLabel label="Zone (Optional)" />
+        <View style={styles.selectRow}>
+          {zones.map((z) => (
+            <SelectOption key={z.id} label={z.name} selected={form.zoneId === z.id} onSelect={() => update("zoneId", form.zoneId === z.id ? "" : z.id)} />
+          ))}
+        </View>
+
+        <InputLabel label="Ward (Optional)" />
+        <View style={styles.selectRow}>
+          {filteredWards.map((w) => (
+            <SelectOption key={w.id} label={w.name} selected={form.wardId === w.id} onSelect={() => update("wardId", form.wardId === w.id ? "" : w.id)} />
+          ))}
+        </View>
+      </View>
+
+      <View style={[Layout.card, { marginBottom: Spacing.m }]}>
+        <Text style={Typography.h3}>Status & Condition</Text>
+
+        <View style={{ marginTop: Spacing.m, gap: Spacing.m }}>
+          <Checkbox label="Is bin fixed properly?" checked={form.isFixedProperly} onChange={() => update("isFixedProperly", !form.isFixedProperly)} />
+          <Checkbox label="Has lid?" checked={form.hasLid} onChange={() => update("hasLid", !form.hasLid)} />
+        </View>
+
+        <InputLabel label="Condition" />
+        <View style={styles.selectRow}>
+          {["GOOD", "DAMAGED"].map((val) => (
+            <SelectOption key={val} label={val} selected={form.condition === val} onSelect={() => update("condition", val)} />
+          ))}
+        </View>
+      </View>
+
+      <View style={[Layout.card, { marginBottom: Spacing.l }]}>
+        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+          <Text style={Typography.h3}>Location</Text>
+          {form.latitude ? <CheckCircle size={16} color={Colors.success} /> : null}
+        </View>
+
+        <View style={{ flexDirection: "row", gap: Spacing.m, marginTop: Spacing.s }}>
+          <TextInput style={[styles.input, { flex: 1, backgroundColor: Colors.background }]} value={form.latitude} editable={false} placeholder="Lat" />
+          <TextInput style={[styles.input, { flex: 1, backgroundColor: Colors.background }]} value={form.longitude} editable={false} placeholder="Lng" />
+        </View>
+
+        <TouchableOpacity style={[UI.button, UI.buttonSecondary, { marginTop: Spacing.s }]} onPress={fetchLocation} disabled={locLoading}>
+          {locLoading ? <ActivityIndicator size="small" color={Colors.primary} /> : (
+            <View style={{ flexDirection: "row", gap: 8 }}>
+              <Navigation size={18} color={Colors.primary} />
+              <Text style={UI.buttonTextSecondary}>Fetch GPS</Text>
+            </View>
+          )}
+        </TouchableOpacity>
+      </View>
+
+      {error ? <Text style={{ color: Colors.danger, marginBottom: Spacing.m, textAlign: "center" }}>{error}</Text> : null}
+
+      <TouchableOpacity
+        style={[UI.button, canSubmit ? UI.buttonPrimary : { backgroundColor: Colors.textMuted }]}
+        onPress={submit}
+        disabled={!canSubmit}
+      >
+        {loading ? <ActivityIndicator color={Colors.white} /> : <Text style={UI.buttonTextPrimary}>Submit Registration</Text>}
       </TouchableOpacity>
 
-      {error ? <Text style={styles.error}>{error}</Text> : null}
-      {status ? <Text style={styles.success}>{status}</Text> : null}
-
-      <TouchableOpacity style={[styles.button, !canSubmit ? { opacity: 0.5 } : undefined]} disabled={!canSubmit} onPress={submit}>
-        {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Submit Request</Text>}
-      </TouchableOpacity>
     </ScrollView>
   );
 }
 
+function InputLabel({ label }: { label: string }) {
+  return <Text style={[Typography.body, { fontWeight: "600", marginTop: Spacing.s, marginBottom: 4 }]}>{label}</Text>;
+}
+
+function SelectOption({ label, selected, onSelect }: any) {
+  return (
+    <TouchableOpacity
+      style={[
+        styles.option,
+        selected && { backgroundColor: Colors.primary, borderColor: Colors.primary }
+      ]}
+      onPress={onSelect}
+    >
+      <Text style={[Typography.caption, selected ? { color: Colors.white, fontWeight: "700" } : { color: Colors.text }]}>
+        {label}
+      </Text>
+    </TouchableOpacity>
+  );
+}
+
+function Checkbox({ label, checked, onChange }: any) {
+  return (
+    <TouchableOpacity style={{ flexDirection: "row", items: "center", gap: 8 }} onPress={onChange}>
+      {checked ? <CheckSquare size={20} color={Colors.primary} /> : <Square size={20} color={Colors.textMuted} />}
+      <Text style={Typography.body}>{label}</Text>
+    </TouchableOpacity>
+  );
+}
+
 const styles = StyleSheet.create({
-  container: { padding: 16, backgroundColor: "#f5f7fb" },
-  title: { fontSize: 22, fontWeight: "700", marginBottom: 12 },
-  label: { fontWeight: "600", marginTop: 10 },
   input: {
-    backgroundColor: "#fff",
-    borderRadius: 8,
+    backgroundColor: Colors.white,
     borderWidth: 1,
-    borderColor: "#e2e8f0",
-    padding: 10,
-    marginTop: 6
-  },
-  button: {
-    marginTop: 12,
-    backgroundColor: "#1d4ed8",
-    paddingVertical: 12,
-    borderRadius: 10,
-    alignItems: "center"
-  },
-  buttonText: { color: "#fff", fontWeight: "700" },
-  row: { flexDirection: "row", gap: 8, marginTop: 8 },
-  checkbox: {
-    flex: 1,
-    padding: 10,
+    borderColor: Colors.border,
     borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#e2e8f0",
-    backgroundColor: "#fff"
+    padding: 10,
+    fontSize: 15,
+    color: Colors.text
   },
-  checkboxActive: { backgroundColor: "#cbd5e1", borderColor: "#94a3b8" },
-  checkboxText: { color: "#0f172a" },
-  select: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 6 },
-  selectRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 6 },
+  selectRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 4
+  },
   option: {
-    paddingVertical: 8,
+    paddingVertical: 6,
     paddingHorizontal: 12,
-    borderRadius: 999,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: "#e2e8f0",
-    backgroundColor: "#fff"
-  },
-  optionActive: { backgroundColor: "#cbd5e1", borderColor: "#94a3b8" },
-  optionText: { color: "#334155" },
-  optionTextActive: { color: "#0f172a", fontWeight: "700" },
-  error: { color: "#dc2626", marginTop: 8 },
-  success: { color: "#16a34a", marginTop: 8 }
+    borderColor: Colors.border,
+    backgroundColor: Colors.background
+  }
 });

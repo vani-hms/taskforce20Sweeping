@@ -10,8 +10,58 @@ import { GeoLevel } from "../../generated/prisma";
 import { CANONICAL_MODULE_KEYS, getModuleLabel, isCanonicalModuleKey, normalizeModuleKey } from "../modules/moduleMetadata";
 import { getRoleLabel } from "../utils/labels";
 import { resolveCanWrite } from "../utils/moduleAccess";
+import { authenticate } from "../middleware/auth";
+import { requireCityContext } from "../middleware/rbac";
 
 const router = Router();
+
+router.get("/me", authenticate, requireCityContext(), async (req, res, next) => {
+  try {
+    const userId = req.auth!.sub;
+    const cityId = req.auth!.cityId!; // enforced by requireCityContext
+
+    const userCity = await prisma.userCity.findFirst({
+      where: { userId, cityId },
+      include: {
+        user: {
+          include: {
+            modules: {
+              where: { cityId },
+              include: { module: true }
+            }
+          }
+        }
+      }
+    });
+
+    if (!userCity) {
+      throw new HttpError(404, "User not found in current city context");
+    }
+
+    res.json({
+      user: {
+        id: userCity.userId,
+        name: userCity.user.name,
+        email: userCity.user.email,
+        role: userCity.role,
+        zoneIds: userCity.zoneIds || [],
+        wardIds: userCity.wardIds || [],
+        modules: userCity.user.modules
+          .filter((m) => isCanonicalModuleKey(m.module.name))
+          .map((m) => ({
+            id: m.moduleId,
+            key: normalizeModuleKey(m.module.name),
+            name: getModuleLabel(m.module.name),
+            canWrite: m.canWrite,
+            zoneIds: m.zoneIds || [],
+            wardIds: m.wardIds || []
+          }))
+      }
+    });
+  } catch (err) {
+    next(err);
+  }
+});
 
 const loginSchema = z.object({
   email: z.string().email(),

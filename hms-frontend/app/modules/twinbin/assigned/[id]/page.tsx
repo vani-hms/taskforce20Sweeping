@@ -173,104 +173,127 @@ export default function AssignedBinDetailPage() {
   return (
     <Protected>
       <ModuleGuard module="LITTERBINS" roles={["EMPLOYEE"]}>
-        <div className="page">
-          <h1>Twinbin Bin Detail</h1>
-          {error && <div className="alert error">{error}</div>}
+        <div className="content">
+          <header className="mb-6">
+            <p className="eyebrow">Litter Bins</p>
+            <h1>Bin Detail</h1>
+            <p className="muted">Verify location and submit bin inspection report.</p>
+          </header>
+
+          {error && <div className="alert alert-error mb-4">{error}</div>}
+
           {loading ? (
-            <div className="muted">Loading...</div>
+            <div className="card p-8 text-center muted">Loading...</div>
           ) : !bin ? (
-            <div className="muted">No bin found.</div>
+            <div className="card p-8 text-center muted">Bin not found.</div>
           ) : (
+            <div className="grid gap-6 max-w-3xl">
               <div className="card">
-                <div className="grid grid-2">
+                <div className="flex justify-between items-start mb-4">
+                  <h3>Bin Information</h3>
+                  {reportStatus && <div className="badge badge-info">{reportStatus.replace(/_/g, " ")}</div>}
+                </div>
+
+                <div className="grid grid-2 gap-y-4">
                   <Field label="Area Name" value={bin.areaName} />
-                  <Field label="Area Type" value={bin.areaType || "-"} />
-                  <Field label="Location Name" value={bin.locationName} />
-                  <Field label="Road Type" value={bin.roadType || "-"} />
+                  <Field label="Location" value={bin.locationName} />
+                  <Field label="Type" value={`${bin.areaType || '-'} / ${bin.roadType || '-'}`} />
+                  <Field label="Condition" value={bin.condition || "-"} />
                   <Field label="Fixed Properly" value={bin.isFixedProperly ? "Yes" : "No"} />
                   <Field label="Has Lid" value={bin.hasLid ? "Yes" : "No"} />
-                  <Field label="Condition" value={bin.condition || "-"} />
-                <Field label="Latitude" value={bin.latitude?.toString() || "-"} />
-                <Field label="Longitude" value={bin.longitude?.toString() || "-"} />
-                <Field label="Created" value={new Date(bin.createdAt).toLocaleString()} />
+                </div>
               </div>
 
-              <div className="flex gap-2" style={{ marginTop: 16 }}>
-                <button className="btn btn-secondary" onClick={fetchLocation}>
-                  Fetch My Location
-                </button>
-                <div className="muted">
-                  {distance === null ? "Distance not calculated" : `Distance: ${distance.toFixed(1)} m`}
+              <div className="card">
+                <div className="flex justify-between items-center mb-4">
+                  <h3>Location Verification</h3>
+                  {withinFence && <span className="badge badge-success">Within Range</span>}
                 </div>
+
+                <p className="muted text-sm mb-4">
+                  You must be within 50 meters of the bin to submit a report.
+                  {distance !== null && <span className="font-bold ml-2">Current Distance: {distance.toFixed(1)}m</span>}
+                </p>
+
+                <div className="flex gap-3 mb-4">
+                  <button className="btn btn-secondary" onClick={fetchLocation} disabled={loading}>
+                    📍 Check My Location
+                  </button>
+                </div>
+
+                {locError && <div className="alert alert-error">{locError}</div>}
+                {!withinFence && ctxMsg && <div className="alert alert-info">{ctxMsg}</div>}
               </div>
-              {locError && <div className="alert error">{locError}</div>}
-              <div className="muted" style={{ marginTop: 8 }}>
-                {withinFence
-                  ? "You are within 50 meters. You can submit a report."
-                  : ctxMsg || "Fetch your location to verify proximity (<=50 m)."}
-              </div>
-              {withinFence ? (
-                <div className="form-grid" style={{ marginTop: 16 }}>
-                  {questions.map((text, idx) => {
-                    const key = `q${idx + 1}`;
-                    const value = answers[key];
-                    return (
-                      <div key={key} className="card" style={{ padding: 12, border: "1px solid #e2e8f0" }}>
-                        <div style={{ fontWeight: 600, marginBottom: 8 }}>{text}</div>
-                        <div className="flex gap-2" style={{ marginBottom: 8 }}>
-                          <label className="checkbox">
-                            <input
-                              type="radio"
-                              name={key}
-                              checked={value.answer === "YES"}
-                              onChange={() => setAnswer(key, "YES")}
-                            />{" "}
-                            Yes
-                          </label>
-                          <label className="checkbox">
-                            <input
-                              type="radio"
-                              name={key}
-                              checked={value.answer === "NO"}
-                              onChange={() => setAnswer(key, "NO")}
-                            />{" "}
-                            No
-                          </label>
-                        </div>
-                        <label className="btn btn-secondary btn-sm" style={{ display: "inline-block" }}>
-                          Upload Photo (optional)
-                          <input
-                            type="file"
-                            accept="image/*"
-                            style={{ display: "none" }}
-                            onChange={(e) => onFileChange(key, e.target.files?.[0])}
-                          />
-                        </label>
-                        {value.photoUrl ? (
-                          <div style={{ marginTop: 8 }}>
-                            <img src={value.photoUrl} alt="upload preview" style={{ maxHeight: 120, borderRadius: 6 }} />
+
+              {withinFence && (
+                <div className="card">
+                  <h3>Inspection Checklist</h3>
+                  <p className="muted text-sm mb-6">Answer all questions to submit report.</p>
+
+                  <div className="grid gap-4">
+                    {questions.map((text, idx) => {
+                      const key = `q${idx + 1}`;
+                      const value = answers[key];
+                      return (
+                        <div key={key} className="p-4 border rounded-lg bg-slate-50">
+                          <div className="font-medium mb-3">{text}</div>
+                          <div className="flex gap-4 mb-3">
+                            <label className={`pill cursor-pointer ${value.answer === 'YES' ? 'pill-active ring-1 ring-blue-500' : ''}`}>
+                              <input
+                                type="radio"
+                                name={key}
+                                className="hidden"
+                                checked={value.answer === "YES"}
+                                onChange={() => setAnswer(key, "YES")}
+                              />
+                              Yes
+                            </label>
+                            <label className={`pill cursor-pointer ${value.answer === 'NO' ? 'pill-active ring-1 ring-blue-500' : ''}`}>
+                              <input
+                                type="radio"
+                                name={key}
+                                className="hidden"
+                                checked={value.answer === "NO"}
+                                onChange={() => setAnswer(key, "NO")}
+                              />
+                              No
+                            </label>
                           </div>
-                        ) : null}
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : null}
-              {submitError && <div className="alert error" style={{ marginTop: 8 }}>{submitError}</div>}
-              {statusMsg && <div className="alert success" style={{ marginTop: 8 }}>{statusMsg}</div>}
-              {reportStatus && (
-                <div className="badge" style={{ marginTop: 8 }}>
-                  Report Status: {reportStatus.replace("_", " ")}
+
+                          <div className="flex items-center gap-3">
+                            <label className="btn btn-sm btn-secondary cursor-pointer">
+                              {value.photoUrl ? "Change Photo" : "Add Photo"}
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => onFileChange(key, e.target.files?.[0])}
+                              />
+                            </label>
+                            {value.photoUrl && <span className="text-xs text-green-700 font-medium">Photo added</span>}
+                          </div>
+                          {value.photoUrl && (
+                            <img src={value.photoUrl} alt="Evidence" className="mt-3 rounded-lg h-32 object-cover border" />
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {submitError && <div className="alert alert-error mt-4">{submitError}</div>}
+                  {statusMsg && <div className="alert alert-success mt-4">{statusMsg}</div>}
+
+                  <div className="mt-6 pt-6 border-t">
+                    <button
+                      className="btn btn-primary w-full"
+                      disabled={!withinFence || submitting || !proximityToken}
+                      onClick={handleSubmit}
+                    >
+                      {submitting ? "Submitting Report..." : "Submit Inspection Report"}
+                    </button>
+                  </div>
                 </div>
               )}
-              <button
-                className="btn btn-primary"
-                disabled={!withinFence || submitting || !proximityToken}
-                onClick={handleSubmit}
-                style={{ marginTop: 12 }}
-              >
-                {submitting ? "Submitting..." : "Submit Report"}
-              </button>
             </div>
           )}
         </div>
@@ -281,9 +304,9 @@ export default function AssignedBinDetailPage() {
 
 function Field({ label, value }: { label: string; value: string }) {
   return (
-    <div>
-      <label>{label}</label>
-      <div className="muted">{value}</div>
+    <div className="flex flex-col gap-1">
+      <div className="text-xs uppercase tracking-wider muted">{label}</div>
+      <div className="font-medium">{value}</div>
     </div>
   );
 }

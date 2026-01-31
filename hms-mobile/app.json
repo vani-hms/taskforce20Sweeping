@@ -3,6 +3,7 @@
     "name": "hms-mobile",
     "slug": "hms-mobile",
     "version": "1.0.0",
+    "scheme": "hms-mobile",
     "orientation": "portrait",
     "platforms": [
       "android"

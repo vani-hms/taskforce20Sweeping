@@ -5,6 +5,8 @@ import { RootStackParamList } from "../../../navigation";
 import { approveTwinbinBin, rejectTwinbinBin, ApiError, listGeo } from "../../../api/auth";
 import { listEmployees } from "../../../api/employees";
 import { useAuthContext } from "../../../auth/AuthProvider";
+import { Colors, Spacing, Typography, Layout, UI } from "../../../theme";
+import { Map, CheckSquare, Square, ThumbsUp, ThumbsDown, User } from "lucide-react-native";
 
 type Props = NativeStackScreenProps<RootStackParamList, "TwinbinQcReview">;
 
@@ -25,9 +27,9 @@ export default function TwinbinQcReviewScreen({ route, navigation }: Props) {
     setError("");
     try {
       const [empRes, zonesRes, wardsRes] = await Promise.all([
-        listEmployees("LITTERBINS"),
-        listGeo("ZONE"),
-        listGeo("WARD")
+        listEmployees("LITTERBINS").catch(() => ({ employees: [] })),
+        listGeo("ZONE").catch(() => ({ nodes: [] })),
+        listGeo("WARD").catch(() => ({ nodes: [] }))
       ]);
       const onlyEmployees = (empRes.employees || []).filter((e) => e.role === "EMPLOYEE");
       setEmployees(onlyEmployees);
@@ -91,74 +93,91 @@ export default function TwinbinQcReviewScreen({ route, navigation }: Props) {
 
   if (loading) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#1d4ed8" />
+      <View style={[Layout.screenContainer, { justifyContent: "center" }]}>
+        <ActivityIndicator size="large" color={Colors.primary} />
       </View>
     );
   }
 
   if (!isQc) {
     return (
-      <View style={styles.center}>
-        <Text style={styles.error}>Access restricted to QC users.</Text>
+      <View style={[Layout.screenContainer, { justifyContent: "center" }]}>
+        <Text style={[Typography.h3, { color: Colors.danger, textAlign: "center" }]}>Access Restricted</Text>
       </View>
     );
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 24 }}>
-      <Text style={styles.title}>Review Bin</Text>
-      <View style={styles.card}>
+    <ScrollView style={Layout.screenContainer} contentContainerStyle={{ paddingBottom: Spacing.xxl }}>
+      <Text style={[Typography.h2, { marginBottom: Spacing.m, color: Colors.primary }]}>Review Bin Request</Text>
+
+      <View style={Layout.card}>
         <LabelValue label="Area Name" value={bin.areaName} />
         <LabelValue label="Area Type" value={bin.areaType} />
-        <LabelValue label="Location Name" value={bin.locationName} />
-        <LabelValue label="Road Type" value={bin.roadType} />
-        <LabelValue label="Fixed Properly" value={bin.isFixedProperly ? "Yes" : "No"} />
-        <LabelValue label="Has Lid" value={bin.hasLid ? "Yes" : "No"} />
-        <LabelValue label="Condition" value={bin.condition} />
+        <LabelValue label="Location" value={bin.locationName} />
         <LabelValue label="Zone" value={(bin.zoneId && zoneMap[bin.zoneId]) || "-"} />
         <LabelValue label="Ward" value={(bin.wardId && wardMap[bin.wardId]) || "-"} />
-        <LabelValue label="Coordinates" value={`${bin.latitude}, ${bin.longitude}`} />
+        <LabelValue label="Fixed" value={bin.isFixedProperly ? "Yes" : "No"} />
+        <LabelValue label="Lid" value={bin.hasLid ? "Yes" : "No"} />
+        <LabelValue label="Condition" value={bin.condition} />
+
         {bin.latitude && bin.longitude ? (
-          <TouchableOpacity style={styles.mapButton} onPress={openMap}>
-            <Text style={styles.buttonText}>Open in Maps</Text>
+          <TouchableOpacity style={[UI.button, UI.buttonSecondary, { marginTop: Spacing.m }]} onPress={openMap}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+              <Map size={18} color={Colors.primary} />
+              <Text style={UI.buttonTextSecondary}>Open Location</Text>
+            </View>
           </TouchableOpacity>
         ) : null}
       </View>
 
-      <Text style={styles.subtitle}>Assign Employees</Text>
-      <View style={styles.card}>
+      <Text style={[Typography.h3, { marginTop: Spacing.l, marginBottom: Spacing.s }]}>Assign Employees</Text>
+      <View style={Layout.card}>
         {employees.length === 0 ? (
-          <Text style={styles.muted}>No employees available for Twinbin.</Text>
+          <Text style={Typography.muted}>No employees available.</Text>
         ) : (
           employees.map((emp) => (
             <TouchableOpacity key={emp.id} style={styles.assignRow} onPress={() => toggleAssign(emp.id)}>
-              <View style={[styles.checkbox, assignIds.has(emp.id) ? styles.checkboxChecked : undefined]} />
+              {assignIds.has(emp.id) ? (
+                <CheckSquare size={20} color={Colors.primary} />
+              ) : (
+                <Square size={20} color={Colors.textMuted} />
+              )}
               <View>
-                <Text style={styles.assignName}>{emp.name}</Text>
-                <Text style={styles.muted}>{emp.email}</Text>
+                <Text style={Typography.body}>{emp.name}</Text>
+                <Text style={Typography.caption}>{emp.email}</Text>
               </View>
             </TouchableOpacity>
           ))
         )}
       </View>
 
-      {error ? <Text style={styles.error}>{error}</Text> : null}
+      {error ? <Text style={[Typography.body, { color: Colors.danger, marginTop: Spacing.m }]}>{error}</Text> : null}
 
       <View style={styles.actions}>
-        <TouchableOpacity style={[styles.actionButton, styles.reject]} onPress={reject} disabled={actionLoading}>
-          <Text style={styles.buttonText}>Reject</Text>
+        <TouchableOpacity
+          style={[UI.button, { backgroundColor: Colors.dangerBg, flex: 1, marginRight: Spacing.s }]}
+          onPress={reject}
+          disabled={actionLoading}
+        >
+          <View style={{ flexDirection: "row", gap: 8 }}>
+            <ThumbsDown size={18} color={Colors.danger} />
+            <Text style={{ color: Colors.danger, fontWeight: "600" }}>Reject</Text>
+          </View>
         </TouchableOpacity>
+
         <TouchableOpacity
           style={[
-            styles.actionButton,
-            styles.approve,
-            assignIds.size === 0 ? { backgroundColor: "#9ca3af" } : undefined
+            UI.button,
+            { backgroundColor: assignIds.size === 0 ? Colors.border : Colors.success, flex: 1, marginLeft: Spacing.s }
           ]}
           onPress={approve}
           disabled={actionLoading || assignIds.size === 0}
         >
-          <Text style={styles.buttonText}>Approve</Text>
+          <View style={{ flexDirection: "row", gap: 8 }}>
+            <ThumbsUp size={18} color={Colors.white} />
+            <Text style={{ color: Colors.white, fontWeight: "600" }}>Approve</Text>
+          </View>
         </TouchableOpacity>
       </View>
     </ScrollView>
@@ -168,63 +187,21 @@ export default function TwinbinQcReviewScreen({ route, navigation }: Props) {
 function LabelValue({ label, value }: { label: string; value: string }) {
   return (
     <View style={styles.labelRow}>
-      <Text style={styles.label}>{label}</Text>
-      <Text style={styles.value}>{value || "-"}</Text>
+      <Text style={[Typography.body, { color: Colors.textMuted }]}>{label}</Text>
+      <Text style={[Typography.body, { fontWeight: "600", flexShrink: 1, textAlign: "right" }]}>{value || "-"}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f5f7fb", padding: 16 },
-  center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: "#f5f7fb" },
-  title: { fontSize: 22, fontWeight: "700", marginBottom: 12 },
-  subtitle: { fontSize: 18, fontWeight: "700", marginBottom: 8, marginTop: 12 },
-  card: {
-    backgroundColor: "#fff",
-    borderRadius: 10,
-    padding: 14,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: "#e2e8f0"
-  },
   labelRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 8 },
-  label: { color: "#475569", fontWeight: "600" },
-  value: { color: "#0f172a", fontWeight: "600", marginLeft: 12, flexShrink: 1, textAlign: "right" },
-  mapButton: {
-    marginTop: 8,
-    backgroundColor: "#0ea5e9",
-    paddingVertical: 10,
-    borderRadius: 8,
-    alignItems: "center"
-  },
-  buttonText: { color: "#fff", fontWeight: "700" },
-  muted: { color: "#4b5563" },
   assignRow: {
     flexDirection: "row",
     alignItems: "center",
     paddingVertical: 10,
-    borderBottomColor: "#e2e8f0",
-    borderBottomWidth: 1
+    borderBottomColor: Colors.border,
+    borderBottomWidth: 1,
+    gap: Spacing.m
   },
-  checkbox: {
-    width: 18,
-    height: 18,
-    borderRadius: 4,
-    borderWidth: 1,
-    borderColor: "#94a3b8",
-    marginRight: 10
-  },
-  checkboxChecked: { backgroundColor: "#1d4ed8", borderColor: "#1d4ed8" },
-  assignName: { fontWeight: "700", color: "#0f172a" },
-  actions: { flexDirection: "row", justifyContent: "space-between", marginTop: 8 },
-  actionButton: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 10,
-    alignItems: "center",
-    marginHorizontal: 4
-  },
-  approve: { backgroundColor: "#16a34a" },
-  reject: { backgroundColor: "#dc2626" },
-  error: { color: "#dc2626", marginBottom: 8 }
+  actions: { flexDirection: "row", justifyContent: "space-between", marginTop: Spacing.l }
 });

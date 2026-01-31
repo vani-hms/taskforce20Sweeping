@@ -11,9 +11,7 @@ export default function LitterbinsLanding() {
   useEffect(() => {
     if (!user) return;
     const roles = user.roles || [];
-    if (roles.includes("QC")) {
-      router.replace("/modules/twinbin/qc");
-    } else if (roles.includes("EMPLOYEE") || roles.includes("ACTION_OFFICER") || roles.includes("CITY_ADMIN")) {
+    if (roles.includes("QC") || roles.includes("EMPLOYEE") || roles.includes("ACTION_OFFICER") || roles.includes("CITY_ADMIN") || roles.includes("ULB_OFFICER")) {
       router.replace("/modules/twinbin");
     } else {
       router.replace("/modules");

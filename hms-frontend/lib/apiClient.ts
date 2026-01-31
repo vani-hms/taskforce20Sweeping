@@ -59,7 +59,8 @@ export const AuthApi = {
       method: "POST",
       body: JSON.stringify(body)
     }),
-  logout: async () => apiFetch<{ success: boolean }>("/auth/logout", { method: "POST" })
+  logout: async () => apiFetch<{ success: boolean }>("/auth/logout", { method: "POST" }),
+  getMe: async () => apiFetch<{ user: any }>("/auth/me")
 };
 
 export const CityApi = {
@@ -236,10 +237,16 @@ export const ToiletApi = {
 };
 
 export const ModuleRecordsApi = {
-  getRecords: (moduleKey: string) =>
-    apiFetch<{ city: string; module: string; count: number; records: any[] }>(
-      `/modules/${moduleKey}/records`
-    )
+  getRecords: (moduleKey: string, filters?: { zoneIds?: string[]; wardIds?: string[] }) => {
+    const params = new URLSearchParams();
+    if (filters?.zoneIds?.length) filters.zoneIds.forEach(id => params.append("zoneIds", id));
+    if (filters?.wardIds?.length) filters.wardIds.forEach(id => params.append("wardIds", id));
+
+    const queryString = params.toString();
+    const url = `/modules/${moduleKey}/records${queryString ? `?${queryString}` : ""}`;
+
+    return apiFetch<{ city: string; module: string; count: number; records: any[] }>(url);
+  }
 };
 
 export const RegistrationApi = {

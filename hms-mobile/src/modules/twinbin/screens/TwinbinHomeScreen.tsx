@@ -1,56 +1,98 @@
-import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import React, { useEffect, useState } from "react";
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../../../navigation";
+import { Colors, Spacing, Typography, Layout, UI } from "../../../theme";
+import { MapPin, CheckCircle, ClipboardList, PlusCircle, LayoutGrid } from "lucide-react-native";
+import { listTwinbinAssigned, listTwinbinPending, listTwinbinMyRequests } from "../../../api/auth";
+import { useAuthContext } from "../../../auth/AuthProvider";
+import TwinbinAdminDashboard from "./TwinbinAdminDashboard";
 
 type Props = NativeStackScreenProps<RootStackParamList, "TwinbinHome">;
 
-export default function TwinbinHomeScreen({ navigation }: Props) {
+export default function TwinbinHomeScreen(props: Props) {
+  const { auth } = useAuthContext();
+  const isAdmin = auth.status === 'authenticated' &&
+    (auth.user.roles.includes('CITY_ADMIN') || auth.user.roles.includes('ULB_OFFICER'));
+
+  if (isAdmin) {
+    return <TwinbinAdminDashboard />;
+  }
+
+  return <TwinbinEmployeeHome {...props} />;
+}
+
+function TwinbinEmployeeHome({ navigation }: Props) {
+  const [stats, setStats] = useState({ assigned: 0, pending: 0, requests: 0 });
+
+  useEffect(() => {
+    const loadStats = async () => {
+      try {
+        const [assigned, pending, requests] = await Promise.all([
+          listTwinbinAssigned().catch(() => ({ bins: [] })),
+          listTwinbinPending().catch(() => ({ bins: [] })),
+          listTwinbinMyRequests().catch(() => ({ bins: [] }))
+        ]);
+        setStats({
+          assigned: assigned.bins?.length || 0,
+          pending: pending.bins?.length || 0,
+          requests: requests.bins?.length || 0
+        });
+      } catch (e) {
+        // Silent fail for stats
+      }
+    };
+    loadStats();
+  }, []);
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Litter Bins · Field Ops</Text>
-      <Text style={styles.subtitle}>Your daily workspace for bin inspections and reporting.</Text>
+    <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: Spacing.xl }}>
+      <Text style={styles.title}>Litter Bins</Text>
+      <Text style={styles.subtitle}>Field Operations Workspace</Text>
 
       <View style={styles.kpiRow}>
-        <Kpi label="Assigned" value="—" />
-        <Kpi label="Pending" value="—" />
-        <Kpi label="Requests" value="—" />
+        <Kpi label="Assigned" value={stats.assigned.toString()} color={Colors.primary} />
+        <Kpi label="Pending" value={stats.pending.toString()} color={Colors.warning} />
+        <Kpi label="My Requests" value={stats.requests.toString()} color={Colors.secondary} />
       </View>
 
-      <View style={styles.section}>
+      <View style={[Layout.card, { marginTop: Spacing.l }]}>
         <View style={styles.sectionHead}>
-          <Text style={styles.sectionTitle}>Primary Actions</Text>
-          <TouchableOpacity style={styles.primaryBtn} onPress={() => navigation.navigate("TwinbinRegister")}>
-            <Text style={styles.primaryBtnText}>+ Register Bin</Text>
+          <Text style={Typography.h2}>Actions</Text>
+          <TouchableOpacity
+            style={[UI.button, UI.buttonPrimary, { flexDirection: "row", gap: 6 }]}
+            onPress={() => navigation.navigate("TwinbinRegister")}
+          >
+            <PlusCircle size={18} color={Colors.white} />
+            <Text style={UI.buttonTextPrimary}>Register Bin</Text>
           </TouchableOpacity>
         </View>
-        <View style={styles.cardGrid}>
+
+        <View style={{ gap: Spacing.m, marginTop: Spacing.m }}>
           <ActionCard
             title="Assigned Bins"
-            desc="Navigate to your assigned bins, capture location, and submit reports."
+            desc="Inspect and report on your assigned bins."
+            icon={<MapPin size={24} color={Colors.primary} />}
             onPress={() => navigation.navigate("TwinbinAssigned")}
             primary
           />
           <ActionCard
             title="My Requests"
-            desc="Check statuses and follow up on bins you registered."
+            desc="Track status of your bin registrations."
+            icon={<ClipboardList size={24} color={Colors.secondary} />}
             onPress={() => navigation.navigate("TwinbinMyRequests")}
           />
         </View>
       </View>
-
-      <TouchableOpacity style={styles.fab} onPress={() => navigation.navigate("TwinbinRegister")}>
-        <Text style={styles.fabText}>＋</Text>
-      </TouchableOpacity>
-    </View>
+    </ScrollView>
   );
 }
 
-function Kpi({ label, value }: { label: string; value: string }) {
+function Kpi({ label, value, color }: { label: string; value: string; color: string }) {
   return (
-    <View style={styles.kpiCard}>
-      <Text style={styles.kpiLabel}>{label}</Text>
-      <Text style={styles.kpiValue}>{value}</Text>
+    <View style={[styles.kpiCard, { borderTopColor: color, borderTopWidth: 4 }]}>
+      <Text style={[Typography.h1, { color }]}>{value}</Text>
+      <Text style={Typography.caption}>{label}</Text>
     </View>
   );
 }
@@ -58,97 +100,65 @@ function Kpi({ label, value }: { label: string; value: string }) {
 function ActionCard({
   title,
   desc,
+  icon,
   onPress,
   primary
 }: {
   title: string;
   desc: string;
+  icon: React.ReactNode;
   onPress: () => void;
   primary?: boolean;
 }) {
   return (
-    <TouchableOpacity style={[styles.actionCard, primary && styles.actionCardPrimary]} onPress={onPress}>
+    <TouchableOpacity
+      style={[
+        styles.actionCard,
+        primary && { backgroundColor: Colors.primaryLight + "40", borderColor: Colors.primaryLight }
+      ]}
+      onPress={onPress}
+    >
+      <View style={styles.iconBox}>{icon}</View>
       <View style={{ flex: 1 }}>
-        <Text style={[styles.cardTitle, primary && styles.cardTitleLight]}>{title}</Text>
-        <Text style={[styles.cardSubtitle, primary && styles.cardSubtitleLight]}>{desc}</Text>
+        <Text style={Typography.h3}>{title}</Text>
+        <Text style={Typography.caption}>{desc}</Text>
       </View>
-      <Text style={[styles.linkText, primary && styles.cardSubtitleLight]}>Open ›</Text>
     </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f5f7fb", padding: 16 },
-  title: { fontSize: 24, fontWeight: "800", color: "#0f172a" },
-  subtitle: { color: "#475569", marginBottom: 16 },
-  kpiRow: { flexDirection: "row", gap: 10, justifyContent: "space-between" },
+  container: Layout.screenContainer,
+  title: { ...Typography.h1, color: Colors.primary },
+  subtitle: { ...Typography.body, color: Colors.textMuted, marginBottom: Spacing.l },
+  kpiRow: { flexDirection: "row", gap: Spacing.m, justifyContent: "space-between" },
   kpiCard: {
     flex: 1,
-    backgroundColor: "#0b1021",
-    padding: 12,
-    borderRadius: 12,
+    backgroundColor: Colors.white,
+    padding: Spacing.m,
+    borderRadius: 8,
+    alignItems: "center",
     shadowColor: "#000",
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 4
+    shadowOpacity: 0.05,
+    elevation: 2
   },
-  kpiLabel: { color: "#94a3b8", fontWeight: "600" },
-  kpiValue: { color: "#e2e8f0", fontWeight: "800", fontSize: 22, marginTop: 4 },
-  section: {
-    backgroundColor: "#fff",
-    borderRadius: 14,
-    padding: 14,
-    marginTop: 18,
-    borderWidth: 1,
-    borderColor: "#e2e8f0",
-    shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 3
-  },
-  sectionHead: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 },
-  sectionTitle: { fontSize: 18, fontWeight: "700", color: "#0f172a" },
-  primaryBtn: {
-    backgroundColor: "#1d4ed8",
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 10
-  },
-  primaryBtnText: { color: "#fff", fontWeight: "700" },
-  cardGrid: { gap: 12 },
+  sectionHead: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   actionCard: {
-    backgroundColor: "#f8fafc",
-    borderRadius: 12,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: "#e2e8f0",
     flexDirection: "row",
     alignItems: "center",
-    gap: 12
+    backgroundColor: Colors.white,
+    padding: Spacing.m,
+    borderRadius: 12,
+    gap: Spacing.m,
+    borderWidth: 1,
+    borderColor: Colors.border
   },
-  actionCardPrimary: { backgroundColor: "#1d4ed8", borderColor: "#1d4ed8" },
-  cardTitle: { fontSize: 16, fontWeight: "700", color: "#0f172a" },
-  cardTitleLight: { color: "#e2e8f0" },
-  cardSubtitle: { color: "#475569", marginTop: 4 },
-  cardSubtitleLight: { color: "#cbd5e1" },
-  linkText: { color: "#1d4ed8", fontWeight: "700" },
-  fab: {
-    position: "absolute",
-    bottom: 24,
-    right: 24,
-    backgroundColor: "#16a34a",
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+  iconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.background,
     alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 6
-  },
-  fabText: { color: "#fff", fontSize: 28, fontWeight: "800", marginTop: -2 }
+    justifyContent: "center"
+  }
 });

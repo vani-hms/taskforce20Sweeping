@@ -18,7 +18,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...((init.headers || {}) as Record<string, string>)
   };
-  const res = await fetch(`${API_BASE_URL}${path}`, { ...init, headers });
+  const res = await fetch(`${API_BASE_URL}${path}`, { ...init, headers, cache: "no-store" });
   console.log("[api] response", res.status, path);
   if (!res.ok) {
     const text = await res.text();
@@ -103,6 +103,7 @@ export async function fetchPublicWards(zoneId: string) {
   return res.json() as Promise<{ wards: { id: string; name: string }[] }>;
 }
 
+
 export async function requestTwinbinBin(body: {
   zoneId?: string;
   wardId?: string;
@@ -118,9 +119,8 @@ export async function requestTwinbinBin(body: {
 }) {
   return request<{ bin: any }>("/modules/twinbin/bins/request", {
     method: "POST",
-    headers: { "Content-Type": "application/json", ...(await authHeader()) },
     body: JSON.stringify(body)
-  } as any);
+  });
 }
 
 export async function listTwinbinMyRequests() {
@@ -141,9 +141,8 @@ export async function submitTwinbinVisit(
 ) {
   return request<{ report: any }>(`/modules/twinbin/bins/${binId}/visit`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", ...(await authHeader()) },
     body: JSON.stringify(body)
-  } as any);
+  });
 }
 
 export async function submitTwinbinReport(
@@ -152,9 +151,8 @@ export async function submitTwinbinReport(
 ) {
   return request<{ report: any }>(`/modules/twinbin/bins/${binId}/report`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", ...(await authHeader()) },
     body: JSON.stringify(body)
-  } as any);
+  });
 }
 
 export async function getTwinbinReportContext(binId: string, lat: number, lon: number) {
@@ -167,9 +165,8 @@ export async function getTwinbinReportContext(binId: string, lat: number, lon: n
     bin?: any;
     proximityToken: string | null;
   }>(`/modules/twinbin/bins/${binId}/report-context?${params.toString()}`, {
-    method: "GET",
-    headers: { ...(await authHeader()) } as any
-  } as any);
+    method: "GET"
+  });
 }
 
 export async function listTwinbinVisitPending() {
@@ -178,16 +175,14 @@ export async function listTwinbinVisitPending() {
 
 export async function approveTwinbinVisit(id: string) {
   return request<{ visit: any }>(`/modules/twinbin/visits/${id}/approve`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...(await authHeader()) }
-  } as any);
+    method: "POST"
+  });
 }
 
 export async function rejectTwinbinVisit(id: string) {
   return request<{ visit: any }>(`/modules/twinbin/visits/${id}/reject`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...(await authHeader()) }
-  } as any);
+    method: "POST"
+  });
 }
 
 export async function listTwinbinPending() {
@@ -197,24 +192,21 @@ export async function listTwinbinPending() {
 export async function approveTwinbinBin(id: string, body: { assignedEmployeeIds?: string[] }) {
   return request<{ bin: any }>(`/modules/twinbin/bins/${id}/approve`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", ...(await authHeader()) },
     body: JSON.stringify(body)
-  } as any);
+  });
 }
 
 export async function rejectTwinbinBin(id: string) {
   return request<{ bin: any }>(`/modules/twinbin/bins/${id}/reject`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...(await authHeader()) }
-  } as any);
+    method: "POST"
+  });
 }
 
 export async function markTwinbinVisitActionRequired(id: string, qcRemark: string) {
   return request<{ visit: any }>(`/modules/twinbin/visits/${id}/action-required`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", ...(await authHeader()) },
     body: JSON.stringify({ qcRemark })
-  } as any);
+  });
 }
 
 export async function listTwinbinActionRequired() {
@@ -224,9 +216,8 @@ export async function listTwinbinActionRequired() {
 export async function submitTwinbinActionTaken(id: string, body: { actionRemark: string; actionPhotoUrl: string }) {
   return request<{ visit: any }>(`/modules/twinbin/visits/${id}/action-taken`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", ...(await authHeader()) },
     body: JSON.stringify(body)
-  } as any);
+  });
 }
 
 export async function listTwinbinReportsPending() {
@@ -235,23 +226,20 @@ export async function listTwinbinReportsPending() {
 
 export async function approveTwinbinReport(id: string) {
   return request<{ report: any }>(`/modules/twinbin/reports/${id}/approve`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...(await authHeader()) }
-  } as any);
+    method: "POST"
+  });
 }
 
 export async function rejectTwinbinReport(id: string) {
   return request<{ report: any }>(`/modules/twinbin/reports/${id}/reject`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...(await authHeader()) }
-  } as any);
+    method: "POST"
+  });
 }
 
 export async function actionRequiredTwinbinReport(id: string) {
   return request<{ report: any }>(`/modules/twinbin/reports/${id}/action-required`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...(await authHeader()) }
-  } as any);
+    method: "POST"
+  });
 }
 
 // Taskforce feeder points (employee)
@@ -280,9 +268,8 @@ export async function submitTaskforceFeederRequest(body: {
 }) {
   return request<{ feederPoint: any }>("/modules/taskforce/feeder-points/request", {
     method: "POST",
-    headers: { "Content-Type": "application/json", ...(await authHeader()) },
     body: JSON.stringify(body)
-  } as any);
+  });
 }
 
 export async function listTaskforceFeederRequests() {
@@ -295,14 +282,8 @@ export async function submitTaskforceReport(
 ) {
   return request<{ report: any }>(`/modules/taskforce/feeder-points/${feederPointId}/report`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", ...(await authHeader()) },
     body: JSON.stringify(body)
-  } as any);
-}
-
-async function authHeader() {
-  const token = await getToken();
-  return token ? { Authorization: `Bearer ${token}` } : {};
+  });
 }
 
 export async function submitRegistration(body: {
@@ -328,21 +309,24 @@ export async function listTaskforceReportsPending() {
 
 export async function approveTaskforceReport(id: string) {
   return request<{ report: any }>(`/modules/taskforce/reports/${id}/approve`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...(await authHeader()) }
-  } as any);
+    method: "POST"
+  });
 }
 
 export async function rejectTaskforceReport(id: string) {
   return request<{ report: any }>(`/modules/taskforce/reports/${id}/reject`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...(await authHeader()) }
-  } as any);
+    method: "POST"
+  });
 }
 
 export async function actionRequiredTaskforceReport(id: string) {
   return request<{ report: any }>(`/modules/taskforce/reports/${id}/action-required`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...(await authHeader()) }
-  } as any);
+    method: "POST"
+  });
+}
+
+export async function getModuleRecords(moduleKey: string) {
+  return request<{ city: string; module: string; count: number; records: any[] }>(
+    `/modules/${moduleKey}/records`
+  );
 }

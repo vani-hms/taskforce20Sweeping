@@ -53,6 +53,7 @@ import {
 
 import { useAuthContext } from "../auth/AuthProvider";
 import { RootStackParamList } from "./types";
+import { Colors, Typography } from "../theme";
 export type { RootStackParamList } from "./types";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -74,7 +75,17 @@ export function RootNavigator() {
   }
 
   return (
-    <Stack.Navigator key="app" screenOptions={{ headerShown: false }}>
+    <Stack.Navigator
+      key="app"
+      screenOptions={{
+        headerShown: true,
+        headerStyle: { backgroundColor: Colors.white },
+        headerTintColor: Colors.primary,
+        headerTitleStyle: { fontWeight: "700", color: Colors.primary },
+        headerShadowVisible: false,
+        contentStyle: { backgroundColor: Colors.background }
+      }}
+    >
       <Stack.Screen
         name="CityLanding"
         component={CityLandingScreen}
@@ -82,114 +93,137 @@ export function RootNavigator() {
           cityName:
             auth.status === "authenticated" ? auth.cityName : undefined,
         }}
+        options={{ headerShown: false }}
       />
 
-      <Stack.Screen name="Module" component={ModuleHomeWrapper} />
-      <Stack.Screen name="MyEmployees" component={MyEmployeesScreen} />
+      <Stack.Screen name="Module" component={ModuleHomeWrapper} options={{ headerShown: false }} />
+      <Stack.Screen name="MyEmployees" component={MyEmployeesScreen} options={{ title: "My Employees" }} />
       <Stack.Screen
         name="RegistrationRequests"
         component={RegistrationRequestsScreen}
+        options={{ title: "Registration Requests" }}
       />
 
       {/* Twinbin */}
-      <Stack.Screen name="TwinbinHome" component={TwinbinHomeScreen} />
-      <Stack.Screen name="TwinbinRegister" component={TwinbinRegisterScreen} />
+      <Stack.Screen name="TwinbinHome" component={TwinbinHomeScreen} options={{ title: "Litter Bins" }} />
+      <Stack.Screen name="TwinbinRegister" component={TwinbinRegisterScreen} options={{ title: "Register Bin" }} />
       <Stack.Screen
         name="TwinbinMyRequests"
         component={TwinbinMyRequestsScreen}
+        options={{ title: "My Requests" }}
       />
-      <Stack.Screen name="TwinbinQcHome" component={TwinbinQcHomeScreen} />
+      <Stack.Screen name="TwinbinQcHome" component={TwinbinQcHomeScreen} options={{ title: "Litter Bins QC" }} />
       <Stack.Screen
         name="TwinbinQcPending"
         component={TwinbinQcPendingScreen}
+        options={{ title: "Pending Bins" }}
       />
       <Stack.Screen
         name="TwinbinQcReview"
         component={TwinbinQcReviewScreen}
+        options={{ title: "Review Bin" }}
       />
       <Stack.Screen
         name="TwinbinAssigned"
         component={TwinbinAssignedScreen}
+        options={{ title: "Assigned Bins" }}
       />
       <Stack.Screen
         name="TwinbinBinDetail"
         component={TwinbinBinDetailScreen}
+        options={{ title: "Bin Detail" }}
       />
       <Stack.Screen
         name="TwinbinVisitPending"
         component={TwinbinVisitPendingScreen}
+        options={{ title: "Pending Visits" }}
       />
       <Stack.Screen
         name="TwinbinVisitReview"
         component={TwinbinVisitReviewScreen}
+        options={{ title: "Review Visit" }}
       />
       <Stack.Screen
         name="TwinbinActionRequired"
         component={TwinbinActionRequiredScreen}
+        options={{ title: "Action Required" }}
       />
       <Stack.Screen
         name="TwinbinActionRequiredDetail"
         component={TwinbinActionRequiredDetailScreen}
+        options={{ title: "Action Detail" }}
       />
       <Stack.Screen
         name="TwinbinReportPending"
         component={TwinbinReportPendingScreen}
+        options={{ title: "Pending Reports" }}
       />
       <Stack.Screen
         name="TwinbinReportReview"
         component={TwinbinReportReviewScreen}
+        options={{ title: "Review Report" }}
       />
 
       {/* Taskforce */}
-      <Stack.Screen name="TaskforceHome" component={TaskforceHomeScreen} />
+      <Stack.Screen name="TaskforceHome" component={TaskforceHomeScreen} options={{ title: "Taskforce" }} />
       <Stack.Screen
         name="TaskforceRegister"
         component={TaskforceRegisterScreen}
+        options={{ title: "Register Feeder" }}
       />
       <Stack.Screen
         name="TaskforceMyRequests"
         component={TaskforceMyRequestsScreen}
+        options={{ title: "My Requests" }}
       />
       <Stack.Screen
         name="TaskforceAssigned"
         component={TaskforceAssignedScreen}
+        options={{ title: "Assigned" }}
       />
       <Stack.Screen
         name="TaskforceFeederDetail"
         component={TaskforceFeederDetailScreen}
+        options={{ title: "Feeder Detail" }}
       />
       <Stack.Screen
         name="TaskforceQcReports"
         component={TaskforceQcReportsScreen}
+        options={{ title: "QC Reports" }}
       />
       <Stack.Screen
         name="TaskforceQcReportReview"
         component={TaskforceQcReportReviewScreen}
+        options={{ title: "Review Report" }}
       />
 
-      {/* ✅ Cleanliness Of Toilets (ADDED, NO EXISTING CODE TOUCHED) */}
-      <Stack.Screen name="ToiletHome" component={ToiletHomeScreen} />
+      {/* ✅ Cleanliness Of Toilets (ADDED) */}
+      <Stack.Screen name="ToiletHome" component={ToiletHomeScreen} options={{ title: "Toilets" }} />
       <Stack.Screen
         name="ToiletEmployeeTabs"
         component={ToiletEmployeeTabs}
+        options={{ title: "Daily Operations" }}
       />
-      <Stack.Screen name="ToiletQcTabs" component={ToiletQcTabs} />
+      <Stack.Screen name="ToiletQcTabs" component={ToiletQcTabs} options={{ title: "QC Dashboard" }} />
       <Stack.Screen
         name="ToiletInspection"
         component={ToiletInspectionScreen}
+        options={{ title: "Inspection" }}
       />
-      <Stack.Screen name="ToiletReview" component={ToiletReviewScreen} />
-      <Stack.Screen name="ToiletRegister" component={ToiletRegisterScreen} />
+      <Stack.Screen name="ToiletReview" component={ToiletReviewScreen} options={{ title: "Review" }} />
+      <Stack.Screen name="ToiletRegister" component={ToiletRegisterScreen} options={{ title: "Register Toilet" }} />
       <Stack.Screen
         name="ToiletMyRequests"
         component={ToiletMyRequestsScreen}
+        options={{ title: "My Requests" }}
       />
       <Stack.Screen
         name="ToiletPendingRegistration"
         component={ToiletPendingRegistrationScreen}
+        options={{ title: "Pending" }}
       />
-      <Stack.Screen name="ToiletMaster" component={ToiletMasterScreen} />
-      <Stack.Screen name="ToiletHelp" component={ToiletHelpScreen} />
+      <Stack.Screen name="ToiletMaster" component={ToiletMasterScreen} options={{ title: "All Toilets" }} />
+      <Stack.Screen name="ToiletHelp" component={ToiletHelpScreen} options={{ title: "Help" }} />
     </Stack.Navigator>
   );
 }

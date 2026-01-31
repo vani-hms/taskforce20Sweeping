@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, ActivityIndicator, FlatList, StyleSheet } from "react-native";
 import { listTwinbinMyRequests, ApiError } from "../../../api/auth";
+import { Colors, Spacing, Typography, Layout } from "../../../theme";
+import { MapPin, Clock, AlertCircle } from "lucide-react-native";
 
 export default function TwinbinMyRequestsScreen() {
   const [bins, setBins] = useState<any[]>([]);
@@ -26,29 +28,47 @@ export default function TwinbinMyRequestsScreen() {
 
   if (loading) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#1d4ed8" />
+      <View style={[Layout.screenContainer, { justifyContent: "center" }]}>
+        <ActivityIndicator size="large" color={Colors.primary} />
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>My Bin Requests</Text>
-      {error ? <Text style={styles.error}>{error}</Text> : null}
-      {!bins.length ? (
-        <Text style={styles.muted}>No requests yet.</Text>
+    <View style={Layout.screenContainer}>
+      {error ? (
+        <View style={styles.errorBox}>
+          <AlertCircle size={20} color={Colors.danger} />
+          <Text style={{ color: Colors.danger, marginLeft: 8 }}>{error}</Text>
+        </View>
+      ) : null}
+
+      {!bins.length && !error ? (
+        <View style={styles.emptyState}>
+          <Text style={Typography.h3}>No requests found</Text>
+          <Text style={Typography.body}>You haven't submitted any bin registrations yet.</Text>
+        </View>
       ) : (
         <FlatList
           data={bins}
           keyExtractor={(item) => item.id}
+          contentContainerStyle={{ paddingBottom: Spacing.xl }}
           renderItem={({ item }) => (
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>{item.areaName}</Text>
-              <Text style={styles.muted}>{item.locationName}</Text>
-              <Text style={styles.muted}>Condition: {item.condition}</Text>
-              <Text style={[styles.badge, badgeStyle(item.status)]}>{item.status}</Text>
-              <Text style={styles.muted}>{new Date(item.createdAt).toLocaleString()}</Text>
+            <View style={[Layout.card, { marginBottom: Spacing.m }]}>
+              <View style={styles.headerRow}>
+                <Text style={Typography.h3}>{item.areaName}</Text>
+                <StatusBadge status={item.status} />
+              </View>
+
+              <View style={styles.infoRow}>
+                <MapPin size={16} color={Colors.textMuted} />
+                <Text style={Typography.muted}>{item.locationName}</Text>
+              </View>
+
+              <View style={styles.infoRow}>
+                <Clock size={16} color={Colors.textMuted} />
+                <Text style={Typography.caption}>{new Date(item.createdAt).toLocaleString()}</Text>
+              </View>
             </View>
           )}
         />
@@ -57,33 +77,53 @@ export default function TwinbinMyRequestsScreen() {
   );
 }
 
-function badgeStyle(status: string) {
-  if (status === "APPROVED") return { backgroundColor: "#dcfce7", color: "#166534" };
-  if (status === "REJECTED") return { backgroundColor: "#fee2e2", color: "#991b1b" };
-  return { backgroundColor: "#fef9c3", color: "#92400e" };
+function StatusBadge({ status }: { status: string }) {
+  let bg = Colors.warningBg;
+  let text = Colors.warning;
+  if (status === "APPROVED") { bg = Colors.successBg; text = Colors.success; }
+  else if (status === "REJECTED") { bg = Colors.dangerBg; text = Colors.danger; }
+
+  return (
+    <View style={[styles.badge, { backgroundColor: bg }]}>
+      <Text style={[styles.badgeText, { color: text }]}>{status}</Text>
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f5f7fb", padding: 16 },
-  center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: "#f5f7fb" },
-  title: { fontSize: 22, fontWeight: "700", marginBottom: 12 },
-  card: {
-    backgroundColor: "#fff",
-    borderRadius: 10,
-    padding: 14,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: "#e2e8f0"
+  errorBox: {
+    flexDirection: "row",
+    backgroundColor: Colors.dangerBg,
+    padding: Spacing.m,
+    borderRadius: 8,
+    marginBottom: Spacing.m,
+    alignItems: "center"
   },
-  cardTitle: { fontSize: 16, fontWeight: "700" },
-  muted: { color: "#4b5563", marginTop: 4 },
-  error: { color: "#dc2626", marginBottom: 8 },
+  emptyState: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: Spacing.xl
+  },
+  headerRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: Spacing.s
+  },
+  infoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 4
+  },
   badge: {
-    alignSelf: "flex-start",
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 999,
-    marginTop: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 4
+  },
+  badgeText: {
+    fontSize: 12,
     fontWeight: "700"
   }
 });

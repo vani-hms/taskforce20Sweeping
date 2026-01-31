@@ -28,6 +28,17 @@ import {
   TaskforceQcReportsScreen,
   TaskforceQcReportReviewScreen
 } from "../modules/taskforce";
+
+import SweepingBeatsScreen from "../modules/sweeping/screens/SweepingBeatsScreen";
+import SweepingInspectionScreen from "../modules/sweeping/screens/SweepingInspectionScreen";
+import QcSweepingList from "../modules/sweeping/screens/QcSweepingList";
+import QcSweepingDetail from "../modules/sweeping/screens/QcSweepingDetail";
+import QcSweepingHome from "../modules/sweeping/screens/QcSweepingHome";
+import ActionOfficerSweepingScreen from "../modules/sweeping/screens/ActionOfficerSweepingScreen";
+import QcBeatAssignmentScreen from "../modules/sweeping/screens/QcBeatAssignmentScreen";
+
+
+
 import { useAuthContext } from "../auth/AuthProvider";
 import { RootStackParamList } from "./types";
 import { Colors, Typography } from "../theme";
@@ -96,6 +107,18 @@ export function RootNavigator() {
       <Stack.Screen name="TaskforceFeederDetail" component={TaskforceFeederDetailScreen} options={{ title: "Feeder Detail" }} />
       <Stack.Screen name="TaskforceQcReports" component={TaskforceQcReportsScreen} options={{ title: "QC Reports" }} />
       <Stack.Screen name="TaskforceQcReportReview" component={TaskforceQcReportReviewScreen} options={{ title: "Review Report" }} />
+    
+      <Stack.Screen name="SweepingBeats" component={SweepingBeatsScreen} />
+      <Stack.Screen name="SweepingInspection" component={SweepingInspectionScreen} />
+      <Stack.Screen name="QcSweepingHome" component={QcSweepingHome} />
+      <Stack.Screen name="QcSweepingList" component={QcSweepingList} />
+      <Stack.Screen name="QcSweepingDetail" component={QcSweepingDetail} />
+      <Stack.Screen name="ActionOfficerSweeping" component={ActionOfficerSweepingScreen}/>
+      <Stack.Screen name="QcBeatAssignment" component={QcBeatAssignmentScreen} />
+      
+
+
+    
     </Stack.Navigator>
   );
 

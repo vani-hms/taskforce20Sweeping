@@ -11,18 +11,23 @@ export class ApiError extends Error {
   }
 }
 
-async function buildHeaders(initHeaders?: HeadersInit) {
+async function buildHeaders(init?: RequestInit) {
   const token = getTokenFromCookies();
+  const isFormData =
+    typeof FormData !== "undefined" && init?.body instanceof FormData;
+
   const headers: HeadersInit = {
-    "Content-Type": "application/json",
+    ...(isFormData ? {} : { "Content-Type": "application/json" }),
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    ...initHeaders
+    ...(init?.headers || {})
   };
+
   return headers;
 }
 
 export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
-  const headers = await buildHeaders(init.headers);
+  const headers = await buildHeaders(init);
+
   const res = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
     headers,
@@ -37,6 +42,7 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
 
   return res.json();
 }
+
 
 export const AuthApi = {
   login: async (body: { email: string; password: string; cityId?: string }) =>
@@ -316,4 +322,86 @@ export const TwinbinApi = {
   rejectReport: (id: string) => apiFetch<{ report: any }>(`/modules/twinbin/reports/${id}/reject`, { method: "POST" }),
   actionRequiredReport: (id: string) =>
     apiFetch<{ report: any }>(`/modules/twinbin/reports/${id}/action-required`, { method: "POST" })
-};
+}; export const SweepingApi = {
+  /* =====================================================
+     EMPLOYEE
+  ===================================================== */
+
+  listMyBeats: () =>
+    apiFetch<{ beats: any[] }>("/modules/sweeping/employee/beats"),
+
+  submitInspection: (body: {
+    sweepingBeatId: string;
+    latitude: number;
+    longitude: number;
+    answers: {
+      questionCode: string;
+      answer: boolean;
+      photos: string[];
+    }[];
+  }) =>
+    apiFetch<{ inspection: any }>("/modules/sweeping/inspections/submit"
+, {
+      method: "POST",
+      body: JSON.stringify(body)
+    }),
+
+  /* =====================================================
+     QC
+  ===================================================== */
+
+  qcInspections: () =>
+    apiFetch<{ inspections: any[] }>("/modules/sweeping/qc/inspections"),
+
+  qcDecision: (
+    inspectionId: string,
+    decision: "APPROVED" | "REJECTED" | "ACTION_REQUIRED"
+  ) =>
+    apiFetch<{ inspection: any }>(
+      `/modules/sweeping/qc/inspections/${inspectionId}/decision`,
+      {
+        method: "POST",
+        body: JSON.stringify({ decision })
+      }
+    ),
+
+  qcBeats: () =>
+    apiFetch<{ beats: any[] }>("/modules/sweeping/qc/beats"),
+
+  assignBeat: (body: { sweepingBeatId: string; employeeId: string }) =>
+    apiFetch<{ beat: any }>("/modules/sweeping/admin/assign-beat", {
+      method: "POST",
+      body: JSON.stringify(body)
+    }),
+
+  /* =====================================================
+     ACTION OFFICER
+  ===================================================== */
+
+  actionRequired: () =>
+    apiFetch<{ inspections: any[] }>("/modules/sweeping/action/required"),
+
+  submitAction: (
+    inspectionId: string,
+    body: { remarks: string; photos: string[] }
+  ) =>
+    apiFetch<{ actionResponse: any }>(
+      `/modules/sweeping/action/${inspectionId}/respond`,
+      {
+        method: "POST",
+        body: JSON.stringify(body)
+      }
+    ),
+
+  /* =====================================================
+     ADMIN
+  ===================================================== */
+
+  uploadKml: (wardId: string, file: FormData) =>
+    apiFetch(`/modules/sweeping/admin/beats/upload/${wardId}`, {
+      method: "POST",
+      body: file,
+      headers: {}
+    })
+
+}

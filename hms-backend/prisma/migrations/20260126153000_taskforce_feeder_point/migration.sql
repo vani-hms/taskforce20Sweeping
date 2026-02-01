@@ -34,4 +34,3 @@ ALTER TABLE "TaskforceFeederPoint" ADD CONSTRAINT "TaskforceFeederPoint_requeste
 
 -- AddForeignKey
 ALTER TABLE "TaskforceFeederPoint" ADD CONSTRAINT "TaskforceFeederPoint_approvedByQcId_fkey" FOREIGN KEY ("approvedByQcId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-

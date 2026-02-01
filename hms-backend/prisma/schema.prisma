@@ -1,6 +1,6 @@
 generator client {
-  provider = "prisma-client-js"
-  output   = "../generated/prisma"
+  provider   = "prisma-client-js"
+  output     = "../generated/prisma"
   engineType = "binary"
 }
 
@@ -17,31 +17,34 @@ model HMS {
 }
 
 model City {
-  id                         String                      @id @default(uuid()) @db.Uuid
-  hmsId                      String
-  name                       String
-  code                       String                      @unique
-  createdAt                  DateTime                    @default(now())
-  enabled                    Boolean                     @default(true)
-  ulbCode                    String?
-  hms                        HMS                         @relation(fields: [hmsId], references: [id], onDelete: Cascade)
-  modules                    CityModule[]
-  zones                      GeoNode[]
-  iecForms                   IECForm[]
-  permissions                Permission[]
-  sweepingRecords           SweepingRecord[]
-  taskforceActivities        TaskforceActivity[]
-  taskforceCases             TaskforceCase[]
-  taskforceRecords           TaskforceRecord[]
-  taskforceFeederPoints      TaskforceFeederPoint[]
-  litterBins                 LitterBin[]
-  litterBinRecords           LitterBinRecord[]
-  litterBinVisitReports      LitterBinVisitReport[]
-  litterBinReports           LitterBinReport[]
-  users                      UserCity[]
-  moduleRoles                UserModuleRole[]
-  registrationRequests       UserRegistrationRequest[]
-  TaskforceFeederReport      TaskforceFeederReport[]
+  id                    String                    @id @default(uuid()) @db.Uuid
+  hmsId                 String
+  name                  String
+  code                  String                    @unique
+  createdAt             DateTime                  @default(now())
+  enabled               Boolean                   @default(true)
+  ulbCode               String?
+  hms                   HMS                       @relation(fields: [hmsId], references: [id], onDelete: Cascade)
+  modules               CityModule[]
+  zones                 GeoNode[]
+  iecForms              IECForm[]
+  permissions           Permission[]
+  sweepingRecords       SweepingRecord[]
+  taskforceActivities   TaskforceActivity[]
+  taskforceCases        TaskforceCase[]
+  taskforceRecords      TaskforceRecord[]
+  taskforceFeederPoints TaskforceFeederPoint[]
+  litterBins            LitterBin[]
+  litterBinRecords      LitterBinRecord[]
+  litterBinVisitReports LitterBinVisitReport[]
+  litterBinReports      LitterBinReport[]
+  users                 UserCity[]
+  moduleRoles           UserModuleRole[]
+  registrationRequests  UserRegistrationRequest[]
+  TaskforceFeederReport TaskforceFeederReport[]
+  toilets               Toilet[]
+  toiletInspections     ToiletInspection[]
+  toiletAssignments     ToiletAssignment[]
 
   @@index([hmsId])
 }
@@ -51,6 +54,7 @@ model Module {
   name                String              @unique
   isActive            Boolean             @default(true)
   createdAt           DateTime            @default(now())
+  displayName         String?
   cityModules         CityModule[]
   iecForms            IECForm[]
   permissions         Permission[]
@@ -73,26 +77,29 @@ model CityModule {
 }
 
 model User {
-  id                              String                      @id @default(uuid()) @db.Uuid
-  email                           String                      @unique
+  id                              String                  @id @default(uuid()) @db.Uuid
+  email                           String                  @unique
   name                            String
   password                        String
-  createdAt                       DateTime                    @default(now())
-  updatedAt                       DateTime                    @updatedAt
+  createdAt                       DateTime                @default(now())
+  updatedAt                       DateTime                @updatedAt
   sweepingRecords                 SweepingRecord[]
   taskforceRecords                TaskforceRecord[]
-  taskforceFeederPointsApproved   TaskforceFeederPoint[]      @relation("TaskforceFeederApprovedBy")
-  taskforceFeederPointsRequested  TaskforceFeederPoint[]      @relation("TaskforceFeederRequestedBy")
-  taskforceFeederReportsSubmitted TaskforceFeederReport[]     @relation("TaskforceReportSubmittedBy")
-  taskforceFeederReportsReviewed  TaskforceFeederReport[]     @relation("TaskforceReportReviewedBy")
-  twinbinLitterBinsApproved       LitterBin[]                 @relation("TwinbinApprovedBy")
-  twinbinLitterBinsRequested      LitterBin[]                 @relation("TwinbinRequestedBy")
+  taskforceFeederPointsApproved   TaskforceFeederPoint[]  @relation("TaskforceFeederApprovedBy")
+  taskforceFeederPointsRequested  TaskforceFeederPoint[]  @relation("TaskforceFeederRequestedBy")
+  taskforceFeederReportsSubmitted TaskforceFeederReport[] @relation("TaskforceReportSubmittedBy")
+  taskforceFeederReportsReviewed  TaskforceFeederReport[] @relation("TaskforceReportReviewedBy")
+  twinbinLitterBinsApproved       LitterBin[]             @relation("TwinbinApprovedBy")
+  twinbinLitterBinsRequested      LitterBin[]             @relation("TwinbinRequestedBy")
   twinbinRecords                  LitterBinRecord[]
-  twinbinVisitActions             LitterBinVisitReport[]      @relation("TwinbinVisitActionTakenBy")
-  twinbinVisitsReviewed           LitterBinVisitReport[]      @relation("TwinbinVisitReviewedBy")
-  twinbinVisitsSubmitted          LitterBinVisitReport[]      @relation("TwinbinVisitSubmittedBy")
-  twinbinReportsSubmitted         LitterBinReport[]           @relation("TwinbinReportSubmittedBy")
-  twinbinReportsReviewed          LitterBinReport[]           @relation("TwinbinReportReviewedBy")
+  twinbinVisitActions             LitterBinVisitReport[]  @relation("TwinbinVisitActionTakenBy")
+  twinbinVisitsReviewed           LitterBinVisitReport[]  @relation("TwinbinVisitReviewedBy")
+  twinbinVisitsSubmitted          LitterBinVisitReport[]  @relation("TwinbinVisitSubmittedBy")
+  twinbinReportsSubmitted         LitterBinReport[]       @relation("TwinbinReportSubmittedBy")
+  twinbinReportsReviewed          LitterBinReport[]       @relation("TwinbinReportReviewedBy")
+  toiletsRequested                Toilet[]                @relation("ToiletRequestedBy")
+  toiletInspections               ToiletInspection[]      @relation("ToiletInspectionBy")
+  toiletAssignments               ToiletAssignment[]      @relation("ToiletAssignmentTo")
   cities                          UserCity[]
   modules                         UserModuleRole[]
 }
@@ -247,11 +254,11 @@ model LitterBinRecord {
 }
 
 model LitterBin {
-  id                  String               @id @default(uuid()) @db.Uuid
-  cityId              String               @db.Uuid
-  requestedById       String               @db.Uuid
-  zoneId              String?              @db.Uuid
-  wardId              String?              @db.Uuid
+  id                  String                 @id @default(uuid()) @db.Uuid
+  cityId              String                 @db.Uuid
+  requestedById       String                 @db.Uuid
+  zoneId              String?                @db.Uuid
+  wardId              String?                @db.Uuid
   areaName            String
   areaType            AreaType
   locationName        String
@@ -262,13 +269,13 @@ model LitterBin {
   latitude            Float
   longitude           Float
   status              TwinbinBinStatus
-  assignedEmployeeIds String[]             @default([])
-  approvedByQcId      String?              @db.Uuid
-  createdAt           DateTime             @default(now())
-  updatedAt           DateTime             @updatedAt
-  approvedByQc        User?                @relation("TwinbinApprovedBy", fields: [approvedByQcId], references: [id])
-  city                City                 @relation(fields: [cityId], references: [id], onDelete: Cascade)
-  requestedBy         User                 @relation("TwinbinRequestedBy", fields: [requestedById], references: [id], onDelete: Cascade)
+  assignedEmployeeIds String[]               @default([])
+  approvedByQcId      String?                @db.Uuid
+  createdAt           DateTime               @default(now())
+  updatedAt           DateTime               @updatedAt
+  approvedByQc        User?                  @relation("TwinbinApprovedBy", fields: [approvedByQcId], references: [id])
+  city                City                   @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  requestedBy         User                   @relation("TwinbinRequestedBy", fields: [requestedById], references: [id], onDelete: Cascade)
   visits              LitterBinVisitReport[]
   reports             LitterBinReport[]
 
@@ -426,6 +433,84 @@ model UserRegistrationRequest {
   @@index([cityId])
 }
 
+model Toilet {
+  id                  String       @id @default(uuid()) @db.Uuid
+  cityId              String       @db.Uuid
+  requestedById       String       @db.Uuid
+  wardId              String?      @db.Uuid
+  zoneId              String?      @db.Uuid
+  name                String
+  type                ToiletType
+  gender              ToiletGender
+  code                String?      @unique
+  operatorName        String?
+  numberOfSeats       Int?         @default(0)
+  latitude            Float
+  longitude           Float
+  address             String?
+  status              ToiletStatus @default(PENDING)
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+  assignedEmployeeIds String[]     @default([])
+
+  city        City               @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  requestedBy User               @relation("ToiletRequestedBy", fields: [requestedById], references: [id], onDelete: Cascade)
+  inspections ToiletInspection[]
+  assignments ToiletAssignment[]
+
+  @@index([cityId])
+}
+
+model ToiletInspection {
+  id             String           @id @default(uuid()) @db.Uuid
+  cityId         String           @db.Uuid
+  toiletId       String           @db.Uuid
+  employeeId     String           @db.Uuid
+  status         InspectionStatus @default(SUBMITTED)
+  latitude       Float
+  longitude      Float
+  distanceMeters Float?
+  answers        Json?
+  qcComment      String?
+  actionNote     String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  toilet   Toilet @relation(fields: [toiletId], references: [id], onDelete: Cascade)
+  employee User   @relation("ToiletInspectionBy", fields: [employeeId], references: [id], onDelete: Cascade)
+  city     City   @relation(fields: [cityId], references: [id], onDelete: Cascade)
+
+  @@index([cityId])
+  @@index([toiletId])
+}
+
+model ToiletAssignment {
+  id         String   @id @default(uuid()) @db.Uuid
+  cityId     String   @db.Uuid
+  toiletId   String   @db.Uuid
+  employeeId String   @db.Uuid
+  category   String?
+  assignedAt DateTime @default(now())
+
+  city     City   @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  toilet   Toilet @relation(fields: [toiletId], references: [id], onDelete: Cascade)
+  employee User   @relation("ToiletAssignmentTo", fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@unique([toiletId, employeeId])
+}
+
+model ToiletInspectionQuestion {
+  id           String      @id @default(uuid()) @db.Uuid
+  text         String
+  type         String      @default("YES_NO") // YES_NO, TEXT, OPTIONS
+  options      String[]    @default([])
+  requirePhoto Boolean     @default(false)
+  forType      ToiletType? // CT, PT, or null for both
+  order        Int         @default(0)
+  isActive     Boolean     @default(true)
+  createdAt    DateTime    @default(now())
+}
+
 enum Role {
   HMS_SUPER_ADMIN
   CITY_ADMIN
@@ -501,6 +586,31 @@ enum TwinbinBinStatus {
   PENDING_QC
   APPROVED
   REJECTED
+}
+
+enum ToiletType {
+  CT
+  PT
+}
+
+enum ToiletGender {
+  MALE
+  FEMALE
+  UNISEX
+  DISABLED
+}
+
+enum ToiletStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum InspectionStatus {
+  SUBMITTED
+  APPROVED
+  REJECTED
+  ACTION_REQUIRED
 }
 
 enum RegistrationStatus {

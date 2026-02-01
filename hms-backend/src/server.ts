@@ -21,11 +21,12 @@ const allowedOrigins = (process.env.CORS_ORIGIN || "http://localhost:3000")
   .split(",")
   .map((o) => o.trim());
 
-// Manual CORS to ensure exact origin (no wildcard) when using credentials
+// Permissive CORS for development/mobile
 app.use((req, res, next) => {
   const origin = req.headers.origin;
-  if (origin && allowedOrigins.includes(origin)) {
-    res.header("Access-Control-Allow-Origin", origin);
+  // If origin is present, check against allowed list. If missing (mobile), allow it.
+  if (!origin || allowedOrigins.includes(origin)) {
+    res.header("Access-Control-Allow-Origin", origin || "*");
     res.header("Vary", "Origin");
   }
   res.header("Access-Control-Allow-Credentials", "true");

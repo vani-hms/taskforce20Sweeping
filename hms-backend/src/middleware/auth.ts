@@ -10,6 +10,7 @@ export function authenticate(req: Request, _res: Response, next: NextFunction) {
   const token = header.replace("Bearer ", "");
   try {
     req.auth = verifyAccessToken(token);
+    console.log("[auth][middleware] decoded", req.auth);
     next();
   } catch (err) {
     next(new HttpError(401, "Invalid or expired token"));

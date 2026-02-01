@@ -442,6 +442,15 @@ router.get("/employees", async (req, res, next) => {
       qcScopes = new Map(entries);
     }
 
+    console.log("[employees][debug]", {
+      qcId: req.auth!.sub,
+      qcCityId: cityId,
+      moduleKey,
+      qcModuleIds: Array.from(qcModuleIds),
+      qcScopes: Array.from(qcScopes.entries()),
+      totalEmployeesInCity: records.length
+    });
+
     const filtered = isCityAdmin
       ? records
       : records.filter((uc) => {
@@ -487,6 +496,8 @@ router.get("/employees", async (req, res, next) => {
         createdAt: uc.createdAt
       }))
     });
+
+    console.log("[employees][debug] filtered", { scopedEmployees: filtered.length });
   } catch (err) {
     next(err);
   }

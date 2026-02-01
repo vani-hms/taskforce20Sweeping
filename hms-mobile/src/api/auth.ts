@@ -27,6 +27,19 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+export async function getMe() {
+  return request<{
+    user: {
+      id: string;
+      name: string;
+      email: string;
+      role: string;
+      cityId?: string;
+      modules?: { key: string; name?: string; canWrite: boolean; cityId?: string; zoneIds?: string[]; wardIds?: string[] }[];
+    };
+  }>("/auth/me");
+}
+
 export async function login(body: { email: string; password: string }) {
   return request<{ token: string; user: { cityName?: string; modules?: { key: string; name?: string; canWrite: boolean }[] } }>(
     "/auth/login",
@@ -202,6 +215,33 @@ export async function rejectTwinbinBin(id: string) {
   });
 }
 
+export async function listTwinbinApproved() {
+  // We can reuse getModuleRecords which maps to generic records endpoint
+  // But strictly we need APPROVED bins to assign.
+  // The generic endpoint '/modules/twinbin/records' returns all types.
+  // Ideally we want '/modules/twinbin/bins/approved' if it existed, or filter client side.
+  // Backend `twinbin/router.ts` doesn't have explicit `approved` endpoint for BINS.
+  // But `getRecords` returns everything.
+  // Let's us `getModuleRecords("twinbin")` and filter in the component or add a specific helper here.
+  // Actually, let's use the generic records fetcher but wrap it for clarity,
+  // OR since the user wants specific "Approved Bins" list, we can implement it by filtering the generic response if backend supports it.
+  // Backend `recordsRouter.ts` supports ?status=... but it aggregates visits too.
+  // Let's simply add `assignTwinbinBin` here which is the critical missing piece.
+  // And for listing, we will use `getModuleRecords` in the screen or add a helper `listTwinbinRecords`.
+  // Wait, `listTwinbinPending` uses `/modules/twinbin/bins/pending`.
+  // Does backend have `/modules/twinbin/bins/approved`? No.
+  // But we added `/modules/twinbin/bins/:id/assign`.
+  // We can use `getModuleRecords('twinbin')` and filter for `type === 'BIN_REGISTRATION' && status === 'APPROVED'`.
+  return getModuleRecords("twinbin");
+}
+
+export async function assignTwinbinBin(id: string, body: { assignedEmployeeIds: string[] }) {
+  return request<{ bin: any }>(`/modules/twinbin/bins/${id}/assign`, {
+    method: "POST",
+    body: JSON.stringify(body)
+  });
+}
+
 export async function markTwinbinVisitActionRequired(id: string, qcRemark: string) {
   return request<{ visit: any }>(`/modules/twinbin/visits/${id}/action-required`, {
     method: "POST",
@@ -244,7 +284,7 @@ export async function actionRequiredTwinbinReport(id: string) {
 
 // Taskforce feeder points (employee)
 export async function listTaskforceAssigned() {
-  return request<{ feederPoints: any[] }>("/modules/taskforce/feeder-points/assigned");
+  return request<{ feederPoints: any[] }>("/modules/taskforce/feeder-points/my-tasks");
 }
 
 export async function submitTaskforceFeederRequest(body: {
@@ -329,4 +369,16 @@ export async function getModuleRecords(moduleKey: string) {
   return request<{ city: string; module: string; count: number; records: any[] }>(
     `/modules/${moduleKey}/records`
   );
+}
+
+export async function getTaskforceRecords(filters?: { page?: number; limit?: number; tab?: string }) {
+  const params = new URLSearchParams();
+  if (filters?.page) params.append("page", filters.page.toString());
+  if (filters?.limit) params.append("limit", filters.limit.toString());
+  if (filters?.tab) params.append("tab", filters.tab);
+  return request<{
+    data: any[];
+    meta: { page: number; limit: number; total: number; totalPages: number };
+    stats: { pending: number; approved: number; rejected: number; actionRequired: number; total: number };
+  }>(`/modules/taskforce/records?${params.toString()}`);
 }

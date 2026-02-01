@@ -16,6 +16,7 @@ type FeederPoint = {
   zoneId?: string | null;
   wardId?: string | null;
   status: string;
+  assignedAt?: string;
 };
 
 function haversineMeters(lat1: number, lon1: number, lat2: number, lon2: number) {
@@ -157,6 +158,7 @@ export default function TaskforceAssignedDetailPage() {
                 <Field label="Latitude" value={feeder.latitude?.toString() || "-"} />
                 <Field label="Longitude" value={feeder.longitude?.toString() || "-"} />
                 <Field label="Status" value={feeder.status} />
+                <Field label="Assigned On" value={feeder.assignedAt ? new Date(feeder.assignedAt).toLocaleString() : "-"} />
               </div>
 
               <div className="card" style={{ marginTop: 12, background: "#f8fafc" }}>

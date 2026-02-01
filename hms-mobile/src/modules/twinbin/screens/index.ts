@@ -4,6 +4,8 @@ export { default as TwinbinMyRequestsScreen } from "./TwinbinMyRequestsScreen";
 export { default as TwinbinQcHomeScreen } from "./TwinbinQcHomeScreen";
 export { default as TwinbinQcPendingScreen } from "./TwinbinQcPendingScreen";
 export { default as TwinbinQcReviewScreen } from "./TwinbinQcReviewScreen";
+export { default as TwinbinQcApprovedScreen } from "./TwinbinQcApprovedScreen";
+export { default as TwinbinQcAssignScreen } from "./TwinbinQcAssignScreen";
 export { default as TwinbinAssignedScreen } from "./TwinbinAssignedScreen";
 export { default as TwinbinBinDetailScreen } from "./TwinbinBinDetailScreen";
 export { default as TwinbinVisitPendingScreen } from "./TwinbinVisitPendingScreen";

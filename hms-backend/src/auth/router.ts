@@ -53,6 +53,7 @@ router.get("/me", authenticate, requireCityContext(), async (req, res, next) => 
             key: normalizeModuleKey(m.module.name),
             name: getModuleLabel(m.module.name),
             canWrite: m.canWrite,
+            cityId: m.cityId,
             zoneIds: m.zoneIds || [],
             wardIds: m.wardIds || []
           }))
@@ -164,10 +165,13 @@ router.post("/login", validateBody(loginSchema), async (req, res, next) => {
       redirectTo = `/modules/${first.key.toLowerCase()}`;
     }
 
+    const activeCityScope = typedUser.cities.find((c) => c.cityId === activeCityId);
     const claims = {
       sub: user.id,
       cityId: activeCityId,
       roles: effectiveRoles,
+      zoneIds: activeCityScope?.zoneIds || [],
+      wardIds: activeCityScope?.wardIds || [],
       modules: moduleClaims.map((m) => ({
         moduleId: m.moduleId,
         key: m.key,
@@ -177,6 +181,7 @@ router.post("/login", validateBody(loginSchema), async (req, res, next) => {
         canWrite: m.canWrite
       }))
     };
+    console.log("[auth][login] token payload", claims);
     const token = signAccessToken(claims);
     res.json({
       token,

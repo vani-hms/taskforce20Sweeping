@@ -165,7 +165,7 @@ export const TaskforceApi = {
       body: JSON.stringify(body)
     }),
   assigned: () =>
-    apiFetch<{ feederPoints: any[] }>("/modules/taskforce/feeder-points/assigned"),
+    apiFetch<{ feederPoints: any[] }>("/modules/taskforce/feeder-points/my-tasks"),
   feederRequests: () => apiFetch<{ feederPoints: any[] }>("/modules/taskforce/feeder-points/requests"),
   approveRequest: (id: string, body: any) =>
     apiFetch<{ feederPoint: any }>(`/modules/taskforce/feeder-points/${id}/approve`, {
@@ -179,11 +179,33 @@ export const TaskforceApi = {
       method: "POST",
       body: JSON.stringify(body)
     }),
+  pendingFeederPoints: () => apiFetch<{ feederPoints: any[] }>("/modules/taskforce/feeder-points/pending"),
+  approvedFeederPoints: (assigned?: boolean) =>
+    apiFetch<{ feederPoints: any[] }>(
+      `/modules/taskforce/feeder-points/approved${assigned ? "?assigned=true" : ""}`
+    ),
+  assignFeederPoint: (id: string, employeeId: string) =>
+    apiFetch<{ feederPoint: any }>(`/modules/taskforce/feeder-points/${id}/assign`, {
+      method: "POST",
+      body: JSON.stringify({ employeeId })
+    }),
   pendingReports: () => apiFetch<{ reports: any[] }>("/modules/taskforce/reports/pending"),
   approveReport: (id: string) => apiFetch<{ report: any }>(`/modules/taskforce/reports/${id}/approve`, { method: "POST" }),
   rejectReport: (id: string) => apiFetch<{ report: any }>(`/modules/taskforce/reports/${id}/reject`, { method: "POST" }),
   actionRequiredReport: (id: string) =>
-    apiFetch<{ report: any }>(`/modules/taskforce/reports/${id}/action-required`, { method: "POST" })
+    apiFetch<{ report: any }>(`/modules/taskforce/reports/${id}/action-required`, { method: "POST" }),
+  getRecords: (filters?: { page?: number; limit?: number; tab?: string }) => {
+    const params = new URLSearchParams();
+    if (filters?.page) params.append("page", filters.page.toString());
+    if (filters?.limit) params.append("limit", filters.limit.toString());
+    if (filters?.tab) params.append("tab", filters.tab);
+    return apiFetch<{
+      data: any[];
+      meta: { page: number; limit: number; total: number; totalPages: number };
+      stats: { pending: number; approved: number; rejected: number; actionRequired: number; total: number };
+    }>(`/modules/taskforce/records?${params.toString()}`);
+  },
+  myTasks: () => apiFetch<{ feederPoints: any[] }>("/modules/taskforce/feeder-points/my-tasks")
 };
 
 export const ToiletApi = {
@@ -237,15 +259,23 @@ export const ToiletApi = {
 };
 
 export const ModuleRecordsApi = {
-  getRecords: (moduleKey: string, filters?: { zoneIds?: string[]; wardIds?: string[] }) => {
+  getRecords: (moduleKey: string, filters?: { zoneIds?: string[]; wardIds?: string[]; page?: number; limit?: number; tab?: string }) => {
     const params = new URLSearchParams();
     if (filters?.zoneIds?.length) filters.zoneIds.forEach(id => params.append("zoneIds", id));
     if (filters?.wardIds?.length) filters.wardIds.forEach(id => params.append("wardIds", id));
+    if (filters?.page) params.append("page", filters.page.toString());
+    if (filters?.limit) params.append("limit", filters.limit.toString());
+    if (filters?.tab) params.append("tab", filters.tab);
 
     const queryString = params.toString();
     const url = `/modules/${moduleKey}/records${queryString ? `?${queryString}` : ""}`;
 
-    return apiFetch<{ city: string; module: string; count: number; records: any[] }>(url);
+    return apiFetch<{
+      city: string;
+      module: string;
+      data: any[];
+      meta: { page: number; limit: number; total: number; totalPages: number };
+    }>(url);
   }
 };
 
@@ -284,8 +314,8 @@ export const EmployeesApi = {
 
 export const TwinbinApi = {
   requestBin: (body: {
-    zoneId?: string;
-    wardId?: string;
+    zoneId: string;
+    wardId: string;
     areaName: string;
     areaType: string;
     locationName: string;
@@ -321,9 +351,11 @@ export const TwinbinApi = {
       }[];
     }>("/modules/twinbin/bins/assigned"),
   myBins: () => apiFetch<{ bins: any[] }>("/modules/twinbin/bins/my"),
-  pending: () => apiFetch<{ bins: any[] }>("/modules/twinbin/bins/pending"),
+  pending: (page = 1, limit = 20) => apiFetch<{ data: any[], meta: any }>(`/modules/twinbin/bins/pending?page=${page}&limit=${limit}`),
   approve: (id: string, body: { assignedEmployeeIds?: string[] }) =>
     apiFetch<{ bin: any }>(`/modules/twinbin/bins/${id}/approve`, { method: "POST", body: JSON.stringify(body) }),
+  assign: (id: string, body: { assignedEmployeeIds: string[] }) =>
+    apiFetch<{ bin: any }>(`/modules/twinbin/bins/${id}/assign`, { method: "POST", body: JSON.stringify(body) }),
   reject: (id: string) => apiFetch<{ bin: any }>(`/modules/twinbin/bins/${id}/reject`, { method: "POST" }),
   submitVisit: (binId: string, body: { latitude: number; longitude: number; inspectionAnswers: Record<string, { answer: "YES" | "NO"; photoUrl: string }> }) =>
     apiFetch<{ report: any }>(`/modules/twinbin/bins/${binId}/visit`, { method: "POST", body: JSON.stringify(body) }),
@@ -340,8 +372,8 @@ export const TwinbinApi = {
       proximityToken: string | null;
     }>(`/modules/twinbin/bins/${binId}/report-context?${params.toString()}`);
   },
-  pendingVisits: () =>
-    apiFetch<{ visits: any[] }>("/modules/twinbin/visits/pending"),
+  pendingVisits: (page = 1, limit = 20) =>
+    apiFetch<{ data: any[], meta: any }>(`/modules/twinbin/visits/pending?page=${page}&limit=${limit}`),
   approveVisit: (id: string) =>
     apiFetch<{ visit: any }>(`/modules/twinbin/visits/${id}/approve`, { method: "POST" }),
   rejectVisit: (id: string) =>
@@ -352,7 +384,7 @@ export const TwinbinApi = {
     apiFetch<{ visits: any[] }>("/modules/twinbin/visits/action-required"),
   submitActionTaken: (id: string, body: { actionRemark: string; actionPhotoUrl: string }) =>
     apiFetch<{ visit: any }>(`/modules/twinbin/visits/${id}/action-taken`, { method: "POST", body: JSON.stringify(body) }),
-  pendingReports: () => apiFetch<{ reports: any[] }>("/modules/twinbin/reports/pending"),
+  pendingReports: (page = 1, limit = 20) => apiFetch<{ data: any[], meta: any }>(`/modules/twinbin/reports/pending?page=${page}&limit=${limit}`),
   approveReport: (id: string) => apiFetch<{ report: any }>(`/modules/twinbin/reports/${id}/approve`, { method: "POST" }),
   rejectReport: (id: string) => apiFetch<{ report: any }>(`/modules/twinbin/reports/${id}/reject`, { method: "POST" }),
   actionRequiredReport: (id: string) =>

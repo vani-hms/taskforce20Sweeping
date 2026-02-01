@@ -26,15 +26,7 @@ export async function getQcScope(params: { userId: string; cityId: string; modul
     (m.wardIds || []).forEach((w) => wardSet.add(w));
   });
 
-  // If nothing is set at module level, fall back to city-level QC assignment
-  if (zoneSet.size === 0 || wardSet.size === 0) {
-    const cityAssignment = await prisma.userCity.findFirst({
-      where: { userId, cityId, role: Role.QC },
-      select: { zoneIds: true, wardIds: true }
-    });
-    cityAssignment?.zoneIds?.forEach((z) => zoneSet.add(z));
-    cityAssignment?.wardIds?.forEach((w) => wardSet.add(w));
-  }
+  // STRICT: No fallback to city-level scope. Must be defined in module.
 
   return { zoneIds: Array.from(zoneSet), wardIds: Array.from(wardSet) };
 }

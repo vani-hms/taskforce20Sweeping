@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { ModuleGuard, Protected } from "@components/Guards";
-import { ApiError, GeoApi, TwinbinApi } from "@lib/apiClient";
+import { ApiError, AuthApi, PublicGeoApi, TwinbinApi } from "@lib/apiClient";
 
-type GeoNode = { id: string; name: string; parentId?: string | null };
+type GeoNode = { id: string; name: string };
 
 export default function TwinbinRegisterPage() {
   const [zones, setZones] = useState<GeoNode[]>([]);
@@ -27,22 +27,56 @@ export default function TwinbinRegisterPage() {
   const [locFetching, setLocFetching] = useState(false);
 
   useEffect(() => {
-    const loadGeo = async () => {
+    const loadCityAndZones = async () => {
       try {
-        const [zonesRes, wardsRes] = await Promise.all([GeoApi.list("ZONE"), GeoApi.list("WARD")]);
-        setZones((zonesRes.nodes || []).map((z: any) => ({ id: z.id, name: z.name })));
-        setWards((wardsRes.nodes || []).map((w: any) => ({ id: w.id, name: w.name, parentId: w.parentId || null })));
-      } catch {
-        setError("Failed to load geo data");
+        const { user } = await AuthApi.getMe();
+
+        // Find LITTERBINS module to get scope and correct cityId
+        const module = user.modules?.find((m: any) => m.key === "LITTERBINS" || m.name === "LITTERBINS");
+
+        // Prefer module's cityId if available (from our backend update), fallback to user.cityId
+        // The user.cityId might be undefined for QC/Taskforce in some contexts, so module.cityId is safer.
+        const effectiveCityId = module?.cityId || user.cityId;
+        console.log("EFFECTIVE CITY ID", effectiveCityId, "MODULE FOUND", !!module);
+
+        if (effectiveCityId) {
+          const { zones } = await PublicGeoApi.zones(effectiveCityId);
+          console.log("ALL ZONES FETCHED", zones.length);
+
+          // Apply scope filtering: if module has zoneIds, only show those.
+          // If zoneIds is empty/null, it means NO Restriction (ALL zones in city).
+          const scopedZones = (module?.zoneIds?.length)
+            ? zones.filter(z => module.zoneIds.includes(z.id))
+            : zones;
+
+          console.log("SCOPED ZONES", scopedZones.length);
+          setZones(scopedZones || []);
+        } else {
+          console.error("No City ID found in user or module scope");
+          setError("Could not determine city context. Please contact support.");
+        }
+      } catch (err: any) {
+        console.error("Failed to load geo data", err);
+        setError("Failed to load geo data: " + (err.message || "Unknown error"));
       }
     };
-    loadGeo();
+    loadCityAndZones();
   }, []);
 
-  const filteredWards = useMemo(
-    () => wards.filter((w) => !form.zoneId || (w.parentId && w.parentId === form.zoneId)),
-    [wards, form.zoneId]
-  );
+  const handleZoneChange = async (zoneId: string) => {
+    update("zoneId", zoneId);
+    update("wardId", ""); // Reset ward
+    setWards([]);
+
+    if (zoneId) {
+      try {
+        const { wards } = await PublicGeoApi.wards(zoneId);
+        setWards(wards || []);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  };
 
   const fetchLocation = () => {
     setLocFetching(true);
@@ -70,17 +104,30 @@ export default function TwinbinRegisterPage() {
     );
   };
 
-  const canSubmit = form.areaName && form.locationName && form.roadType && form.latitude && form.longitude;
+  const canSubmit =
+    form.areaName &&
+    form.locationName &&
+    form.roadType &&
+    form.latitude &&
+    form.longitude &&
+    form.zoneId &&
+    form.wardId;
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!form.zoneId || !form.wardId) {
+      setError("Zone and Ward are required");
+      return;
+    }
+
     if (!canSubmit) return;
     setStatus("Submitting...");
     setError("");
     try {
       await TwinbinApi.requestBin({
-        zoneId: form.zoneId || undefined,
-        wardId: form.wardId || undefined,
+        zoneId: form.zoneId,
+        wardId: form.wardId,
         areaType: form.areaType as any,
         areaName: form.areaName,
         locationName: form.locationName,
@@ -170,8 +217,13 @@ export default function TwinbinRegisterPage() {
               <h3>Geography</h3>
               <div className="grid grid-2">
                 <div className="form-field">
-                  <label>Zone (Optional)</label>
-                  <select className="select" value={form.zoneId} onChange={(e) => update("zoneId", e.target.value)}>
+                  <label>Zone <span className="text-red-500">*</span></label>
+                  <select
+                    className="select"
+                    value={form.zoneId}
+                    onChange={(e) => handleZoneChange(e.target.value)}
+                    required
+                  >
                     <option value="">Select zone...</option>
                     {zones.map((z) => (
                       <option key={z.id} value={z.id}>{z.name}</option>
@@ -179,10 +231,16 @@ export default function TwinbinRegisterPage() {
                   </select>
                 </div>
                 <div className="form-field">
-                  <label>Ward (Optional)</label>
-                  <select className="select" value={form.wardId} onChange={(e) => update("wardId", e.target.value)}>
+                  <label>Ward <span className="text-red-500">*</span></label>
+                  <select
+                    className="select"
+                    value={form.wardId}
+                    onChange={(e) => update("wardId", e.target.value)}
+                    disabled={!form.zoneId}
+                    required
+                  >
                     <option value="">Select ward...</option>
-                    {filteredWards.map((w) => (
+                    {wards.map((w) => (
                       <option key={w.id} value={w.id}>{w.name}</option>
                     ))}
                   </select>

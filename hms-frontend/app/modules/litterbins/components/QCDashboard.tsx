@@ -11,8 +11,8 @@ export default function QCDashboard() {
 
     async function loadData() {
         try {
-            const res = await ModuleRecordsApi.getRecords("twinbin");
-            setRecords(res.records || []);
+            const res = await ModuleRecordsApi.getRecords("twinbin") as any;
+            setRecords(res.data || []);
         } catch (err) {
             console.error("Failed to load records", err);
         } finally {

@@ -1,11 +1,11 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, StyleSheet, ScrollView, Alert } from "react-native";
 import * as Location from "expo-location";
-import { listGeo, requestTwinbinBin, ApiError } from "../../../api/auth";
+import { fetchCityInfo, fetchPublicZones, fetchPublicWards, requestTwinbinBin, ApiError, getMe } from "../../../api/auth";
 import { Colors, Spacing, Typography, Layout, UI } from "../../../theme";
 import { MapPin, CheckSquare, Square, Navigation, CheckCircle } from "lucide-react-native";
 
-type GeoNode = { id: string; name: string; parentId?: string | null };
+type GeoNode = { id: string; name: string };
 
 export default function TwinbinRegisterScreen({ navigation }: any) {
   const [zones, setZones] = useState<GeoNode[]>([]);
@@ -28,25 +28,58 @@ export default function TwinbinRegisterScreen({ navigation }: any) {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const loadGeo = async () => {
+    const loadCityAndZones = async () => {
       try {
-        const [zonesRes, wardsRes] = await Promise.all([
-          listGeo("ZONE").catch(() => ({ nodes: [] })),
-          listGeo("WARD").catch(() => ({ nodes: [] }))
-        ]);
-        setZones(zonesRes.nodes || []);
-        setWards(wardsRes.nodes || []);
-      } catch {
-        setError("Failed to load geo data");
+        const { user } = await getMe(); // Use getMe to get module scope
+
+        const module = user.modules?.find((m: any) => m.key === "LITTERBINS" || m.name === "LITTERBINS");
+
+        // Prefer module's cityId if available, fallback to cityId (though user.cityId might not be correct for QC)
+        // But for "Registration", we are likely an Employee.
+        // Employee logic usually has cityId unless they are multi-city.
+        // We stick to the plan: use module.cityId if possible.
+        const effectiveCityId = module?.cityId || user.cityId;
+        console.log("MOBILE: EFFECTIVE CITY ID", effectiveCityId);
+
+        if (effectiveCityId) {
+          const { zones } = await fetchPublicZones(effectiveCityId);
+          console.log("MOBILE: ALL ZONES FETCHED", zones.length);
+
+          const scopedZones = (module?.zoneIds?.length)
+            ? zones.filter(z => module.zoneIds!.includes(z.id))
+            : zones;
+
+          setZones(scopedZones || []);
+        } else {
+          // Fallback to old fetchCityInfo if user.cityId is missing but we might be in single-city app mode?
+          // But fetchCityInfo calls /city/info which relies on header context.
+          // If we rely on getMe, we are safer.
+          console.error("No city ID found");
+        }
+      } catch (err: any) {
+        console.error("Failed to load city zones", err);
+        setError("Failed to load city zones: " + err.message);
       }
     };
-    loadGeo();
+    loadCityAndZones();
   }, []);
 
-  const filteredWards = useMemo(
-    () => wards.filter((w) => !form.zoneId || (w.parentId && w.parentId === form.zoneId)),
-    [wards, form.zoneId]
-  );
+  const handleZoneSelect = async (zoneId: string) => {
+    update("zoneId", zoneId);
+    update("wardId", ""); // Reset ward
+    if (!zoneId) {
+      setWards([]);
+      return;
+    }
+
+    try {
+      const { wards } = await fetchPublicWards(zoneId);
+      setWards(wards || []);
+    } catch (err: any) {
+      console.error("Failed to load wards", err);
+      // Optional: show error toast
+    }
+  };
 
   const fetchLocation = async () => {
     setLocLoading(true);
@@ -72,18 +105,32 @@ export default function TwinbinRegisterScreen({ navigation }: any) {
   };
 
   const canSubmit =
-    form.areaName && form.locationName && form.roadType && form.latitude && form.longitude && !loading && !locLoading;
+    form.areaName &&
+    form.locationName &&
+    form.roadType &&
+    form.latitude &&
+    form.longitude &&
+    form.zoneId &&
+    form.wardId &&
+    !loading &&
+    !locLoading;
 
   const update = (key: keyof typeof form, value: string | boolean) => setForm((f) => ({ ...f, [key]: value }));
 
   const submit = async () => {
     if (!canSubmit) return;
+
+    if (!form.zoneId || !form.wardId) {
+      Alert.alert("Error", "Zone and Ward are required");
+      return;
+    }
+
     setLoading(true);
     setError("");
     try {
       await requestTwinbinBin({
-        zoneId: form.zoneId || undefined,
-        wardId: form.wardId || undefined,
+        zoneId: form.zoneId,
+        wardId: form.wardId,
         areaType: form.areaType as any,
         areaName: form.areaName,
         locationName: form.locationName,
@@ -133,17 +180,18 @@ export default function TwinbinRegisterScreen({ navigation }: any) {
       <View style={[Layout.card, { marginBottom: Spacing.m }]}>
         <Text style={Typography.h3}>Geography</Text>
 
-        <InputLabel label="Zone (Optional)" />
+        <InputLabel label="Zone (Required)" />
         <View style={styles.selectRow}>
           {zones.map((z) => (
-            <SelectOption key={z.id} label={z.name} selected={form.zoneId === z.id} onSelect={() => update("zoneId", form.zoneId === z.id ? "" : z.id)} />
+            <SelectOption key={z.id} label={z.name} selected={form.zoneId === z.id} onSelect={() => handleZoneSelect(z.id)} />
           ))}
         </View>
 
-        <InputLabel label="Ward (Optional)" />
+        <InputLabel label="Ward (Required)" />
+        {!form.zoneId && <Text style={{ color: Colors.textMuted, fontSize: 12 }}>Select a zone first</Text>}
         <View style={styles.selectRow}>
-          {filteredWards.map((w) => (
-            <SelectOption key={w.id} label={w.name} selected={form.wardId === w.id} onSelect={() => update("wardId", form.wardId === w.id ? "" : w.id)} />
+          {wards.map((w) => (
+            <SelectOption key={w.id} label={w.name} selected={form.wardId === w.id} onSelect={() => update("wardId", w.id)} />
           ))}
         </View>
       </View>
@@ -221,7 +269,7 @@ function SelectOption({ label, selected, onSelect }: any) {
 
 function Checkbox({ label, checked, onChange }: any) {
   return (
-    <TouchableOpacity style={{ flexDirection: "row", items: "center", gap: 8 }} onPress={onChange}>
+    <TouchableOpacity style={{ flexDirection: "row", alignItems: "center", gap: 8 }} onPress={onChange}>
       {checked ? <CheckSquare size={20} color={Colors.primary} /> : <Square size={20} color={Colors.textMuted} />}
       <Text style={Typography.body}>{label}</Text>
     </TouchableOpacity>

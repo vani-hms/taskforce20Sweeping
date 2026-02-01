@@ -9,6 +9,8 @@ export type RootStackParamList = {
   TwinbinRegister: undefined;
   TwinbinMyRequests: undefined;
   TwinbinQcHome: undefined;
+  TwinbinQcApproved: undefined;
+  TwinbinQcAssign: { bin: any };
   TwinbinQcPending: undefined;
   TwinbinQcReview: { bin: any };
   TwinbinAssigned: undefined;

@@ -12,9 +12,13 @@ type Feeder = {
   areaName: string;
   areaType: string;
   locationDescription: string;
+  zoneName?: string;
   zoneId?: string | null;
+  wardName?: string;
   wardId?: string | null;
   status: string;
+  assignedAt?: string;
+  updatedAt?: string;
 };
 
 export default function TaskforceAssignedScreen({ navigation }: { navigation: Nav }) {
@@ -49,8 +53,12 @@ export default function TaskforceAssignedScreen({ navigation }: { navigation: Na
         <Text style={styles.title}>{item.feederPointName}</Text>
         <Text style={styles.badge}>{item.status}</Text>
       </View>
-      <Text style={styles.muted}>{item.areaName} · {item.areaType}</Text>
+      <Text style={styles.muted}>{item.areaName} - {item.areaType}</Text>
       <Text style={styles.meta}>{item.locationDescription}</Text>
+      <Text style={styles.meta}>Zone/Ward: {item.zoneName ?? item.zoneId ?? "-"} / {item.wardName ?? item.wardId ?? "-"}</Text>
+      <Text style={styles.meta}>
+        Assigned: {item.assignedAt ? new Date(item.assignedAt).toLocaleString() : item.updatedAt ? new Date(item.updatedAt).toLocaleString() : "-"}
+      </Text>
     </TouchableOpacity>
   );
 

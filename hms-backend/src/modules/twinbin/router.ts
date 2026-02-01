@@ -152,17 +152,11 @@ router.get("/bins/pending", async (req, res, next) => {
     // allow only QC users who are assigned to the Twinbin module in this city
     await assertModuleAccess(req, res, moduleId, [Role.QC]);
 
-    const moduleRoles = await prisma.userModuleRole.findMany({
-      where: { userId: qcId, cityId, moduleId, role: Role.QC },
-      select: { zoneIds: true, wardIds: true }
-    });
-    const scope = {
-      zoneIds: Array.from(new Set(moduleRoles.flatMap((r) => r.zoneIds || []))),
-      wardIds: Array.from(new Set(moduleRoles.flatMap((r) => r.wardIds || [])))
-    };
+    const scope = await getQcScope({ userId: qcId, cityId, moduleId });
     const { zoneFilter, wardFilter } = buildScopeFilters(scope);
+
+    // STRICT: QC queries rely on zone/ward scope, not cityId context
     const where: any = {
-      cityId,
       status: TwinbinBinStatus.PENDING_QC
     };
 
@@ -172,40 +166,67 @@ router.get("/bins/pending", async (req, res, next) => {
 
     if (conditions.length > 0) {
       where.AND = conditions;
+    } else {
+      // If no scope is defined (empty zone/ward lists), explicitly default to city context from auth to prevent global leakage if intended, 
+      // OR if we trust the user instruction "If zoneIds/wardIds empty -> treat as ALL", we leave it empty.
+      // However, "ALL" likely means "All for this city context". 
+      // Given the instruction "NO cityId filter for QC", we trust the module scope logic.
+      // If module scope is empty, it means "All zones assigned to this module role".
+      // But if the user has NO zone assignments, usually they see nothing or everything.
+      // Safest fallback if scope is empty: filter by cityId to avoid cross-city data leak.
+      where.cityId = cityId;
     }
 
+    // Applying this logic to /bins/pending
+
     const latest = await prisma.litterBin.findFirst({
-      where: { cityId },
+      where: { cityId }, // Keeps trace log scoped for debug
       orderBy: { createdAt: "desc" },
       select: { id: true, cityId: true, zoneId: true, wardId: true, status: true, createdAt: true }
     });
 
-    console.info("[twinbin][pending] latest", latest);
-    console.info("[twinbin][pending] qc scope", { qcId, cityId, zoneIds: scope.zoneIds, wardIds: scope.wardIds });
-    console.info("[twinbin][pending] where", where);
+    // console.info("[twinbin][pending] latest", latest);
+    // console.info("[twinbin][pending] qc scope", { qcId, cityId, zoneIds: scope.zoneIds, wardIds: scope.wardIds });
+    // console.info("[twinbin][pending] where", where);
 
-    const bins = await prisma.litterBin.findMany({
-      where,
-      orderBy: { createdAt: "desc" },
-      include: {
-        requestedBy: { select: { id: true, name: true, email: true } } // requester details for display
-      }
-    });
+    // Pagination Params
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 20;
+    const skip = (page - 1) * limit;
 
-    console.info("[twinbin] pending bins", {
+    const [bins, total] = await Promise.all([
+      prisma.litterBin.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        include: {
+          requestedBy: { select: { id: true, name: true, email: true } }
+        },
+        skip,
+        take: limit
+      }),
+      prisma.litterBin.count({ where })
+    ]);
+
+    /* console.info("[twinbin] pending bins", {
       cityId,
       qcId,
       count: bins.length,
       sample: bins.slice(0, 2).map((b) => ({ id: b.id, zoneId: b.zoneId, wardId: b.wardId }))
-    }); // temp trace
+    }); */
 
     res.json({
-      bins: bins.map((b: typeof bins[number]) => ({
+      data: bins.map((b: typeof bins[number]) => ({
         ...b,
         requestedBy: b.requestedBy
           ? { id: b.requestedBy.id, name: b.requestedBy.name, email: b.requestedBy.email }
           : null
-      }))
+      })),
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit)
+      }
     });
   } catch (err) {
     next(err);
@@ -459,17 +480,9 @@ router.get("/visits/pending", async (req, res, next) => {
     const moduleId = await getModuleIdByName(MODULE_KEY);
     await assertModuleAccess(req, res, moduleId, [Role.QC]);
 
-    const moduleRoles = await prisma.userModuleRole.findMany({
-      where: { userId: qcId, cityId, moduleId, role: Role.QC },
-      select: { zoneIds: true, wardIds: true }
-    });
-    const scope = {
-      zoneIds: Array.from(new Set(moduleRoles.flatMap((r) => r.zoneIds || []))),
-      wardIds: Array.from(new Set(moduleRoles.flatMap((r) => r.wardIds || [])))
-    };
+    const scope = await getQcScope({ userId: qcId, cityId, moduleId });
     const { zoneFilter, wardFilter } = buildScopeFilters(scope);
     const where: any = {
-      cityId,
       status: "PENDING_QC",
       bin: {
         AND: [
@@ -478,26 +491,119 @@ router.get("/visits/pending", async (req, res, next) => {
         ]
       }
     };
+    // Ensure strict scope: Only filter by cityId if scope is empty fallback
+    if (zoneFilter || wardFilter) {
+      // Scope exists, do NOT filter by cityId
+    } else {
+      where.cityId = cityId;
+    }
+
     if (!zoneFilter && !wardFilter) delete where.bin;
 
-    console.info("[twinbin][visits][pending] scope", scope);
-    console.info("[twinbin][visits][pending] where", where);
+    // console.info("[twinbin][visits][pending] scope", scope);
+    // console.info("[twinbin][visits][pending] where", where);
 
-    const visits = await prisma.litterBinVisitReport.findMany({
-      where,
-      orderBy: { createdAt: "desc" },
-      include: {
-        bin: true,
-        submittedBy: { select: { id: true, name: true, email: true } }
-      }
-    });
+    // Pagination Params
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 20;
+    const skip = (page - 1) * limit;
+
+    const [visits, total] = await Promise.all([
+      prisma.litterBinVisitReport.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        include: {
+          bin: true,
+          submittedBy: { select: { id: true, name: true, email: true } }
+        },
+        skip,
+        take: limit
+      }),
+      prisma.litterBinVisitReport.count({ where })
+    ]);
 
     const formatted = visits.map((v) => ({
       ...v,
       distanceMeters: v.distanceMeters ?? haversineMeters(v.latitude, v.longitude, v.bin.latitude, v.bin.longitude)
     }));
 
-    res.json({ visits: formatted });
+    res.json({
+      data: formatted,
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit)
+      }
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get("/reports/pending", async (req, res, next) => {
+  try {
+    const cityId = req.auth!.cityId!;
+    const qcId = req.auth!.sub!;
+    const moduleId = await getModuleIdByName(MODULE_KEY);
+    await assertModuleAccess(req, res, moduleId, [Role.QC]);
+
+    const scope = await getQcScope({ userId: qcId, cityId, moduleId });
+    const { zoneFilter, wardFilter } = buildScopeFilters(scope);
+    const where: any = {
+      status: "PENDING_QC",
+      bin: {
+        AND: [
+          ...(zoneFilter ? [zoneFilter] : []),
+          ...(wardFilter ? [wardFilter] : [])
+        ]
+      }
+    };
+    // Ensure strict scope: Only filter by cityId if scope is empty fallback
+    if (zoneFilter || wardFilter) {
+      // Scope exists, do NOT filter by cityId
+    } else {
+      where.cityId = cityId;
+    }
+
+    if (!zoneFilter && !wardFilter) delete where.bin;
+
+    console.info("[twinbin][reports][pending] scope", scope);
+    console.info("[twinbin][reports][pending] where", where);
+
+    // Pagination Params
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 20;
+    const skip = (page - 1) * limit;
+
+    const [reports, total] = await Promise.all([
+      prisma.litterBinReport.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        include: {
+          bin: true,
+          submittedBy: { select: { id: true, name: true, email: true } }
+        },
+        skip,
+        take: limit
+      }),
+      prisma.litterBinReport.count({ where })
+    ]);
+
+    const formatted = reports.map((r) => ({
+      ...r,
+      distanceMeters: r.distanceMeters ?? haversineMeters(r.latitude, r.longitude, r.bin.latitude, r.bin.longitude)
+    }));
+
+    res.json({
+      data: formatted,
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit)
+      }
+    });
   } catch (err) {
     next(err);
   }
@@ -771,17 +877,9 @@ router.get("/reports/pending", async (req, res, next) => {
     forbidCityAdminOrCommissioner(req);
     await assertModuleAccess(req, res, moduleId, [Role.QC]);
 
-    const moduleRoles = await prisma.userModuleRole.findMany({
-      where: { userId: qcId, cityId, moduleId, role: Role.QC },
-      select: { zoneIds: true, wardIds: true }
-    });
-    const scope = {
-      zoneIds: Array.from(new Set(moduleRoles.flatMap((r) => r.zoneIds || []))),
-      wardIds: Array.from(new Set(moduleRoles.flatMap((r) => r.wardIds || [])))
-    };
+    const scope = await getQcScope({ userId: qcId, cityId, moduleId });
     const { zoneFilter, wardFilter } = buildScopeFilters(scope);
     const where: any = {
-      cityId,
       status: "SUBMITTED",
       bin: {
         AND: [
@@ -790,10 +888,15 @@ router.get("/reports/pending", async (req, res, next) => {
         ]
       }
     };
+    if (zoneFilter || wardFilter) {
+      // Scope defined, no cityId
+    } else {
+      where.cityId = cityId;
+    }
     if (!zoneFilter && !wardFilter) delete where.bin;
 
-    console.info("[twinbin][reports][pending] scope", scope);
-    console.info("[twinbin][reports][pending] where", where);
+    // console.info("[twinbin][reports][pending] scope", scope);
+    // console.info("[twinbin][reports][pending] where", where);
 
     const reports = await prisma.litterBinReport.findMany({
       where,
@@ -867,5 +970,60 @@ router.post("/reports/:id/reject", (req, res, next) => updateBinReportStatus(req
 router.post("/reports/:id/action-required", (req, res, next) =>
   updateBinReportStatus(req, res, next, "ACTION_REQUIRED")
 );
+
+const assignSchema = z.object({
+  assignedEmployeeIds: z.array(z.string().uuid())
+});
+
+router.post("/bins/:id/assign", validateBody(assignSchema), async (req, res, next) => {
+  try {
+    const cityId = req.auth!.cityId!;
+    const userId = req.auth!.sub!;
+    const moduleId = await getModuleIdByName(MODULE_KEY);
+    await assertModuleAccess(req, res, moduleId, [Role.QC, Role.CITY_ADMIN]);
+
+    const { assignedEmployeeIds } = req.body as z.infer<typeof assignSchema>;
+    const bin = await prisma.litterBin.findUnique({ where: { id: req.params.id } });
+    if (!bin || bin.cityId !== cityId) throw new HttpError(404, "Bin not found");
+
+    // QC Scope Check
+    const scope = await getQcScope({ userId, cityId, moduleId });
+    console.log("QC scope", scope);
+    console.log("Bin zone/ward", bin.zoneId, bin.wardId);
+
+    if (scope.zoneIds.length || scope.wardIds.length) {
+      if (!bin.zoneId || !bin.wardId || !scope.zoneIds.includes(bin.zoneId) || !scope.wardIds.includes(bin.wardId)) {
+        if (req.auth?.roles?.includes(Role.QC) && !req.auth?.roles?.includes(Role.CITY_ADMIN)) {
+          throw new HttpError(403, "Bin not in QC scope");
+        }
+      }
+    } else {
+      // If scope is empty and user is QC, they shouldn't be able to assign anything
+      if (req.auth?.roles?.includes(Role.QC) && !req.auth?.roles?.includes(Role.CITY_ADMIN)) {
+        throw new HttpError(403, "No QC scope assigned");
+      }
+    }
+
+    if (bin.status !== TwinbinBinStatus.APPROVED) throw new HttpError(400, "Bin must be APPROVED to assign employees");
+
+    if (assignedEmployeeIds.length > 0) {
+      const employees = await prisma.userCity.findMany({
+        where: { cityId, userId: { in: assignedEmployeeIds }, role: Role.EMPLOYEE }
+      });
+      if (employees.length !== assignedEmployeeIds.length) throw new HttpError(400, "Invalid employee assignment");
+    }
+
+    const updated = await prisma.litterBin.update({
+      where: { id: bin.id },
+      data: {
+        assignedEmployeeIds
+      }
+    });
+
+    res.json({ bin: updated });
+  } catch (err) {
+    next(err);
+  }
+});
 
 export default router;

@@ -34,15 +34,25 @@ export default function TwinbinQcHomeScreen({ navigation }: Props) {
         </View>
       </View>
 
-      <View style={{ marginTop: Spacing.m }}>
-        <QcCard
-          title="Pending Bin Reports"
-          desc="Damage or issue reports from employees"
-          icon={<AlertTriangle size={24} color={Colors.danger} />}
-          onPress={() => navigation.navigate("TwinbinReportPending")}
-          color={Colors.danger}
-          full
-        />
+      <View style={{ flexDirection: "row", gap: Spacing.m, marginTop: Spacing.m }}>
+        <View style={styles.col}>
+          <QcCard
+            title="Approved Bins"
+            desc="Assign employees to bins"
+            icon={<ListChecks size={24} color={Colors.success} />}
+            onPress={() => navigation.navigate("TwinbinQcApproved")}
+            color={Colors.success}
+          />
+        </View>
+        <View style={styles.col}>
+          <QcCard
+            title="Pending Reports"
+            desc="Damage/Issue reports"
+            icon={<AlertTriangle size={24} color={Colors.danger} />}
+            onPress={() => navigation.navigate("TwinbinReportPending")}
+            color={Colors.danger}
+          />
+        </View>
       </View>
 
       <View style={[Layout.card, { marginTop: Spacing.l }]}>
@@ -55,7 +65,7 @@ export default function TwinbinQcHomeScreen({ navigation }: Props) {
         </TouchableOpacity>
       </View>
 
-    </ScrollView>
+    </ScrollView >
   );
 }
 

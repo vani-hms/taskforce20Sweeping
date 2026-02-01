@@ -17,6 +17,8 @@ import {
   TwinbinQcHomeScreen,
   TwinbinQcPendingScreen,
   TwinbinQcReviewScreen,
+  TwinbinQcApprovedScreen,
+  TwinbinQcAssignScreen,
   TwinbinAssignedScreen,
   TwinbinBinDetailScreen,
   TwinbinVisitPendingScreen,
@@ -113,6 +115,7 @@ export function RootNavigator() {
         options={{ title: "My Requests" }}
       />
       <Stack.Screen name="TwinbinQcHome" component={TwinbinQcHomeScreen} options={{ title: "Litter Bins QC" }} />
+
       <Stack.Screen
         name="TwinbinQcPending"
         component={TwinbinQcPendingScreen}

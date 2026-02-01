@@ -284,7 +284,7 @@ export async function actionRequiredTwinbinReport(id: string) {
 
 // Taskforce feeder points (employee)
 export async function listTaskforceAssigned() {
-  return request<{ feederPoints: any[] }>("/modules/taskforce/feeder-points/my-tasks");
+  return request<{ feederPoints: any[] }>("/modules/taskforce/feeder-points/assigned");
 }
 
 export async function submitTaskforceFeederRequest(body: {

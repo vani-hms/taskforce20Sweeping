@@ -165,7 +165,7 @@ export const TaskforceApi = {
       body: JSON.stringify(body)
     }),
   assigned: () =>
-    apiFetch<{ feederPoints: any[] }>("/modules/taskforce/feeder-points/my-tasks"),
+    apiFetch<{ feederPoints: any[] }>("/modules/taskforce/feeder-points/assigned"),
   feederRequests: () => apiFetch<{ feederPoints: any[] }>("/modules/taskforce/feeder-points/requests"),
   approveRequest: (id: string, body: any) =>
     apiFetch<{ feederPoint: any }>(`/modules/taskforce/feeder-points/${id}/approve`, {
@@ -205,7 +205,7 @@ export const TaskforceApi = {
       stats: { pending: number; approved: number; rejected: number; actionRequired: number; total: number };
     }>(`/modules/taskforce/records?${params.toString()}`);
   },
-  myTasks: () => apiFetch<{ feederPoints: any[] }>("/modules/taskforce/feeder-points/my-tasks")
+  myTasks: () => apiFetch<{ feederPoints: any[] }>("/modules/taskforce/feeder-points/assigned")
 };
 
 export const ToiletApi = {

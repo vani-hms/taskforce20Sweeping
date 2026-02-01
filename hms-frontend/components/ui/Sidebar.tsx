@@ -26,16 +26,7 @@ export default function Sidebar() {
     const isQc = !!user?.roles?.includes("QC");
     return canonical.map((m) => {
       const path = routeForModule(m.key);
-      let href = `/modules/${path}`;
-
-      if (m.key === "LITTERBINS" && isQc) {
-        href = "/modules/litterbins/qc";
-      }
-
-      if (m.key === "SWEEPING" && isQc) {
-        href = "/modules/sweeping/qc";
-      }
-
+      const href = m.key === "LITTERBINS" && isQc ? "/modules/litterbins/qc" : `/modules/${path}`;
       return {
         label: moduleLabel(m.key, m.name || m.key),
         href

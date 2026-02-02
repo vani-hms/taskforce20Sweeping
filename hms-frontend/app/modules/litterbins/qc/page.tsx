@@ -1,5 +1,14 @@
 'use client';
 
-import TwinbinPage from "../../twinbin/page";
+import { ModuleGuard, Protected } from "@components/Guards";
+import QCDashboard from "../components/QCDashboard";
 
-export default TwinbinPage;
+export default function LitterbinsQcPage() {
+  return (
+    <Protected>
+      <ModuleGuard module="LITTERBINS" roles={["QC", "CITY_ADMIN", "ULB_OFFICER"]}>
+        <QCDashboard />
+      </ModuleGuard>
+    </Protected>
+  );
+}

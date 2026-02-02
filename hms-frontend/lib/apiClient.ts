@@ -259,13 +259,15 @@ export const ToiletApi = {
 };
 
 export const ModuleRecordsApi = {
-  getRecords: (moduleKey: string, filters?: { zoneIds?: string[]; wardIds?: string[]; page?: number; limit?: number; tab?: string }) => {
+  getRecords: (moduleKey: string, filters?: { zoneIds?: string[]; wardIds?: string[]; page?: number; limit?: number; tab?: string; fromDate?: string; toDate?: string }) => {
     const params = new URLSearchParams();
     if (filters?.zoneIds?.length) filters.zoneIds.forEach(id => params.append("zoneIds", id));
     if (filters?.wardIds?.length) filters.wardIds.forEach(id => params.append("wardIds", id));
     if (filters?.page) params.append("page", filters.page.toString());
     if (filters?.limit) params.append("limit", filters.limit.toString());
     if (filters?.tab) params.append("tab", filters.tab);
+    if (filters?.fromDate) params.append("startDate", filters.fromDate);
+    if (filters?.toDate) params.append("endDate", filters.toDate);
 
     const queryString = params.toString();
     const url = `/modules/${moduleKey}/records${queryString ? `?${queryString}` : ""}`;
@@ -352,6 +354,11 @@ export const TwinbinApi = {
     }>("/modules/twinbin/bins/assigned"),
   myBins: () => apiFetch<{ bins: any[] }>("/modules/twinbin/bins/my"),
   pending: (page = 1, limit = 20) => apiFetch<{ data: any[], meta: any }>(`/modules/twinbin/bins/pending?page=${page}&limit=${limit}`),
+  pendingBinRequests: (page = 1, limit = 20) => apiFetch<{ data: any[], meta: any }>(`/modules/twinbin/bin-requests/pending?page=${page}&limit=${limit}`),
+  approveBinRequest: (id: string, body: { assignedEmployeeIds?: string[] } = {}) =>
+    apiFetch<{ bin: any }>(`/modules/twinbin/bin-requests/${id}/approve`, { method: "POST", body: JSON.stringify(body) }),
+  rejectBinRequest: (id: string) =>
+    apiFetch<{ bin: any }>(`/modules/twinbin/bin-requests/${id}/reject`, { method: "POST" }),
   approve: (id: string, body: { assignedEmployeeIds?: string[] }) =>
     apiFetch<{ bin: any }>(`/modules/twinbin/bins/${id}/approve`, { method: "POST", body: JSON.stringify(body) }),
   assign: (id: string, body: { assignedEmployeeIds: string[] }) =>
@@ -385,6 +392,9 @@ export const TwinbinApi = {
   submitActionTaken: (id: string, body: { actionRemark: string; actionPhotoUrl: string }) =>
     apiFetch<{ visit: any }>(`/modules/twinbin/visits/${id}/action-taken`, { method: "POST", body: JSON.stringify(body) }),
   pendingReports: (page = 1, limit = 20) => apiFetch<{ data: any[], meta: any }>(`/modules/twinbin/reports/pending?page=${page}&limit=${limit}`),
+  approvedReports: (page = 1, limit = 20) => apiFetch<{ data: any[], meta: any }>(`/modules/twinbin/reports/approved?page=${page}&limit=${limit}`),
+  rejectedReports: (page = 1, limit = 20) => apiFetch<{ data: any[], meta: any }>(`/modules/twinbin/reports/rejected?page=${page}&limit=${limit}`),
+  actionRequiredReports: (page = 1, limit = 20) => apiFetch<{ data: any[], meta: any }>(`/modules/twinbin/reports/action-required?page=${page}&limit=${limit}`),
   approveReport: (id: string) => apiFetch<{ report: any }>(`/modules/twinbin/reports/${id}/approve`, { method: "POST" }),
   rejectReport: (id: string) => apiFetch<{ report: any }>(`/modules/twinbin/reports/${id}/reject`, { method: "POST" }),
   actionRequiredReport: (id: string) =>

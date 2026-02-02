@@ -143,7 +143,7 @@ router.get("/bins/my-requests", async (req, res, next) => {
   }
 });
 
-router.get("/bins/pending", async (req, res, next) => {
+async function getPendingBins(req: any, res: any, next: any) {
   try {
     const cityId = req.auth!.cityId!;
     const qcId = req.auth!.sub!;
@@ -225,20 +225,25 @@ router.get("/bins/pending", async (req, res, next) => {
         page,
         limit,
         total,
-        totalPages: Math.ceil(total / limit)
-      }
-    });
+      totalPages: Math.ceil(total / limit)
+    }
+  });
   } catch (err) {
     next(err);
   }
-});
+}
+
+router.get("/bins/pending", getPendingBins);
+
+// Aliased, scope-safe bin request queue for QC
+router.get("/bin-requests/pending", getPendingBins);
 
 
 const approveSchema = z.object({
   assignedEmployeeIds: z.array(z.string().uuid()).optional()
 });
 
-router.post("/bins/:id/approve", validateBody(approveSchema), async (req, res, next) => {
+async function approveBin(req: any, res: any, next: any) {
   try {
     const cityId = req.auth!.cityId!;
     const userId = req.auth!.sub!;
@@ -275,9 +280,9 @@ router.post("/bins/:id/approve", validateBody(approveSchema), async (req, res, n
   } catch (err) {
     next(err);
   }
-});
+}
 
-router.post("/bins/:id/reject", async (req, res, next) => {
+async function rejectBin(req: any, res: any, next: any) {
   try {
     const cityId = req.auth!.cityId!;
     const userId = req.auth!.sub!;
@@ -302,7 +307,14 @@ router.post("/bins/:id/reject", async (req, res, next) => {
   } catch (err) {
     next(err);
   }
-});
+}
+
+router.post("/bins/:id/approve", validateBody(approveSchema), approveBin);
+router.post("/bins/:id/reject", rejectBin);
+
+// Aliases for clarity in QC flow
+router.post("/bin-requests/:id/approve", validateBody(approveSchema), approveBin);
+router.post("/bin-requests/:id/reject", rejectBin);
 
 router.get("/bins/my", async (req, res, next) => {
   try {
@@ -541,37 +553,41 @@ router.get("/visits/pending", async (req, res, next) => {
   }
 });
 
-router.get("/reports/pending", async (req, res, next) => {
-  try {
-    const cityId = req.auth!.cityId!;
-    const qcId = req.auth!.sub!;
-    const moduleId = await getModuleIdByName(MODULE_KEY);
-    await assertModuleAccess(req, res, moduleId, [Role.QC]);
-
-    const scope = await getQcScope({ userId: qcId, cityId, moduleId });
-    const { zoneFilter, wardFilter } = buildScopeFilters(scope);
-    const where: any = {
-      status: "PENDING_QC",
+function buildReportWhere(statuses: string[], scope: { zoneIds: string[]; wardIds: string[] }, cityId: string) {
+  const { zoneFilter, wardFilter } = buildScopeFilters(scope);
+  const andConditions: any[] = [{ status: { in: statuses } }];
+  if (zoneFilter || wardFilter) {
+    andConditions.push({
       bin: {
+        assignedEmployeeIds: { isEmpty: false },
         AND: [
           ...(zoneFilter ? [zoneFilter] : []),
           ...(wardFilter ? [wardFilter] : [])
         ]
       }
-    };
-    // Ensure strict scope: Only filter by cityId if scope is empty fallback
-    if (zoneFilter || wardFilter) {
-      // Scope exists, do NOT filter by cityId
-    } else {
-      where.cityId = cityId;
-    }
+    });
+  }
+  if (!zoneFilter && !wardFilter) {
+    // No explicit scope -> restrict by city on the bin as well for safety
+    andConditions.push({ bin: { cityId, assignedEmployeeIds: { isEmpty: false } } });
+  }
+  return {
+    AND: andConditions,
+    cityId // always constrain to QC city to prevent cross-city leakage
+  };
+}
 
-    if (!zoneFilter && !wardFilter) delete where.bin;
+async function listReports(req: any, res: any, next: any, statuses: string[]) {
+  try {
+    const cityId = req.auth!.cityId!;
+    const qcId = req.auth!.sub!;
+    const moduleId = await getModuleIdByName(MODULE_KEY);
+    forbidCityAdminOrCommissioner(req);
+    await assertModuleAccess(req, res, moduleId, [Role.QC]);
 
-    console.info("[twinbin][reports][pending] scope", scope);
-    console.info("[twinbin][reports][pending] where", where);
+    const scope = await getQcScope({ userId: qcId, cityId, moduleId });
+    const where = buildReportWhere(statuses, scope, cityId);
 
-    // Pagination Params
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 20;
     const skip = (page - 1) * limit;
@@ -581,7 +597,19 @@ router.get("/reports/pending", async (req, res, next) => {
         where,
         orderBy: { createdAt: "desc" },
         include: {
-          bin: true,
+          bin: {
+            select: {
+              id: true,
+              areaName: true,
+              areaType: true,
+              locationName: true,
+              roadType: true,
+              latitude: true,
+              longitude: true,
+              zoneId: true,
+              wardId: true
+            }
+          },
           submittedBy: { select: { id: true, name: true, email: true } }
         },
         skip,
@@ -592,7 +620,9 @@ router.get("/reports/pending", async (req, res, next) => {
 
     const formatted = reports.map((r) => ({
       ...r,
-      distanceMeters: r.distanceMeters ?? haversineMeters(r.latitude, r.longitude, r.bin.latitude, r.bin.longitude)
+      distanceMeters: r.distanceMeters ?? (r.bin?.latitude && r.bin?.longitude
+        ? haversineMeters(r.latitude, r.longitude, r.bin.latitude, r.bin.longitude)
+        : null)
     }));
 
     res.json({
@@ -601,13 +631,18 @@ router.get("/reports/pending", async (req, res, next) => {
         page,
         limit,
         total,
-        totalPages: Math.ceil(total / limit)
+        totalPages: Math.max(1, Math.ceil(total / limit))
       }
     });
   } catch (err) {
     next(err);
   }
-});
+}
+
+router.get("/reports/pending", (req, res, next) => listReports(req, res, next, ["SUBMITTED", "PENDING_QC"]));
+router.get("/reports/approved", (req, res, next) => listReports(req, res, next, ["APPROVED"]));
+router.get("/reports/rejected", (req, res, next) => listReports(req, res, next, ["REJECTED"]));
+router.get("/reports/action-required", (req, res, next) => listReports(req, res, next, ["ACTION_REQUIRED"]));
 
 router.post("/visits/:id/approve", async (req, res, next) => {
   try {
@@ -864,60 +899,6 @@ router.post("/bins/:id/report", validateBody(binReportSchema), async (req, res, 
     });
 
     res.json({ report });
-  } catch (err) {
-    next(err);
-  }
-});
-
-router.get("/reports/pending", async (req, res, next) => {
-  try {
-    const cityId = req.auth!.cityId!;
-    const qcId = req.auth!.sub!;
-    const moduleId = await getModuleIdByName(MODULE_KEY);
-    forbidCityAdminOrCommissioner(req);
-    await assertModuleAccess(req, res, moduleId, [Role.QC]);
-
-    const scope = await getQcScope({ userId: qcId, cityId, moduleId });
-    const { zoneFilter, wardFilter } = buildScopeFilters(scope);
-    const where: any = {
-      status: "SUBMITTED",
-      bin: {
-        AND: [
-          ...(zoneFilter ? [zoneFilter] : []),
-          ...(wardFilter ? [wardFilter] : [])
-        ]
-      }
-    };
-    if (zoneFilter || wardFilter) {
-      // Scope defined, no cityId
-    } else {
-      where.cityId = cityId;
-    }
-    if (!zoneFilter && !wardFilter) delete where.bin;
-
-    // console.info("[twinbin][reports][pending] scope", scope);
-    // console.info("[twinbin][reports][pending] where", where);
-
-    const reports = await prisma.litterBinReport.findMany({
-      where,
-      orderBy: { createdAt: "desc" },
-      include: {
-        bin: {
-          select: {
-            id: true,
-            areaName: true,
-            areaType: true,
-            locationName: true,
-            roadType: true,
-            latitude: true,
-            longitude: true
-          }
-        },
-        submittedBy: { select: { id: true, name: true, email: true } }
-      }
-    });
-
-    res.json({ reports });
   } catch (err) {
     next(err);
   }

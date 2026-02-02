@@ -11,6 +11,8 @@ export default function QCDashboard() {
     const [activeTab, setActiveTab] = useState<'DAILY_REPORTS' | 'BIN_REQUESTS' | 'APPROVED_BINS' | 'HISTORY'>('BIN_REQUESTS');
     const [page, setPage] = useState(1);
     const [limit] = useState(20);
+    const [fromDate, setFromDate] = useState<string>("");
+    const [toDate, setToDate] = useState<string>("");
     const [meta, setMeta] = useState<{ total: number; totalPages: number } | null>(null);
     const [stats, setStats] = useState<{ pending: number; approved: number; rejected: number; actionRequired: number; total: number } | null>(null);
 
@@ -77,7 +79,9 @@ export default function QCDashboard() {
                 wardIds: wardIds.length ? wardIds : undefined,
                 page,
                 limit,
-                tab: activeTab
+                tab: activeTab,
+                fromDate: activeTab === 'DAILY_REPORTS' ? fromDate : undefined,
+                toDate: activeTab === 'DAILY_REPORTS' ? toDate : undefined
             };
 
             const response = await ModuleRecordsApi.getRecords("twinbin", filters) as any;
@@ -112,7 +116,7 @@ export default function QCDashboard() {
 
     useEffect(() => {
         loadData();
-    }, [activeTab, page]);
+    }, [activeTab, page, fromDate, toDate]);
 
     // Reset page when tab changes
     const handleTabChange = (tab: typeof activeTab) => {
@@ -249,7 +253,24 @@ export default function QCDashboard() {
             <div className="card">
                 <div className="flex items-center justify-between mb-4">
                     <h2 className="text-lg">Records Review</h2>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 items-center">
+                        {activeTab === 'DAILY_REPORTS' && (
+                            <div className="flex gap-2 items-center mr-4">
+                                <input
+                                    type="date"
+                                    className="input input-sm input-bordered"
+                                    value={fromDate}
+                                    onChange={(e) => setFromDate(e.target.value)}
+                                />
+                                <span className="text-xs muted">to</span>
+                                <input
+                                    type="date"
+                                    className="input input-sm input-bordered"
+                                    value={toDate}
+                                    onChange={(e) => setToDate(e.target.value)}
+                                />
+                            </div>
+                        )}
                         <TabButton active={activeTab === 'DAILY_REPORTS'} onClick={() => handleTabChange('DAILY_REPORTS')}>Daily Reports</TabButton>
                         <TabButton active={activeTab === 'BIN_REQUESTS'} onClick={() => handleTabChange('BIN_REQUESTS')}>Bin Requests</TabButton>
                         <TabButton active={activeTab === 'APPROVED_BINS'} onClick={() => handleTabChange('APPROVED_BINS')}>Approved Bins</TabButton>
@@ -412,13 +433,44 @@ export default function QCDashboard() {
                         {/* TYPE SPECIFIC DETAILS */}
                         {viewRecord.type === 'VISIT_REPORT' && (
                             <div className="bg-base-200 p-4 rounded-lg">
-                                <h4 className="font-bold mb-2">Inspection Report</h4>
-                                <div className="grid grid-cols-2 gap-2 text-sm">
-                                    {/* Try to show some details if available */}
-                                    {viewRecord.distanceMeters && <p>Distance: {Math.round(viewRecord.distanceMeters)}m</p>}
-                                    {/* If answers are available */}
-                                </div>
-                                <p className="text-sm italic muted mt-2">Full details view not implemented in this summary.</p>
+                                <h4 className="font-bold mb-4">Daily Report Details</h4>
+
+                                {viewRecord.questionnaire ? (
+                                    <div className="flex flex-col gap-3 mb-4">
+                                        {Object.entries(viewRecord.questionnaire).map(([key, val]: any, idx) => (
+                                            <div key={idx} className="border-b border-base-300/50 pb-2 last:border-0">
+                                                <p className="font-medium text-sm text-base-content/70">{val?.question || key}</p>
+                                                <p className="text-sm font-semibold">{val?.answer || (typeof val === 'string' ? val : JSON.stringify(val))}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p className="text-sm muted italic mb-4">No questionnaire data available.</p>
+                                )}
+
+                                {/* IMAGE GALLERY */}
+                                {(viewRecord.images || viewRecord.photos) && (
+                                    <div>
+                                        <h5 className="font-bold text-xs uppercase muted mb-2">Attached Images</h5>
+                                        <div className="flex gap-2 flex-wrap">
+                                            {(viewRecord.images || viewRecord.photos).map((img: string, idx: number) => (
+                                                <a key={idx} href={img} target="_blank" rel="noopener noreferrer" className="group relative">
+                                                    <img
+                                                        src={img}
+                                                        alt={`Evidence ${idx + 1}`}
+                                                        className="w-24 h-24 object-cover rounded-lg border border-base-300 shadow-sm transition-transform group-hover:scale-105"
+                                                    />
+                                                </a>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {viewRecord.distanceMeters && (
+                                    <div className="mt-4 pt-2 border-t border-base-300/50">
+                                        <p className="text-xs muted">Distance from bin: <span className="font-mono">{Math.round(viewRecord.distanceMeters)}m</span></p>
+                                    </div>
+                                )}
                             </div>
                         )}
                         {viewRecord.type === 'BIN_REGISTRATION' && (

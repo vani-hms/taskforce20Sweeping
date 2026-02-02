@@ -249,7 +249,7 @@ export default function TaskforceFeederDetailScreen({ navigation, route }: Props
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 32 }}>
       <Text style={styles.back} onPress={() => navigation.goBack()}>
-        <- Back
+        {"<- Back"}
       </Text>
       <Text style={styles.heading}>{feeder.feederPointName}</Text>
       <Text style={styles.muted}>{feeder.areaName} - {feeder.areaType}</Text>

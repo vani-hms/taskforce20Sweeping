@@ -235,7 +235,7 @@ export default function TaskforceAssignedDetailPage() {
         <div className="page">
           <div className="flex gap-2" style={{ alignItems: "center" }}>
             <button className="btn btn-secondary btn-sm" onClick={() => router.back()}>
-              <- Back
+              {"<- Back"}
             </button>
             <h1 style={{ margin: 0 }}>Feeder Point</h1>
           </div>

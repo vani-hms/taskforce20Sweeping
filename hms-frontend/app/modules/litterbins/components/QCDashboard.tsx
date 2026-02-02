@@ -244,58 +244,11 @@ export default function QCDashboard() {
 
             {viewItem && (
                 <section className="card mt-6" style={{ borderLeft: '4px solid #1d4ed8' }}>
-                    <div className="flex justify-between items-start mb-3">
-                        <div>
-                            <p className="muted text-xs">{viewItem.type === 'BIN_REQUEST' ? 'Bin Request' : 'Daily Report'}</p>
-                            <h3 className="text-lg font-semibold mb-1">{viewItem.areaName || viewItem.bin?.areaName || '-'}</h3>
-                            <p className="muted text-sm mb-0">
-                                {readableType(viewItem.type)} | {new Date(viewItem.createdAt).toLocaleString()}
-                            </p>
-                        </div>
-                        <button className="btn btn-sm" onClick={() => setViewItem(null)}>x</button>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3 mb-4">
-                        <InfoItem label="Zone" value={viewItem.zoneName || viewItem.bin?.zoneName || viewItem.zoneId || viewItem.bin?.zoneId || '-'} />
-                        <InfoItem label="Ward" value={viewItem.wardName || viewItem.bin?.wardName || viewItem.wardId || viewItem.bin?.wardId || '-'} />
-                        <InfoItem label="Status" value={<StatusBadge status={viewItem.status} />} />
-                        <InfoItem label="Type" value={readableType(viewItem.type)} />
-                        {viewItem.submittedBy && (
-                            <InfoItem label="Submitted By" value={viewItem.submittedBy.name || viewItem.submittedBy.email || viewItem.submittedBy.id || '-'} />
-                        )}
-                        {viewItem.locationName && <InfoItem label="Location" value={viewItem.locationName} />}
-                    </div>
-
-                    {viewItem.type === 'DAILY_REPORT' && (
-                        <div className="mb-4">
-                            <h4 className="text-md font-semibold mb-2">Questionnaire</h4>
-                            <div className="grid gap-2">
-                                {viewItem.questionnaire
-                                    ? Object.entries(viewItem.questionnaire).map(([key, val]: [string, any]) => {
-                                        const answer = typeof val === "object" && val !== null && "answer" in val ? (val as any).answer : val;
-                                        const photos = typeof val === "object" && (val as any).photos ? (val as any).photos : [];
-                                        return (
-                                            <div key={key} className="p-3 rounded border border-base-200 bg-base-50">
-                                                <div className="text-sm font-semibold">{key}</div>
-                                                <div className="muted text-sm">{String(answer ?? "-")}</div>
-                                                {Array.isArray(photos) && photos.length > 0 && (
-                                                    <div className="flex flex-wrap gap-2 mt-2">
-                                                        {photos.map((p: string, idx: number) => (
-                                                            <a key={idx} href={p} target="_blank" rel="noreferrer" className="block">
-                                                                <img src={p} alt={`Photo ${idx + 1}`} className="h-16 w-16 object-cover rounded border" />
-                                                            </a>
-                                                        ))}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        );
-                                    })
-                                    : <div className="muted text-sm">No questionnaire answers.</div>}
-                            </div>
-                        </div>
+                    {viewItem.type === 'BIN_REQUEST' ? (
+                        <BinRequestView item={viewItem} onClose={() => setViewItem(null)} />
+                    ) : (
+                        <DailyReportView item={viewItem} loading={viewLoading} onClose={() => setViewItem(null)} />
                     )}
-
-                    {viewLoading && <div className="muted text-sm">Loading details...</div>}
                 </section>
             )}
         </div>
@@ -314,5 +267,108 @@ function InfoItem({ label, value }: { label: string; value: React.ReactNode }) {
             <span className="muted text-xs uppercase tracking-wide">{label}</span>
             <span className="font-semibold text-sm">{value}</span>
         </div>
+    );
+}
+
+function BinRequestView({ item, onClose }: { item: any; onClose: () => void }) {
+    return (
+        <>
+            <div className="flex justify-between items-start mb-3">
+                <div>
+                    <p className="muted text-xs">Bin Request</p>
+                    <h3 className="text-lg font-semibold mb-1">{item.areaName || item.locationName || '-'}</h3>
+                    <p className="muted text-sm mb-0">
+                        Submitted {new Date(item.createdAt).toLocaleString()}
+                    </p>
+                </div>
+                <button className="btn btn-sm" onClick={onClose}>x</button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 mb-4">
+                <InfoItem label="Zone" value={item.zoneName || item.bin?.zoneName || item.zoneId || '-'} />
+                <InfoItem label="Ward" value={item.wardName || item.bin?.wardName || item.wardId || '-'} />
+                <InfoItem label="Status" value={<StatusBadge status={item.status} />} />
+                <InfoItem label="Type" value={readableType(item.type)} />
+                {item.requestedBy && (
+                    <InfoItem label="Requested By" value={item.requestedBy.name || item.requestedBy.email || '-'} />
+                )}
+                {item.locationName && <InfoItem label="Location" value={item.locationName} />}
+            </div>
+
+            <div className="mb-2">
+                <h4 className="text-md font-semibold mb-2">Description</h4>
+                <p className="muted text-sm">{item.description || "No description provided."}</p>
+            </div>
+
+            {Array.isArray(item.photos) && item.photos.length > 0 && (
+                <div className="mb-2">
+                    <h4 className="text-md font-semibold mb-2">Images</h4>
+                    <div className="flex flex-wrap gap-2">
+                        {item.photos.map((p: string, idx: number) => (
+                            <a key={idx} href={p} target="_blank" rel="noreferrer">
+                                <img src={p} alt={`Photo ${idx + 1}`} className="h-16 w-16 object-cover rounded border" />
+                            </a>
+                        ))}
+                    </div>
+                </div>
+            )}
+        </>
+    );
+}
+
+function DailyReportView({ item, loading, onClose }: { item: any; loading: boolean; onClose: () => void }) {
+    return (
+        <>
+            <div className="flex justify-between items-start mb-3">
+                <div>
+                    <p className="muted text-xs">Daily Report</p>
+                    <h3 className="text-lg font-semibold mb-1">{item.areaName || item.bin?.areaName || '-'}</h3>
+                    <p className="muted text-sm mb-0">
+                        Submitted {new Date(item.createdAt).toLocaleString()}
+                    </p>
+                </div>
+                <button className="btn btn-sm" onClick={onClose}>x</button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 mb-4">
+                <InfoItem label="Zone" value={item.zoneName || item.bin?.zoneName || item.zoneId || '-'} />
+                <InfoItem label="Ward" value={item.wardName || item.bin?.wardName || item.wardId || '-'} />
+                <InfoItem label="Status" value={<StatusBadge status={item.status} />} />
+                <InfoItem label="Type" value={readableType(item.type)} />
+                {item.submittedBy && (
+                    <InfoItem label="Submitted By" value={item.submittedBy.name || item.submittedBy.email || '-'} />
+                )}
+                {item.locationName && <InfoItem label="Location" value={item.locationName} />}
+            </div>
+
+            <div className="mb-4">
+                <h4 className="text-md font-semibold mb-2">Questionnaire</h4>
+                <div className="grid gap-2">
+                    {item.questionnaire
+                        ? Object.entries(item.questionnaire).map(([key, val]: [string, any]) => {
+                            const answer = typeof val === "object" && val !== null && "answer" in val ? (val as any).answer : val;
+                            const photos = typeof val === "object" && (val as any).photos ? (val as any).photos : [];
+                            return (
+                                <div key={key} className="p-3 rounded border border-base-200 bg-base-50">
+                                    <div className="text-sm font-semibold">{key}</div>
+                                    <div className="muted text-sm">{String(answer ?? "-")}</div>
+                                    {Array.isArray(photos) && photos.length > 0 && (
+                                        <div className="flex flex-wrap gap-2 mt-2">
+                                            {photos.map((p: string, idx: number) => (
+                                                <a key={idx} href={p} target="_blank" rel="noreferrer" className="block">
+                                                    <img src={p} alt={`Photo ${idx + 1}`} className="h-16 w-16 object-cover rounded border" />
+                                                </a>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })
+                        : <div className="muted text-sm">No questionnaire answers.</div>}
+                </div>
+            </div>
+
+            {loading && <div className="muted text-sm">Loading details...</div>}
+        </>
     );
 }

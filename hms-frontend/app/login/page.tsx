@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ApiError, AuthApi } from "@lib/apiClient";
 import { setAuthCookie, decodeToken } from "@lib/auth";
 import { useAuth } from "@hooks/useAuth";
+import { getPostLoginRedirect } from "@utils/modules";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -20,11 +21,11 @@ export default function LoginPage() {
     setLoading(true);
     setError("");
     try {
-      const { token, user: authUser, redirectTo } = await AuthApi.login({ email, password });
+      const { token, user: authUser } = await AuthApi.login({ email, password });
       setAuthCookie(token);
       const decoded = decodeToken(token, authUser);
       setUser(decoded);
-      router.replace(redirectTo || "/");
+      router.replace(getPostLoginRedirect(decoded));
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
         setError("Invalid credentials");

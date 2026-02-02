@@ -67,6 +67,9 @@ router.get("/:moduleKey/records", async (req, res, next) => {
           visitWhere.cityId = cityId;
           reportWhere.cityId = cityId;
         }
+
+        // QC should only see reports currently owned by QC
+        reportWhere.currentOwnerRole = Role.QC;
       }
 
       // Pagination & Tab Params
@@ -219,12 +222,11 @@ router.get("/:moduleKey/records", async (req, res, next) => {
 
       // Calculate aggregated stats for the dashboard (independent of pagination)
       // This ensures KPI cards still work
-      const [statsPendingBins, statsApprovedBins, statsRejectedBins, statsPendingVisits, statsActionVisits, statsTotalBins, statsTotalVisits] = await Promise.all([
+      const [statsPendingBins, statsApprovedBins, statsRejectedBins, statsPendingVisits, statsTotalBins, statsTotalVisits] = await Promise.all([
         prisma.litterBin.count({ where: { ...where, status: { in: ['PENDING_QC'] } } }),
         prisma.litterBin.count({ where: { ...where, status: 'APPROVED' } }),
         prisma.litterBin.count({ where: { ...where, status: 'REJECTED' } }),
         prisma.litterBinVisitReport.count({ where: { ...visitWhere, status: 'PENDING_QC' } }),
-        prisma.litterBinVisitReport.count({ where: { ...visitWhere, actionStatus: 'ACTION_REQUIRED' } }),
         prisma.litterBin.count({ where: where }), // Total Bins in scope
         prisma.litterBinVisitReport.count({ where: visitWhere }) // Total Visits in scope
       ]);
@@ -233,7 +235,7 @@ router.get("/:moduleKey/records", async (req, res, next) => {
         pending: statsPendingBins + statsPendingVisits,
         approved: statsApprovedBins, // Visits don't have 'APPROVED' state persistence in same way usually, or we just count bins
         rejected: statsRejectedBins,
-        actionRequired: statsActionVisits,
+        actionRequired: 0, // QC should not see ACTION_REQUIRED items (owned by Action Officers)
         total: statsTotalBins + statsTotalVisits // Approximate total work items
       };
 

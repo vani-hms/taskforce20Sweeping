@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useMemo } from "react";
 import { useAuth } from "@hooks/useAuth";
-import { canonicalizeModules, routeForModule } from "@utils/modules";
+import { canonicalizeModules, moduleEntryPath } from "@utils/modules";
 import { moduleLabel } from "@lib/labels";
 import type { Role } from "../../types/auth";
 
@@ -23,18 +23,11 @@ export default function Sidebar() {
   const moduleLinks = useMemo(() => {
     const canonical = canonicalizeModules(user?.modules || []);
     if (!canonical.length) return [];
-    const isQc = !!user?.roles?.includes("QC");
-    return canonical.map((m) => {
-      const path = routeForModule(m.key);
-      const href = m.key === "LITTERBINS" && isQc ? "/modules/litterbins/qc" : `/modules/${path}`;
-      return {
-        label: moduleLabel(m.key, m.name || m.key),
-        href
-      };
-    });
+    return canonical.map((m) => ({
+      label: moduleLabel(m.key, m.name || m.key),
+      href: moduleEntryPath(user || null, m.key)
+    }));
   }, [user?.modules, user?.roles]);
-
-  const hasRole = (r: Role) => Boolean(user?.roles?.includes(r));
 
   let links: { label: string; href: string }[] = [];
   if (!user) {
@@ -42,31 +35,9 @@ export default function Sidebar() {
       { label: "Home", href: "/" },
       { label: "Login", href: "/login" }
     ];
-  } else if (hasRole("HMS_SUPER_ADMIN")) {
-    links = [
-      { label: "Home", href: "/" },
-      { label: "HMS Super Admin", href: "/hms" }
-    ];
-  } else if (hasRole("CITY_ADMIN")) {
-    links = [
-      { label: "Home", href: "/" },
-      { label: "City Admin", href: "/city" },
-      { label: "Municipal", href: "/municipal" },
-      ...moduleLinks
-    ];
-  } else if (hasRole("COMMISSIONER")) {
-    links = [
-      { label: "City Overview", href: "/city" },
-      ...moduleLinks
-    ];
-  } else if (hasRole("ACTION_OFFICER") || hasRole("QC") || hasRole("EMPLOYEE")) {
-    const common = [...moduleLinks];
-    if (hasRole("QC")) {
-      common.push({ label: "Employees", href: "/employees" });
-    }
-    links = common;
   } else {
-    links = [{ label: "Home", href: "/" }];
+    // Strictly render modules from auth token; no role-based injection
+    links = [...moduleLinks];
   }
 
   const handleLogout = async () => {

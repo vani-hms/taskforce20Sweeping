@@ -65,6 +65,29 @@ async function ensureGeoValid(cityId: string, zoneId?: string | null, wardId?: s
   }
 }
 
+async function resolveActionOfficerId(params: { cityId: string; moduleId: string; zoneId: string; wardId: string }) {
+  const { cityId, moduleId, zoneId, wardId } = params;
+  const assignment = await prisma.userCity.findFirst({
+    where: {
+      cityId,
+      role: Role.ACTION_OFFICER,
+      zoneIds: { has: zoneId },
+      wardIds: { has: wardId },
+      user: {
+        modules: {
+          some: { cityId, moduleId, role: Role.ACTION_OFFICER }
+        }
+      }
+    },
+    orderBy: { createdAt: "asc" },
+    select: { userId: true }
+  });
+  if (!assignment) {
+    throw new HttpError(400, "No Action Officer assigned for this zone/ward");
+  }
+  return assignment.userId;
+}
+
 const requestSchema = z.object({
   zoneId: z.string().uuid().optional(),
   wardId: z.string().uuid().optional(),
@@ -225,9 +248,9 @@ async function getPendingBins(req: any, res: any, next: any) {
         page,
         limit,
         total,
-      totalPages: Math.ceil(total / limit)
-    }
-  });
+        totalPages: Math.ceil(total / limit)
+      }
+    });
   } catch (err) {
     next(err);
   }
@@ -555,7 +578,10 @@ router.get("/visits/pending", async (req, res, next) => {
 
 function buildReportWhere(statuses: string[], scope: { zoneIds: string[]; wardIds: string[] }, cityId: string) {
   const { zoneFilter, wardFilter } = buildScopeFilters(scope);
-  const andConditions: any[] = [{ status: { in: statuses } }];
+  const andConditions: any[] = [
+    { status: { in: statuses } },
+    { currentOwnerRole: Role.QC }
+  ];
   if (zoneFilter || wardFilter) {
     andConditions.push({
       bin: {
@@ -642,7 +668,6 @@ async function listReports(req: any, res: any, next: any, statuses: string[]) {
 router.get("/reports/pending", (req, res, next) => listReports(req, res, next, ["SUBMITTED", "PENDING_QC"]));
 router.get("/reports/approved", (req, res, next) => listReports(req, res, next, ["APPROVED"]));
 router.get("/reports/rejected", (req, res, next) => listReports(req, res, next, ["REJECTED"]));
-router.get("/reports/action-required", (req, res, next) => listReports(req, res, next, ["ACTION_REQUIRED"]));
 
 router.post("/visits/:id/approve", async (req, res, next) => {
   try {
@@ -891,6 +916,7 @@ router.post("/bins/:id/report", validateBody(binReportSchema), async (req, res, 
         submittedById: userId,
         reviewedByQcId: null,
         status: "SUBMITTED",
+        currentOwnerRole: Role.QC,
         latitude: payload.latitude,
         longitude: payload.longitude,
         distanceMeters: distance,
@@ -933,11 +959,38 @@ async function updateBinReportStatus(
     ) {
       throw new HttpError(403, "Report not in QC scope");
     }
-    if (report.status !== "SUBMITTED") throw new HttpError(400, "Report not pending review");
+    if (!["SUBMITTED", "PENDING_QC"].includes(report.status)) throw new HttpError(400, "Report not pending review");
+    if (report.currentOwnerRole !== Role.QC) throw new HttpError(400, "Report not pending QC review");
+
+    let updateData: any = {
+      status,
+      reviewedByQcId: userId,
+      reviewedAt: new Date(),
+      currentOwnerRole: Role.QC
+    };
+
+    if (status === "ACTION_REQUIRED") {
+      if (!report.bin?.zoneId || !report.bin?.wardId) {
+        throw new HttpError(400, "Report missing zone/ward for Action Officer assignment");
+      }
+      const actionOfficerId = await resolveActionOfficerId({
+        cityId,
+        moduleId,
+        zoneId: report.bin.zoneId,
+        wardId: report.bin.wardId
+      });
+      updateData = {
+        ...updateData,
+        currentOwnerRole: Role.ACTION_OFFICER,
+        actionOfficerId,
+        actionOfficerRemark: null,
+        actionOfficerRespondedAt: null
+      };
+    }
 
     const updated = await prisma.litterBinReport.update({
       where: { id: report.id },
-      data: { status, reviewedByQcId: userId, reviewedAt: new Date() }
+      data: updateData
     });
 
     res.json({ report: updated });
@@ -951,6 +1004,79 @@ router.post("/reports/:id/reject", (req, res, next) => updateBinReportStatus(req
 router.post("/reports/:id/action-required", (req, res, next) =>
   updateBinReportStatus(req, res, next, "ACTION_REQUIRED")
 );
+
+router.get("/action-officer/pending", async (req, res, next) => {
+  try {
+    const cityId = req.auth!.cityId!;
+    const userId = req.auth!.sub!;
+    const moduleId = await getModuleIdByName(MODULE_KEY);
+    await assertModuleAccess(req, res, moduleId, [Role.ACTION_OFFICER]);
+
+    const reports = await prisma.litterBinReport.findMany({
+      where: {
+        cityId,
+        status: "ACTION_REQUIRED",
+        currentOwnerRole: Role.ACTION_OFFICER,
+        actionOfficerId: userId
+      },
+      orderBy: { createdAt: "desc" },
+      include: {
+        bin: {
+          select: {
+            id: true,
+            areaName: true,
+            locationName: true,
+            zoneId: true,
+            wardId: true
+          }
+        },
+        submittedBy: { select: { id: true, name: true, email: true } },
+        reviewedByQc: { select: { id: true, name: true, email: true } }
+      }
+    });
+
+    res.json({ reports });
+  } catch (err) {
+    next(err);
+  }
+});
+
+const actionOfficerReportSchema = z.object({
+  actionNote: z.string().min(1).optional()
+});
+
+router.post("/action-officer/:id/submit", validateBody(actionOfficerReportSchema), async (req, res, next) => {
+  try {
+    const cityId = req.auth!.cityId!;
+    const userId = req.auth!.sub!;
+    const moduleId = await getModuleIdByName(MODULE_KEY);
+    await assertModuleAccess(req, res, moduleId, [Role.ACTION_OFFICER]);
+
+    const report = await prisma.litterBinReport.findUnique({
+      where: { id: req.params.id as string },
+      include: { bin: true }
+    });
+    if (!report || report.cityId !== cityId) throw new HttpError(404, "Report not found");
+    if (report.status !== "ACTION_REQUIRED") throw new HttpError(400, "Report not pending action");
+    if (report.currentOwnerRole !== Role.ACTION_OFFICER) throw new HttpError(400, "Report not assigned to Action Officer");
+    if (report.actionOfficerId !== userId) throw new HttpError(403, "Not assigned to this Action Required report");
+
+    const updated = await prisma.litterBinReport.update({
+      where: { id: report.id },
+      data: {
+        status: "PENDING_QC",
+        currentOwnerRole: Role.QC,
+        actionOfficerId: null,
+        actionOfficerRemark: req.body.actionNote || null,
+        actionOfficerRespondedAt: new Date()
+      }
+    });
+
+    res.json({ report: updated });
+  } catch (err) {
+    next(err);
+  }
+});
 
 const assignSchema = z.object({
   assignedEmployeeIds: z.array(z.string().uuid())

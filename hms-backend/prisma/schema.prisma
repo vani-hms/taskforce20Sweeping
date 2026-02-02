@@ -321,6 +321,10 @@ model LitterBinReport {
   submittedById  String              @db.Uuid
   reviewedByQcId String?             @db.Uuid
   status         TwinbinReportStatus
+  currentOwnerRole Role              @default(QC)
+  actionOfficerId String?            @db.Uuid
+  actionOfficerRemark String?
+  actionOfficerRespondedAt DateTime?
   latitude       Float
   longitude      Float
   distanceMeters Float
@@ -334,6 +338,8 @@ model LitterBinReport {
 
   @@index([cityId])
   @@index([binId])
+  @@index([currentOwnerRole])
+  @@index([actionOfficerId])
   @@map("LitterBinReport")
 }
 
@@ -395,6 +401,10 @@ model TaskforceFeederReport {
   distanceMeters Float
   payload        Json
   status         TaskforceReportStatus
+  currentOwnerRole Role                @default(QC)
+  actionOfficerId String?              @db.Uuid
+  actionOfficerRemark String?
+  actionOfficerRespondedAt DateTime?
   reviewedByQcId String?               @db.Uuid
   reviewedAt     DateTime?
   createdAt      DateTime              @default(now())
@@ -556,6 +566,7 @@ enum TwinbinVisitStatus {
 
 enum TwinbinReportStatus {
   SUBMITTED
+  PENDING_QC
   APPROVED
   REJECTED
   ACTION_REQUIRED
@@ -577,6 +588,7 @@ enum TaskforceRequestStatus {
 
 enum TaskforceReportStatus {
   SUBMITTED
+  PENDING_QC
   APPROVED
   REJECTED
   ACTION_REQUIRED

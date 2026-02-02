@@ -33,6 +33,7 @@ export default function TaskforceQCDashboard() {
     const [employees, setEmployees] = useState<any[]>([]);
     const [assignSelection, setAssignSelection] = useState<Record<string, string>>({});
     const [selectedRecord, setSelectedRecord] = useState<TaskforceRecord | null>(null);
+    const [showEmployees, setShowEmployees] = useState(false);
 
     const [scope, setScope] = useState<{
         zones: string[];
@@ -108,6 +109,11 @@ export default function TaskforceQCDashboard() {
         } catch (empErr) {
             console.error("Failed to load employees", empErr);
         }
+    }
+
+    async function openEmployeesModal() {
+        await loadEmployeesOnce();
+        setShowEmployees(true);
     }
 
     async function loadData() {
@@ -309,6 +315,9 @@ export default function TaskforceQCDashboard() {
                         </div>
                     </div>
                     <div className="flex gap-2">
+                        <button className="btn btn-outline" onClick={openEmployeesModal}>
+                            Employees
+                        </button>
                         <button
                             className={`btn ${viewTab === 'dashboard' ? 'btn-primary' : 'btn-outline'}`}
                             onClick={() => setViewTab('dashboard')}
@@ -427,6 +436,44 @@ export default function TaskforceQCDashboard() {
                         loading={actionLoading === selectedRecord.id}
                     />
                 </section>
+            )}
+
+            {showEmployees && (
+                <div className="modal modal-open">
+                    <div className="modal-box w-11/12 max-w-4xl">
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="font-bold text-lg">Assigned Employees</h3>
+                            <button className="btn btn-sm" onClick={() => setShowEmployees(false)}>
+                                Close
+                            </button>
+                        </div>
+
+                        {employees.length === 0 ? (
+                            <div className="muted text-sm">No employees found for this module.</div>
+                        ) : (
+                            <div className="overflow-x-auto">
+                                <table className="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Name</th>
+                                            <th>Email</th>
+                                            <th>Modules</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {employees.map((e) => (
+                                            <tr key={e.id}>
+                                                <td>{e.name}</td>
+                                                <td>{e.email}</td>
+                                                <td>{(e.modules || []).map((m: any) => m.name || m.key).join(", ") || "-"}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+                    </div>
+                </div>
             )}
         </div>
     );

@@ -194,6 +194,12 @@ export const TaskforceApi = {
   rejectReport: (id: string) => apiFetch<{ report: any }>(`/modules/taskforce/reports/${id}/reject`, { method: "POST" }),
   actionRequiredReport: (id: string) =>
     apiFetch<{ report: any }>(`/modules/taskforce/reports/${id}/action-required`, { method: "POST" }),
+  actionOfficerPending: () => apiFetch<{ reports: any[] }>("/modules/taskforce/action-officer/pending"),
+  actionOfficerSubmit: (id: string, body?: { actionNote?: string }) =>
+    apiFetch<{ report: any }>(`/modules/taskforce/action-officer/${id}/submit`, {
+      method: "POST",
+      body: JSON.stringify(body || {})
+    }),
   getRecords: (filters?: { page?: number; limit?: number; tab?: string }) => {
     const params = new URLSearchParams();
     if (filters?.page) params.append("page", filters.page.toString());
@@ -398,5 +404,11 @@ export const TwinbinApi = {
   approveReport: (id: string) => apiFetch<{ report: any }>(`/modules/twinbin/reports/${id}/approve`, { method: "POST" }),
   rejectReport: (id: string) => apiFetch<{ report: any }>(`/modules/twinbin/reports/${id}/reject`, { method: "POST" }),
   actionRequiredReport: (id: string) =>
-    apiFetch<{ report: any }>(`/modules/twinbin/reports/${id}/action-required`, { method: "POST" })
+    apiFetch<{ report: any }>(`/modules/twinbin/reports/${id}/action-required`, { method: "POST" }),
+  actionOfficerPending: () => apiFetch<{ reports: any[] }>("/modules/twinbin/action-officer/pending"),
+  actionOfficerSubmit: (id: string, body?: { actionNote?: string }) =>
+    apiFetch<{ report: any }>(`/modules/twinbin/action-officer/${id}/submit`, {
+      method: "POST",
+      body: JSON.stringify(body || {})
+    })
 };

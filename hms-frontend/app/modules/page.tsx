@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Protected } from "@components/Guards";
 import { useAuth } from "@hooks/useAuth";
 import { moduleLabel } from "@lib/labels";
-import { canonicalizeModules, routeForModule } from "@utils/modules";
+import { canonicalizeModules, moduleEntryPath } from "@utils/modules";
 
 export default function ModulesLanding() {
   const { user } = useAuth();
@@ -25,7 +25,7 @@ export default function ModulesLanding() {
               <div className="card card-hover" key={m.key}>
                 <h3>{moduleLabel(m.key, m.name)}</h3>
                 <p className="muted">Access records and tasks for this module.</p>
-                <Link className="btn btn-primary btn-sm" href={`/modules/${routeForModule(m.key)}`}>
+                <Link className="btn btn-primary btn-sm" href={moduleEntryPath(user || null, m.key)}>
                   Open
                 </Link>
               </div>

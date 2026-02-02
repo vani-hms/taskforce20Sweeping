@@ -5,18 +5,30 @@ import { useRouter } from "next/navigation";
 import { ModuleGuard, Protected } from "@components/Guards";
 import Link from "next/link";
 import { useAuth } from "@hooks/useAuth";
+import { getPostLoginRedirect } from "@utils/modules";
 
 export default function TaskforceModulePage() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const router = useRouter();
   // Safe check for roles to avoid runtime crash if user/roles undefined (though useAuth usually handles null user)
   const isQc = user?.roles ? user.roles.includes("QC") : false;
+  const isActionOfficer = user?.roles ? user.roles.includes("ACTION_OFFICER") : false;
 
   useEffect(() => {
+    if (loading || !user) return;
     if (isQc) {
-      router.replace("/modules/taskforce/qc");
+      router.replace(getPostLoginRedirect(user));
     }
-  }, [isQc, router]);
+  }, [loading, isQc, user, router]);
+
+  if (isActionOfficer) {
+    return (
+      <div className="card">
+        <h3>Unauthorized for this module</h3>
+        <p className="muted">Action Officer access is not allowed on Employee workspaces.</p>
+      </div>
+    );
+  }
 
   if (isQc) {
     return <div className="p-8 text-center text-gray-500">Redirecting to QC Dashboard...</div>;

@@ -48,6 +48,29 @@ async function ensureGeoValid(cityId: string, zoneId?: string | null, wardId?: s
   }
 }
 
+async function resolveActionOfficerId(params: { cityId: string; moduleId: string; zoneId: string; wardId: string }) {
+  const { cityId, moduleId, zoneId, wardId } = params;
+  const assignment = await prisma.userCity.findFirst({
+    where: {
+      cityId,
+      role: Role.ACTION_OFFICER,
+      zoneIds: { has: zoneId },
+      wardIds: { has: wardId },
+      user: {
+        modules: {
+          some: { cityId, moduleId, role: Role.ACTION_OFFICER }
+        }
+      }
+    },
+    orderBy: { createdAt: "asc" },
+    select: { userId: true }
+  });
+  if (!assignment) {
+    throw new HttpError(400, "No Action Officer assigned for this zone/ward");
+  }
+  return assignment.userId;
+}
+
 const feederRequestSchema = z.object({
   zoneId: z.string().uuid().optional(),
   wardId: z.string().uuid().optional(),
@@ -612,7 +635,8 @@ router.post("/feeder-points/:id/report", validateBody(reportSchema), async (req,
         longitude: payload.longitude,
         distanceMeters: distance,
         payload: payload.payload,
-        status: "SUBMITTED"
+        status: "SUBMITTED",
+        currentOwnerRole: Role.QC
       }
     });
 
@@ -639,7 +663,8 @@ router.get("/reports/pending", async (req, res, next) => {
     const reports = await prisma.taskforceFeederReport.findMany({
       where: {
         cityId,
-        status: "SUBMITTED",
+        status: { in: ["SUBMITTED", "PENDING_QC"] },
+        currentOwnerRole: Role.QC,
         feederPoint: {
           zoneId: { in: scope.zoneIds },
           wardId: { in: scope.wardIds }
@@ -705,15 +730,38 @@ async function updateReportStatus(
     ) {
       throw new HttpError(403, "Report not in QC scope");
     }
-    if (report.status !== "SUBMITTED") throw new HttpError(400, "Report not pending review");
+    if (!["SUBMITTED", "PENDING_QC"].includes(report.status)) throw new HttpError(400, "Report not pending review");
+    if (report.currentOwnerRole !== Role.QC) throw new HttpError(400, "Report not pending QC review");
+
+    let updateData: any = {
+      status,
+      reviewedByQcId: userId,
+      reviewedAt: new Date(),
+      currentOwnerRole: Role.QC
+    };
+
+    if (status === "ACTION_REQUIRED") {
+      if (!report.feederPoint?.zoneId || !report.feederPoint?.wardId) {
+        throw new HttpError(400, "Report missing zone/ward for Action Officer assignment");
+      }
+      const actionOfficerId = await resolveActionOfficerId({
+        cityId,
+        moduleId,
+        zoneId: report.feederPoint.zoneId,
+        wardId: report.feederPoint.wardId
+      });
+      updateData = {
+        ...updateData,
+        currentOwnerRole: Role.ACTION_OFFICER,
+        actionOfficerId,
+        actionOfficerRemark: null,
+        actionOfficerRespondedAt: null
+      };
+    }
 
     const updated = await prisma.taskforceFeederReport.update({
       where: { id: report.id },
-      data: {
-        status,
-        reviewedByQcId: userId,
-        reviewedAt: new Date()
-      }
+      data: updateData
     });
 
     res.json({ report: updated });
@@ -725,6 +773,83 @@ async function updateReportStatus(
 router.post("/reports/:id/approve", (req, res, next) => updateReportStatus(req, res, next, "APPROVED"));
 router.post("/reports/:id/reject", (req, res, next) => updateReportStatus(req, res, next, "REJECTED"));
 router.post("/reports/:id/action-required", (req, res, next) => updateReportStatus(req, res, next, "ACTION_REQUIRED"));
+
+router.get("/action-officer/pending", async (req, res, next) => {
+  try {
+    const cityId = req.auth!.cityId!;
+    const userId = req.auth!.sub!;
+    const moduleId = await getModuleIdByName(MODULE_KEY);
+    forbidCityAdminOrCommissioner(req);
+    await assertModuleAccess(req, res, moduleId, [Role.ACTION_OFFICER]);
+    await ensureModuleEnabled(cityId, moduleId);
+
+    const reports = await prisma.taskforceFeederReport.findMany({
+      where: {
+        cityId,
+        status: "ACTION_REQUIRED",
+        currentOwnerRole: Role.ACTION_OFFICER,
+        actionOfficerId: userId
+      },
+      orderBy: { createdAt: "desc" },
+      include: {
+        feederPoint: {
+          select: {
+            id: true,
+            feederPointName: true,
+            areaName: true,
+            areaType: true,
+            locationDescription: true,
+            zoneId: true,
+            wardId: true
+          }
+        },
+        submittedBy: { select: { id: true, name: true, email: true } }
+      }
+    });
+
+    res.json({ reports });
+  } catch (err) {
+    next(err);
+  }
+});
+
+const actionOfficerSubmitSchema = z.object({
+  actionNote: z.string().min(1).optional()
+});
+
+router.post("/action-officer/:id/submit", validateBody(actionOfficerSubmitSchema), async (req, res, next) => {
+  try {
+    const cityId = req.auth!.cityId!;
+    const userId = req.auth!.sub!;
+    const moduleId = await getModuleIdByName(MODULE_KEY);
+    forbidCityAdminOrCommissioner(req);
+    await assertModuleAccess(req, res, moduleId, [Role.ACTION_OFFICER]);
+    await ensureModuleEnabled(cityId, moduleId);
+
+    const report = await prisma.taskforceFeederReport.findUnique({
+      where: { id: req.params.id as string },
+      include: { feederPoint: true }
+    });
+    if (!report || report.cityId !== cityId) throw new HttpError(404, "Report not found");
+    if (report.status !== "ACTION_REQUIRED") throw new HttpError(400, "Report not pending action");
+    if (report.currentOwnerRole !== Role.ACTION_OFFICER) throw new HttpError(400, "Report not assigned to Action Officer");
+    if (report.actionOfficerId !== userId) throw new HttpError(403, "Not assigned to this Action Required report");
+
+    const updated = await prisma.taskforceFeederReport.update({
+      where: { id: report.id },
+      data: {
+        status: "PENDING_QC",
+        currentOwnerRole: Role.QC,
+        actionOfficerRemark: req.body.actionNote || null,
+        actionOfficerRespondedAt: new Date()
+      }
+    });
+
+    res.json({ report: updated });
+  } catch (err) {
+    next(err);
+  }
+});
 
 const createSchema = z.object({
   title: z.string().min(1),
@@ -931,7 +1056,7 @@ router.get("/records", async (req, res, next) => {
       // Consistent with LitterBins which shows Visits in Daily Reports -> Here we show Feeder Reports
       const [reports, total] = await Promise.all([
         prisma.taskforceFeederReport.findMany({
-          where: { ...reportWhere, status: { in: ['SUBMITTED', 'APPROVED', 'REJECTED', 'ACTION_REQUIRED'] } }, // Show all reports? Or just submitted? "Daily Reports" usually implies recent activity. Let's show all for now but ordered by date.
+          where: { ...reportWhere, status: { in: ['SUBMITTED', 'PENDING_QC', 'APPROVED', 'REJECTED', 'ACTION_REQUIRED'] } }, // Show all reports? Or just submitted? "Daily Reports" usually implies recent activity. Let's show all for now but ordered by date.
           orderBy: { createdAt: "desc" },
           take: limit,
           skip,
@@ -956,7 +1081,7 @@ router.get("/records", async (req, res, next) => {
     } else if (tab === 'PENDING') {
       // Pending Points (PENDING_QC) + Pending Reports (SUBMITTED)
       const pWhere = { ...pointWhere, status: 'PENDING_QC' };
-      const rWhere = { ...reportWhere, status: 'SUBMITTED' };
+      const rWhere = { ...reportWhere, status: { in: ['SUBMITTED', 'PENDING_QC'] } };
 
       const [points, reports, pCount, rCount] = await Promise.all([
         prisma.taskforceFeederPoint.findMany({ where: pWhere, orderBy: { createdAt: 'desc' }, take: limit, skip }), // Naive pagination for combined list
@@ -1069,7 +1194,7 @@ router.get("/records", async (req, res, next) => {
     // 5. Stats
     const [statPendingP, statPendingR, statApprovedP, statApprovedR, statRejectedP, statRejectedR, statActionP, statActionR, totalP, totalR] = await Promise.all([
       prisma.taskforceFeederPoint.count({ where: { ...pointWhere, status: 'PENDING_QC' } }),
-      prisma.taskforceFeederReport.count({ where: { ...reportWhere, status: 'SUBMITTED' } }),
+      prisma.taskforceFeederReport.count({ where: { ...reportWhere, status: { in: ['SUBMITTED', 'PENDING_QC'] } } }),
       prisma.taskforceFeederPoint.count({ where: { ...pointWhere, status: 'APPROVED' } }),
       prisma.taskforceFeederReport.count({ where: { ...reportWhere, status: 'APPROVED' } }),
       prisma.taskforceFeederPoint.count({ where: { ...pointWhere, status: 'REJECTED' } }),

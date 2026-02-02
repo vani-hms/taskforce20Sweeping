@@ -1,10 +1,10 @@
 'use client';
 
-import { ModuleGuard, Protected } from "@components/Guards";
+import { Protected, ModuleGuard } from "@components/Guards";
 import { useAuth } from "@hooks/useAuth";
-import QCDashboard from "../components/QCDashboard";
+import AdminDashboard from "../../twinbin/components/AdminDashboard";
 
-export default function LitterbinsQcPage() {
+export default function LitterbinsAdminPage() {
   const { user, loading } = useAuth();
 
   if (loading) {
@@ -15,15 +15,15 @@ export default function LitterbinsQcPage() {
     return (
       <div className="card">
         <h3>Unauthorized for this module</h3>
-        <p className="muted">Action Officer access is not allowed on QC workspaces.</p>
+        <p className="muted">Action Officer access is not allowed on Admin workspaces.</p>
       </div>
     );
   }
 
   return (
     <Protected>
-      <ModuleGuard module="LITTERBINS" roles={["QC", "CITY_ADMIN", "ULB_OFFICER"]}>
-        <QCDashboard />
+      <ModuleGuard module="LITTERBINS" roles={["CITY_ADMIN", "HMS_SUPER_ADMIN", "ULB_OFFICER"]}>
+        <AdminDashboard />
       </ModuleGuard>
     </Protected>
   );

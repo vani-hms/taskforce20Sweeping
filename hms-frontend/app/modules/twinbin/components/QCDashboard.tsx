@@ -30,6 +30,7 @@ export default function QCDashboard() {
     const [employees, setEmployees] = useState<any[]>([]);
     const [employeesLoading, setEmployeesLoading] = useState(false);
     const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>("");
+    const [showEmployees, setShowEmployees] = useState(false);
 
     // Cache reference to avoid excessive fetching if we wanted to implement sophisticated caching, 
     // but for now we trust standard SWR-like behavior (useEffect fetch). 
@@ -112,6 +113,11 @@ export default function QCDashboard() {
         } finally {
             setEmployeesLoading(false);
         }
+    }
+
+    async function openEmployeesModal() {
+        await loadEmployees();
+        setShowEmployees(true);
     }
 
     useEffect(() => {
@@ -238,7 +244,12 @@ export default function QCDashboard() {
                         </div>
                     </div>
                 </div>
-                <div className="badge badge-warning">QC Access</div>
+                <div className="flex items-center gap-2">
+                    <button className="btn btn-sm btn-outline" onClick={openEmployeesModal}>
+                        Employees
+                    </button>
+                    <div className="badge badge-warning">QC Access</div>
+                </div>
             </header>
 
             {/* KPI Cards */}
@@ -542,6 +553,46 @@ export default function QCDashboard() {
                                 {actionLoading ? 'Assigning...' : 'Confirm Assignment'}
                             </button>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {showEmployees && (
+                <div className="modal modal-open">
+                    <div className="modal-box w-11/12 max-w-4xl">
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="font-bold text-lg">Assigned Employees</h3>
+                            <button className="btn btn-sm" onClick={() => setShowEmployees(false)}>
+                                Close
+                            </button>
+                        </div>
+
+                        {employeesLoading ? (
+                            <div className="py-6 text-center">Loading employees...</div>
+                        ) : employees.length === 0 ? (
+                            <div className="muted text-sm">No employees found for this module.</div>
+                        ) : (
+                            <div className="overflow-x-auto">
+                                <table className="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Name</th>
+                                            <th>Email</th>
+                                            <th>Modules</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {employees.map((e) => (
+                                            <tr key={e.id}>
+                                                <td>{e.name}</td>
+                                                <td>{e.email}</td>
+                                                <td>{(e.modules || []).map((m: any) => m.name || m.key).join(", ") || "-"}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}

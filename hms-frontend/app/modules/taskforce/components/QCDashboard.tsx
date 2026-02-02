@@ -298,8 +298,8 @@ export default function TaskforceQCDashboard() {
 
     return (
         <div className="content">
-            <section className="card mb-6">
-                <div className="flex flex-wrap justify-between gap-4 items-center">
+            <section className="card card-spacious mb-6">
+                <div className="section-header">
                     <div>
                         <p className="eyebrow">Module - Taskforce</p>
                         <h1 className="text-2xl font-bold mb-1">QC Dashboard</h1>
@@ -314,10 +314,14 @@ export default function TaskforceQCDashboard() {
                             </div>
                         </div>
                     </div>
+<<<<<<< Updated upstream
                     <div className="flex gap-2">
                         <button className="btn btn-outline" onClick={openEmployeesModal}>
                             Employees
                         </button>
+=======
+                    <div className="section-actions">
+>>>>>>> Stashed changes
                         <button
                             className={`btn ${viewTab === 'dashboard' ? 'btn-primary' : 'btn-outline'}`}
                             onClick={() => setViewTab('dashboard')}
@@ -333,17 +337,16 @@ export default function TaskforceQCDashboard() {
                         <div className="badge badge-warning">QC Access</div>
                     </div>
                 </div>
+                <div className="stats-row">
+                    <StatsCard label="Pending Review" value={derivedStats.pending || 0} sub="Feeder Points" color="#d97706" />
+                    <StatsCard label="Approved" value={derivedStats.approved || 0} sub="Feeder Points" color="#16a34a" />
+                    <StatsCard label="Rejected" value={derivedStats.rejected || 0} sub="Feeder Points" color="#ef4444" />
+                    <StatsCard label="Assigned" value={derivedStats.assigned || 0} sub="Eliminated Feeder Point" color="#6366f1" />
+                    <StatsCard label="Total In Scope" value={derivedStats.total || 0} sub="Partially Eliminated" color="#0f172a" />
+                </div>
             </section>
 
-            <section className="grid grid-5 gap-4 mb-6">
-                <StatsCard label="Pending Review" value={derivedStats.pending || 0} sub="Feeder Points" color="#d97706" />
-                <StatsCard label="Approved" value={derivedStats.approved || 0} sub="Feeder Points" color="#16a34a" />
-                <StatsCard label="Rejected" value={derivedStats.rejected || 0} sub="Feeder Points" color="#ef4444" />
-                <StatsCard label="Assigned" value={derivedStats.assigned || 0} sub="Team Queue" color="#6366f1" />
-                <StatsCard label="Total In Scope" value={derivedStats.total || 0} sub="Overall" color="#0f172a" />
-            </section>
-
-            <section className="card">
+            <section className="card card-spacious">
                 <div className="flex items-center justify-between mb-4">
                     <div>
                         <h2 className="text-lg">Records Review</h2>

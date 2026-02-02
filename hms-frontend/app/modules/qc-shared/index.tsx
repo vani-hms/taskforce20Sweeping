@@ -21,10 +21,17 @@ type RecordsTableProps<T> = {
 };
 
 export function StatsCard({ label, value, sub, color }: { label: string; value: number | string; sub?: string; color?: string }) {
+  const accent = color || "#1d4ed8";
   return (
-    <div className="card stat-card" style={{ borderLeft: `4px solid ${color || "#1d4ed8"}` }}>
+    <div
+      className="card stat-card"
+      style={{
+        borderLeft: `4px solid ${accent}`,
+        background: `linear-gradient(135deg, ${accent}12, #fff)`,
+      }}
+    >
       <div className="stat-label">{label}</div>
-      <div className="stat-value" style={{ color: color || "#1f2937" }}>{value}</div>
+      <div className="stat-value" style={{ color: accent }}>{value}</div>
       {sub && <div className="stat-sub">{sub}</div>}
       <style jsx>{`
         .stat-card {
@@ -32,6 +39,7 @@ export function StatsCard({ label, value, sub, color }: { label: string; value: 
           display: flex;
           flex-direction: column;
           gap: 2px;
+          height: 100%;
         }
         .stat-label {
           font-size: 10px;

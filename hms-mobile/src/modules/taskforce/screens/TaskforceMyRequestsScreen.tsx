@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, FlatList, ActivityIndicator, 
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../../../navigation";
 import { listTaskforceFeederRequests, ApiError } from "../../../api/auth";
+import TaskforceLayout from "../components/TaskforceLayout";
 
 type Nav = NativeStackNavigationProp<RootStackParamList, "TaskforceMyRequests">;
 
@@ -54,27 +55,29 @@ export default function TaskforceMyRequestsScreen({ navigation }: { navigation: 
   );
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>My Feeder Requests</Text>
-      {loading ? (
-        <ActivityIndicator color="#0ea5e9" size="large" />
-      ) : error ? (
-        <Text style={styles.error}>{error}</Text>
-      ) : requests.length === 0 ? (
-        <Text style={styles.muted}>No requests yet.</Text>
-      ) : (
-        <FlatList
-          data={requests}
-          keyExtractor={(item) => item.id}
-          renderItem={renderItem}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} />}
-          contentContainerStyle={{ paddingVertical: 12, gap: 12 }}
-        />
-      )}
-      <TouchableOpacity style={styles.button} onPress={() => navigation.goBack()}>
-        <Text style={styles.buttonText}>Back</Text>
-      </TouchableOpacity>
-    </View>
+    <TaskforceLayout
+      title="My Feeder Requests"
+      subtitle="Track your submissions"
+      navigation={navigation}
+    >
+      <View style={styles.container}>
+        {loading ? (
+          <ActivityIndicator color="#0ea5e9" size="large" />
+        ) : error ? (
+          <Text style={styles.error}>{error}</Text>
+        ) : requests.length === 0 ? (
+          <Text style={styles.muted}>No requests yet.</Text>
+        ) : (
+          <FlatList
+            data={requests}
+            keyExtractor={(item) => item.id}
+            renderItem={renderItem}
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} />}
+            contentContainerStyle={{ paddingVertical: 12, gap: 12 }}
+          />
+        )}
+      </View>
+    </TaskforceLayout>
   );
 }
 
@@ -91,28 +94,24 @@ function StatusChip({ status }: { status: string }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: "#0f172a" },
-  title: { color: "#e2e8f0", fontSize: 22, fontWeight: "700", marginBottom: 8, textAlign: "center" },
-  muted: { color: "#94a3b8", textAlign: "center", marginBottom: 20 },
-  error: { color: "#fca5a5", textAlign: "center", marginBottom: 12 },
+  container: { flex: 1, padding: 20, backgroundColor: "#f8fafc" },
+  muted: { color: "#64748b", textAlign: "center", marginBottom: 20 },
+  error: { color: "#dc2626", textAlign: "center", marginBottom: 12 },
   card: {
-    backgroundColor: "#0b253a",
+    backgroundColor: "#ffffff",
     borderRadius: 12,
     padding: 14,
     borderWidth: 1,
-    borderColor: "#1e3a8a"
+    borderColor: "#e2e8f0",
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 6,
+    elevation: 2
   },
-  cardTitle: { color: "#e2e8f0", fontSize: 16, fontWeight: "700" },
-  cardSubtitle: { color: "#cbd5e1", marginTop: 4 },
-  meta: { color: "#94a3b8", marginTop: 4 },
-  metaSmall: { color: "#64748b", marginTop: 2, fontSize: 12 },
+  cardTitle: { color: "#0f172a", fontSize: 16, fontWeight: "700" },
+  cardSubtitle: { color: "#475569", marginTop: 4 },
+  meta: { color: "#64748b", marginTop: 4 },
+  metaSmall: { color: "#94a3b8", marginTop: 2, fontSize: 12 },
   badge: { color: "#0f172a", fontWeight: "700", paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8, overflow: "hidden" },
-  button: {
-    marginTop: 12,
-    backgroundColor: "#1d4ed8",
-    paddingVertical: 12,
-    borderRadius: 10,
-    alignItems: "center"
-  },
-  buttonText: { color: "#fff", fontWeight: "700" }
 });

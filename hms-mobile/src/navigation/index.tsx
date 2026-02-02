@@ -168,36 +168,36 @@ export function RootNavigator() {
       />
 
       {/* Taskforce */}
-      <Stack.Screen name="TaskforceHome" component={TaskforceHomeScreen} options={{ title: "Taskforce" }} />
+      <Stack.Screen name="TaskforceHome" component={TaskforceHomeScreen} options={{ headerShown: false }} />
       <Stack.Screen
         name="TaskforceRegister"
         component={TaskforceRegisterScreen}
-        options={{ title: "Register Feeder" }}
+        options={{ headerShown: false }}
       />
       <Stack.Screen
         name="TaskforceMyRequests"
         component={TaskforceMyRequestsScreen}
-        options={{ title: "My Requests" }}
+        options={{ headerShown: false }}
       />
       <Stack.Screen
         name="TaskforceAssigned"
         component={TaskforceAssignedScreen}
-        options={{ title: "Assigned" }}
+        options={{ headerShown: false }}
       />
       <Stack.Screen
         name="TaskforceFeederDetail"
         component={TaskforceFeederDetailScreen}
-        options={{ title: "Feeder Detail" }}
+        options={{ headerShown: false }}
       />
       <Stack.Screen
         name="TaskforceQcReports"
         component={TaskforceQcReportsScreen}
-        options={{ title: "QC Reports" }}
+        options={{ headerShown: false }}
       />
       <Stack.Screen
         name="TaskforceQcReportReview"
         component={TaskforceQcReportReviewScreen}
-        options={{ title: "Review Report" }}
+        options={{ headerShown: false }}
       />
 
       {/* ✅ Cleanliness Of Toilets (ADDED) */}

@@ -1,5 +1,5 @@
 import { getToken } from "../auth/storage";
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || "http://localhost:4000";
+import { API_BASE_URL } from "./baseUrl";
 
 export class ApiError extends Error {
   status: number;

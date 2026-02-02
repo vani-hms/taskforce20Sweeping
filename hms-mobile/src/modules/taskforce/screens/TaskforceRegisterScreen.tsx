@@ -6,6 +6,7 @@ import { Picker } from "@react-native-picker/picker";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../../../navigation";
 import { submitTaskforceFeederRequest, ApiError, getMe, fetchPublicZones, fetchPublicWards } from "../../../api/auth";
+import TaskforceLayout from "../components/TaskforceLayout";
 
 type Nav = NativeStackNavigationProp<RootStackParamList, "TaskforceRegister">;
 
@@ -137,76 +138,76 @@ export default function TaskforceRegisterScreen({ navigation }: { navigation: Na
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Register Feeder Point</Text>
-      {coords ? (
-        <Text style={styles.muted}>GPS: {coords.latitude.toFixed(5)}, {coords.longitude.toFixed(5)}</Text>
-      ) : (
-        <Text style={styles.error}>Getting location...</Text>
-      )}
+    <TaskforceLayout
+      title="Register Feeder"
+      subtitle="Enter details for new SCP"
+      navigation={navigation}
+    >
+      <ScrollView contentContainerStyle={styles.container}>
+        {coords ? (
+          <Text style={styles.muted}>GPS: {coords.latitude.toFixed(5)}, {coords.longitude.toFixed(5)}</Text>
+        ) : (
+          <Text style={styles.error}>Getting location...</Text>
+        )}
 
-      <Field label="Feeder point name" value={form.feederPointName} onChangeText={(v) => setForm({ ...form, feederPointName: v })} />
-      <Field label="Area name" value={form.areaName} onChangeText={(v) => setForm({ ...form, areaName: v })} />
+        <Field label="Feeder point name" value={form.feederPointName} onChangeText={(v) => setForm({ ...form, feederPointName: v })} />
+        <Field label="Area name" value={form.areaName} onChangeText={(v) => setForm({ ...form, areaName: v })} />
 
-      {/* ZONE PICKER */}
-      <View style={{ marginBottom: 12 }}>
-        <Text style={styles.label}>Zone</Text>
-        <View style={styles.pickerContainer}>
-          <Picker
-            selectedValue={selectedZoneId}
-            onValueChange={(itemValue) => setSelectedZoneId(itemValue)}
-            dropdownIconColor="#e2e8f0"
-            style={{ color: '#e2e8f0', backgroundColor: 'transparent' }}
-          >
-            <Picker.Item label="Select Zone" value="" color="#000" />
-            {zones.map(z => <Picker.Item key={z.id} label={z.name} value={z.id} color="#000" />)}
-          </Picker>
+        {/* ZONE PICKER */}
+        <View style={{ marginBottom: 12 }}>
+          <Text style={styles.label}>Zone</Text>
+          <View style={styles.pickerContainer}>
+            <Picker
+              selectedValue={selectedZoneId}
+              onValueChange={(itemValue) => setSelectedZoneId(itemValue)}
+              dropdownIconColor="#0f172a"
+              style={{ color: '#0f172a', backgroundColor: 'transparent' }}
+            >
+              <Picker.Item label="Select Zone" value="" color="#000" />
+              {zones.map(z => <Picker.Item key={z.id} label={z.name} value={z.id} color="#000" />)}
+            </Picker>
+          </View>
         </View>
-      </View>
 
-      {/* WARD PICKER */}
-      <View style={{ marginBottom: 12 }}>
-        <Text style={styles.label}>Ward</Text>
-        <View style={styles.pickerContainer}>
-          <Picker
-            selectedValue={selectedWardId}
-            onValueChange={(itemValue) => setSelectedWardId(itemValue)}
-            dropdownIconColor="#e2e8f0"
-            enabled={wards.length > 0}
-            style={{ color: '#e2e8f0', backgroundColor: 'transparent' }}
-          >
-            <Picker.Item label={wards.length ? "Select Ward" : "Select Zone First"} value="" color="#000" />
-            {wards.map(w => <Picker.Item key={w.id} label={w.name} value={w.id} color="#000" />)}
-          </Picker>
+        {/* WARD PICKER */}
+        <View style={{ marginBottom: 12 }}>
+          <Text style={styles.label}>Ward</Text>
+          <View style={styles.pickerContainer}>
+            <Picker
+              selectedValue={selectedWardId}
+              onValueChange={(itemValue) => setSelectedWardId(itemValue)}
+              dropdownIconColor="#0f172a"
+              enabled={wards.length > 0}
+              style={{ color: '#0f172a', backgroundColor: 'transparent' }}
+            >
+              <Picker.Item label={wards.length ? "Select Ward" : "Select Zone First"} value="" color="#000" />
+              {wards.map(w => <Picker.Item key={w.id} label={w.name} value={w.id} color="#000" />)}
+            </Picker>
+          </View>
         </View>
-      </View>
 
-      <Field label="Nearest landmark / address" value={form.landmark} onChangeText={(v) => setForm({ ...form, landmark: v })} />
-      <Field label="Location description" value={form.locationDescription} onChangeText={(v) => setForm({ ...form, locationDescription: v })} />
-      <Field label="Households count" value={form.householdsCount} keyboardType="numeric" onChangeText={(v) => setForm({ ...form, householdsCount: v })} />
+        <Field label="Nearest landmark / address" value={form.landmark} onChangeText={(v) => setForm({ ...form, landmark: v })} />
+        <Field label="Location description" value={form.locationDescription} onChangeText={(v) => setForm({ ...form, locationDescription: v })} />
+        <Field label="Households count" value={form.householdsCount} keyboardType="numeric" onChangeText={(v) => setForm({ ...form, householdsCount: v })} />
 
-      {/* Reuse Picker logic for Vehicle Type just to be nice? User didn't ask but "vehicleOptions" is unused otherwise. 
-          User asked to remove free text for Zone/Ward. I'll stick to that constraint only to avoid scope creep or breaking other things. 
-          But I will fix the options usage if it's identical effort. 
-          Actually, I'll keep Vehicle as Field to avoid risks.
-      */}
-      <Field label="Vehicle type" value={form.vehicleType} onChangeText={(v) => setForm({ ...form, vehicleType: v })} />
+        <Field label="Vehicle type" value={form.vehicleType} onChangeText={(v) => setForm({ ...form, vehicleType: v })} />
 
-      <Field label="Population density" value={form.populationDensity} onChangeText={(v) => setForm({ ...form, populationDensity: v })} />
-      <Field label="Accessibility level" value={form.accessibilityLevel} onChangeText={(v) => setForm({ ...form, accessibilityLevel: v })} />
-      <Field label="Additional notes (optional)" value={form.notes} onChangeText={(v) => setForm({ ...form, notes: v })} multiline />
+        <Field label="Population density" value={form.populationDensity} onChangeText={(v) => setForm({ ...form, populationDensity: v })} />
+        <Field label="Accessibility level" value={form.accessibilityLevel} onChangeText={(v) => setForm({ ...form, accessibilityLevel: v })} />
+        <Field label="Additional notes (optional)" value={form.notes} onChangeText={(v) => setForm({ ...form, notes: v })} multiline />
 
-      <TouchableOpacity style={styles.photoPicker} onPress={pickPhoto}>
-        <Text style={styles.buttonText}>{photo ? "Change photo" : "Pick location photo"}</Text>
-      </TouchableOpacity>
-      {photo ? <Image source={{ uri: photo }} style={styles.preview} /> : null}
+        <TouchableOpacity style={styles.photoPicker} onPress={pickPhoto}>
+          <Text style={styles.buttonText}>{photo ? "Change photo" : "Pick location photo"}</Text>
+        </TouchableOpacity>
+        {photo ? <Image source={{ uri: photo }} style={styles.preview} /> : null}
 
-      {error ? <Text style={styles.error}>{error}</Text> : null}
+        {error ? <Text style={styles.error}>{error}</Text> : null}
 
-      <TouchableOpacity style={styles.button} onPress={submit} disabled={loading}>
-        {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Submit</Text>}
-      </TouchableOpacity>
-    </ScrollView>
+        <TouchableOpacity style={styles.button} onPress={submit} disabled={loading}>
+          {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Submit</Text>}
+        </TouchableOpacity>
+      </ScrollView>
+    </TaskforceLayout>
   );
 }
 
@@ -239,36 +240,40 @@ function Field({
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 20, backgroundColor: "#0f172a", flexGrow: 1 },
-  title: { color: "#e2e8f0", fontSize: 22, fontWeight: "700", marginBottom: 8, textAlign: "center" },
-  muted: { color: "#94a3b8", textAlign: "center", marginBottom: 12 },
-  label: { color: "#e2e8f0", marginBottom: 4 },
+  container: { padding: 20, backgroundColor: "#f8fafc", flexGrow: 1 },
+  muted: { color: "#64748b", textAlign: "center", marginBottom: 12 },
+  label: { color: "#475569", marginBottom: 4, fontWeight: "600" },
   input: {
-    backgroundColor: "#0b253a",
+    backgroundColor: "#ffffff",
     borderRadius: 10,
     padding: 12,
     borderWidth: 1,
-    borderColor: "#1e3a8a",
-    color: "#e2e8f0"
+    borderColor: "#e2e8f0",
+    color: "#0f172a",
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
+    elevation: 1
   },
   pickerContainer: {
-    backgroundColor: "#0b253a",
+    backgroundColor: "#ffffff",
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: "#1e3a8a",
+    borderColor: "#e2e8f0",
     overflow: 'hidden'
   },
   button: {
-    backgroundColor: "#1d4ed8",
+    backgroundColor: "#0f172a",
     paddingVertical: 14,
     borderRadius: 12,
     alignItems: "center",
     marginTop: 12
   },
   buttonText: { color: "#fff", fontWeight: "700" },
-  error: { color: "#fca5a5", textAlign: "center", marginVertical: 8 },
+  error: { color: "#dc2626", textAlign: "center", marginVertical: 8 },
   photoPicker: {
-    backgroundColor: "#0ea5e9",
+    backgroundColor: "#2563eb",
     paddingVertical: 12,
     borderRadius: 10,
     alignItems: "center",

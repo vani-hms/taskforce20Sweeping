@@ -247,6 +247,32 @@ p {
   padding: 18px;
   box-shadow: var(--shadow);
 }
+.card-spacious {
+  padding: 24px;
+}
+.section-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+}
+.section-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.stats-row {
+  margin-top: 12px;
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+@media (min-width: 1200px) {
+  .stats-row {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
 .card-header {
   display: flex;
   align-items: center;
@@ -276,6 +302,14 @@ p {
 }
 .grid-3 {
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+.grid-5 {
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+@media (min-width: 1200px) {
+  .grid-5 {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
 }
 
 .form-grid {

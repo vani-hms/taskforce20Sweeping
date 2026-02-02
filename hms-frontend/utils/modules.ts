@@ -33,6 +33,7 @@ export function canonicalizeModules<T extends { key: string }>(modules: T[] = []
 
 export function routeForModule(key: CanonicalModuleKey) {
   if (key === "LITTERBINS") return "litterbins";
+  if (key === "TASKFORCE") return "taskforce/qc"; // land QC flows directly on QC dashboard
   if (key === "SWEEPING") return "modules"; // placeholder until dedicated UI exists
   return key.toLowerCase();
 }

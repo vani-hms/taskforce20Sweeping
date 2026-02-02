@@ -6,6 +6,8 @@ import type { RouteProp } from "@react-navigation/native";
 import { RootStackParamList } from "../../../navigation";
 import { submitTaskforceReport } from "../../../api/auth";
 
+import TaskforceLayout from "../components/TaskforceLayout";
+
 type Nav = NativeStackNavigationProp<RootStackParamList, "TaskforceFeederDetail">;
 type Route = RouteProp<RootStackParamList, "TaskforceFeederDetail">;
 
@@ -247,121 +249,123 @@ export default function TaskforceFeederDetailScreen({ navigation, route }: Props
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 32 }}>
-      <Text style={styles.back} onPress={() => navigation.goBack()}>
-        {"<- Back"}
-      </Text>
-      <Text style={styles.heading}>{feeder.feederPointName}</Text>
-      <Text style={styles.muted}>{feeder.areaName} - {feeder.areaType}</Text>
-      <Text style={styles.meta}>{feeder.locationDescription}</Text>
+    <TaskforceLayout
+      title={feeder.feederPointName}
+      subtitle={`${feeder.areaName} - ${feeder.areaType}`}
+      navigation={navigation}
+      showBack={true}
+    >
+      <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 32 }}>
+        <Text style={styles.meta}>{feeder.locationDescription}</Text>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Distance to feeder</Text>
-        {distance === null ? <ActivityIndicator color="#38bdf8" /> : <Text style={styles.distance}>{distance.toFixed(1)} m</Text>}
-        {!withinFence && <Text style={styles.warning}>You must be within 100 meters to submit.</Text>}
-        {locError ? <Text style={styles.error}>{locError}</Text> : null}
-      </View>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Distance to feeder</Text>
+          {distance === null ? <ActivityIndicator color="#38bdf8" /> : <Text style={styles.distance}>{distance.toFixed(1)} m</Text>}
+          {!withinFence && <Text style={styles.warning}>You must be within 100 meters to submit.</Text>}
+          {locError ? <Text style={styles.error}>{locError}</Text> : null}
+        </View>
 
-      {/* Questionnaire */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Taskforce Questionnaire</Text>
+        {/* Questionnaire */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Taskforce Questionnaire</Text>
 
-        {/* Q1 */}
-        <RadioRow
-          label="Q1. Is there any waste present at the SCP?"
-          value={q.wastePresent}
-          onChange={(v) => update("wastePresent", v)}
-        />
-        {q.wastePresent === "YES" && (
-          <>
-            <Text style={styles.label}>Segregation / notes</Text>
-            <TextInput style={styles.input} value={q.segregationNotes} onChangeText={(t) => update("segregationNotes", t)} />
-            <PhotoInput label="Inside waste photo" value={q.insidePhotos[0]} onChange={(t) => updatePhotoArray("insidePhotos", 0, t)} />
-            <RadioRow label="Outside waste present?" value={q.outsideWaste} onChange={(v) => update("outsideWaste", v)} />
-            {q.outsideWaste === "YES" && (
-              <PhotoInput label="Outside waste photo" value={q.outsidePhotos[0]} onChange={(t) => updatePhotoArray("outsidePhotos", 0, t)} />
-            )}
-          </>
-        )}
-        {q.wastePresent === "NO" && (
-          <>
-            <PhotoInput label="Area clean photo" value={q.insidePhotos[0]} onChange={(t) => updatePhotoArray("insidePhotos", 0, t)} />
-            <Text style={styles.label}>Remark</Text>
-            <TextInput style={styles.input} value={q.cleanRemark} onChangeText={(t) => update("cleanRemark", t)} />
-          </>
-        )}
+          {/* Q1 */}
+          <RadioRow
+            label="Q1. Is there any waste present at the SCP?"
+            value={q.wastePresent}
+            onChange={(v) => update("wastePresent", v)}
+          />
+          {q.wastePresent === "YES" && (
+            <>
+              <Text style={styles.label}>Segregation / notes</Text>
+              <TextInput style={styles.input} value={q.segregationNotes} onChangeText={(t) => update("segregationNotes", t)} />
+              <PhotoInput label="Inside waste photo" value={q.insidePhotos[0]} onChange={(t) => updatePhotoArray("insidePhotos", 0, t)} />
+              <RadioRow label="Outside waste present?" value={q.outsideWaste} onChange={(v) => update("outsideWaste", v)} />
+              {q.outsideWaste === "YES" && (
+                <PhotoInput label="Outside waste photo" value={q.outsidePhotos[0]} onChange={(t) => updatePhotoArray("outsidePhotos", 0, t)} />
+              )}
+            </>
+          )}
+          {q.wastePresent === "NO" && (
+            <>
+              <PhotoInput label="Area clean photo" value={q.insidePhotos[0]} onChange={(t) => updatePhotoArray("insidePhotos", 0, t)} />
+              <Text style={styles.label}>Remark</Text>
+              <TextInput style={styles.input} value={q.cleanRemark} onChangeText={(t) => update("cleanRemark", t)} />
+            </>
+          )}
 
-        {/* Q2 */}
-        <RadioRow
-          label="Q2. Are Swachh workers present?"
-          value={q.workersPresent}
-          onChange={(v) => update("workersPresent", v)}
-        />
-        {q.workersPresent === "YES" && (
-          <>
-            <Text style={styles.label}>Worker count</Text>
-            <TextInput style={styles.input} keyboardType="numeric" value={q.workerCount} onChangeText={(t) => update("workerCount", t)} />
-            <Text style={styles.label}>Worker names</Text>
-            <TextInput style={styles.input} value={q.workerNames} onChangeText={(t) => update("workerNames", t)} />
-          </>
-        )}
-        {q.workersPresent === "NO" && (
-          <PhotoInput label="Photo (no workers present)" value={q.workersPhoto} onChange={(t) => update("workersPhoto", t)} />
-        )}
+          {/* Q2 */}
+          <RadioRow
+            label="Q2. Are Swachh workers present?"
+            value={q.workersPresent}
+            onChange={(v) => update("workersPresent", v)}
+          />
+          {q.workersPresent === "YES" && (
+            <>
+              <Text style={styles.label}>Worker count</Text>
+              <TextInput style={styles.input} keyboardType="numeric" value={q.workerCount} onChangeText={(t) => update("workerCount", t)} />
+              <Text style={styles.label}>Worker names</Text>
+              <TextInput style={styles.input} value={q.workerNames} onChangeText={(t) => update("workerNames", t)} />
+            </>
+          )}
+          {q.workersPresent === "NO" && (
+            <PhotoInput label="Photo (no workers present)" value={q.workersPhoto} onChange={(t) => update("workersPhoto", t)} />
+          )}
 
-        {/* Q3 */}
-        <RadioRow label="Q3. Is PMC waste vehicle present?" value={q.vehiclePresent} onChange={(v) => update("vehiclePresent", v)} />
-        {q.vehiclePresent === "YES" && (
-          <>
-            <Text style={styles.label}>Vehicle number</Text>
-            <TextInput style={styles.input} value={q.vehicleNumber} onChangeText={(t) => update("vehicleNumber", t)} />
-            <Text style={styles.label}>Helper details</Text>
-            <TextInput style={styles.input} value={q.vehicleHelper} onChangeText={(t) => update("vehicleHelper", t)} />
-          </>
-        )}
-        {q.vehiclePresent === "NO" && (
-          <PhotoInput label="Photo (vehicle not present)" value={q.vehiclePhoto} onChange={(t) => update("vehiclePhoto", t)} />
-        )}
+          {/* Q3 */}
+          <RadioRow label="Q3. Is PMC waste vehicle present?" value={q.vehiclePresent} onChange={(v) => update("vehiclePresent", v)} />
+          {q.vehiclePresent === "YES" && (
+            <>
+              <Text style={styles.label}>Vehicle number</Text>
+              <TextInput style={styles.input} value={q.vehicleNumber} onChangeText={(t) => update("vehicleNumber", t)} />
+              <Text style={styles.label}>Helper details</Text>
+              <TextInput style={styles.input} value={q.vehicleHelper} onChangeText={(t) => update("vehicleHelper", t)} />
+            </>
+          )}
+          {q.vehiclePresent === "NO" && (
+            <PhotoInput label="Photo (vehicle not present)" value={q.vehiclePhoto} onChange={(t) => update("vehiclePhoto", t)} />
+          )}
 
-        {/* Q4 */}
-        <Text style={styles.label}>Q4. Surrounding area (30m) clean? Upload 3 photos</Text>
-        {q.surroundingCleanPhotos.map((p, idx) => (
-          <PhotoInput key={idx} label={`Photo ${idx + 1}`} value={p} onChange={(t) => updatePhotoArray("surroundingCleanPhotos", idx, t)} />
-        ))}
+          {/* Q4 */}
+          <Text style={styles.label}>Q4. Surrounding area (30m) clean? Upload 3 photos</Text>
+          {q.surroundingCleanPhotos.map((p, idx) => (
+            <PhotoInput key={idx} label={`Photo ${idx + 1}`} value={p} onChange={(t) => updatePhotoArray("surroundingCleanPhotos", idx, t)} />
+          ))}
 
-        {/* Q5 */}
-        <RadioRow label="Q5. Is SWD clean?" value={q.swdClean} onChange={(v) => update("swdClean", v)} />
-        <PhotoInput label="SWD photo" value={q.swdPhotos[0]} onChange={(t) => updatePhotoArray("swdPhotos", 0, t)} />
+          {/* Q5 */}
+          <RadioRow label="Q5. Is SWD clean?" value={q.swdClean} onChange={(v) => update("swdClean", v)} />
+          <PhotoInput label="SWD photo" value={q.swdPhotos[0]} onChange={(t) => updatePhotoArray("swdPhotos", 0, t)} />
 
-        {/* Q6 */}
-        <RadioRow label="Q6. Is SCP signboard/QR visible?" value={q.signboardVisible} onChange={(v) => update("signboardVisible", v)} />
-        <PhotoInput label="Signboard/QR photo" value={q.signboardPhoto} onChange={(t) => update("signboardPhoto", t)} />
-        <Text style={styles.label}>Remarks</Text>
-        <TextInput style={styles.input} value={q.signboardRemark} onChangeText={(t) => update("signboardRemark", t)} />
+          {/* Q6 */}
+          <RadioRow label="Q6. Is SCP signboard/QR visible?" value={q.signboardVisible} onChange={(v) => update("signboardVisible", v)} />
+          <PhotoInput label="Signboard/QR photo" value={q.signboardPhoto} onChange={(t) => update("signboardPhoto", t)} />
+          <Text style={styles.label}>Remarks</Text>
+          <TextInput style={styles.input} value={q.signboardRemark} onChangeText={(t) => update("signboardRemark", t)} />
 
-        {/* Q7 */}
-        <RadioRow label="Q7. Third-party dumping observed?" value={q.thirdPartyDumping} onChange={(v) => update("thirdPartyDumping", v)} />
-        {q.thirdPartyDumping === "YES" && (
-          <PhotoInput label="Dumping photo" value={q.dumpingPhoto} onChange={(t) => update("dumpingPhoto", t)} />
-        )}
+          {/* Q7 */}
+          <RadioRow label="Q7. Third-party dumping observed?" value={q.thirdPartyDumping} onChange={(v) => update("thirdPartyDumping", v)} />
+          {q.thirdPartyDumping === "YES" && (
+            <PhotoInput label="Dumping photo" value={q.dumpingPhoto} onChange={(t) => update("dumpingPhoto", t)} />
+          )}
 
-        {/* Q8 */}
-        <RadioRow label="Q8. Leachate visible?" value={q.leachateVisible} onChange={(v) => update("leachateVisible", v)} />
-        <PhotoInput label="Leachate photo" value={q.leachatePhoto} onChange={(t) => update("leachatePhoto", t)} />
+          {/* Q8 */}
+          <RadioRow label="Q8. Leachate visible?" value={q.leachateVisible} onChange={(v) => update("leachateVisible", v)} />
+          <PhotoInput label="Leachate photo" value={q.leachatePhoto} onChange={(t) => update("leachatePhoto", t)} />
 
-        {/* Q9 */}
-        <RadioRow label="Q9. Stray animals present?" value={q.strayAnimals} onChange={(v) => update("strayAnimals", v)} />
-        <PhotoInput label="Stray animals photo" value={q.strayAnimalsPhoto} onChange={(t) => update("strayAnimalsPhoto", t)} />
+          {/* Q9 */}
+          <RadioRow label="Q9. Stray animals present?" value={q.strayAnimals} onChange={(v) => update("strayAnimals", v)} />
+          <PhotoInput label="Stray animals photo" value={q.strayAnimalsPhoto} onChange={(t) => update("strayAnimalsPhoto", t)} />
 
-        <TouchableOpacity
-          style={[styles.submitBtn, (!withinFence || submitting) && styles.submitDisabled]}
-          onPress={submit}
-          disabled={!withinFence || submitting}
-        >
-          <Text style={styles.submitText}>{submitting ? "Submitting..." : "Submit for QC"}</Text>
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
+          <TouchableOpacity
+            style={[styles.submitBtn, (!withinFence || submitting) && styles.submitDisabled]}
+            onPress={submit}
+            disabled={!withinFence || submitting}
+          >
+            <Text style={styles.submitText}>{submitting ? "Submitting..." : "Submit for QC"}</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    </TaskforceLayout>
   );
 }
 
@@ -371,10 +375,10 @@ function RadioRow({ label, value, onChange }: { label: string; value: Bool; onCh
       <Text style={[styles.label, { flex: 1 }]}>{label}</Text>
       <View style={{ flexDirection: "row", gap: 8 }}>
         <TouchableOpacity style={[styles.pill, value === "YES" && styles.pillActive]} onPress={() => onChange("YES")}>
-          <Text style={styles.pillText}>Yes</Text>
+          <Text style={[styles.pillText, value === "YES" && styles.pillTextActive]}>Yes</Text>
         </TouchableOpacity>
         <TouchableOpacity style={[styles.pill, value === "NO" && styles.pillActive]} onPress={() => onChange("NO")}>
-          <Text style={styles.pillText}>No</Text>
+          <Text style={[styles.pillText, value === "NO" && styles.pillTextActive]}>No</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -397,50 +401,56 @@ function PhotoInput({ label, value, onChange }: { label: string; value: string; 
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, backgroundColor: "#0f172a" },
-  back: { color: "#38bdf8", marginBottom: 8, fontWeight: "600" },
-  heading: { color: "#e2e8f0", fontSize: 22, fontWeight: "700" },
-  muted: { color: "#94a3b8", marginTop: 4 },
-  meta: { color: "#cbd5e1", marginTop: 6 },
+  container: { flex: 1, padding: 16, backgroundColor: "#f8fafc" },
+  back: { color: "#1d4ed8", marginBottom: 8, fontWeight: "600" },
+  heading: { color: "#0f172a", fontSize: 22, fontWeight: "700" },
+  muted: { color: "#64748b", marginTop: 4 },
+  meta: { color: "#475569", marginTop: 6 },
   section: {
-    backgroundColor: "#0b253a",
+    backgroundColor: "#ffffff",
     borderRadius: 12,
     padding: 14,
     borderWidth: 1,
-    borderColor: "#1e3a8a",
-    marginTop: 14
+    borderColor: "#e2e8f0",
+    marginTop: 14,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 6,
+    elevation: 2
   },
-  sectionTitle: { color: "#e2e8f0", fontSize: 16, fontWeight: "700", marginBottom: 6 },
-  distance: { color: "#38bdf8", fontSize: 20, fontWeight: "700" },
-  warning: { color: "#fbbf24", marginTop: 4 },
-  error: { color: "#fca5a5", marginTop: 4 },
-  label: { color: "#cbd5e1", marginTop: 10, marginBottom: 4 },
+  sectionTitle: { color: "#0f172a", fontSize: 16, fontWeight: "700", marginBottom: 6 },
+  distance: { color: "#1d4ed8", fontSize: 20, fontWeight: "700" },
+  warning: { color: "#d97706", marginTop: 4, fontWeight: "600" },
+  error: { color: "#dc2626", marginTop: 4 },
+  label: { color: "#475569", marginTop: 10, marginBottom: 4, fontWeight: "600" },
   rowBetween: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 8 },
   pill: {
-    paddingHorizontal: 12,
+    paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: "#1e3a8a",
-    backgroundColor: "#0f172a"
+    borderColor: "#e2e8f0",
+    backgroundColor: "#f1f5f9"
   },
-  pillActive: { backgroundColor: "#1e3a8a" },
-  pillText: { color: "#e2e8f0", fontWeight: "600" },
+  pillActive: { backgroundColor: "#0f172a", borderColor: "#0f172a" },
+  pillText: { color: "#475569", fontWeight: "600" },
+  pillTextActive: { color: "#ffffff" },
   input: {
-    backgroundColor: "#0f172a",
+    backgroundColor: "#f8fafc",
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: "#1e3a8a",
+    borderColor: "#e2e8f0",
     padding: 12,
-    color: "#e2e8f0"
+    color: "#0f172a"
   },
   submitBtn: {
-    marginTop: 14,
-    backgroundColor: "#0ea5e9",
+    marginTop: 20,
+    backgroundColor: "#0f172a",
     paddingVertical: 14,
     borderRadius: 12,
     alignItems: "center"
   },
-  submitDisabled: { opacity: 0.6 },
-  submitText: { color: "#0f172a", fontWeight: "700", fontSize: 16 }
+  submitDisabled: { opacity: 0.5 },
+  submitText: { color: "#ffffff", fontWeight: "700", fontSize: 16 }
 });

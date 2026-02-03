@@ -1,6 +1,5 @@
 import { getToken } from "../auth/storage";
-
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || "http://localhost:4000";
+import { API_BASE_URL } from "./baseUrl";
 
 export class ApiError extends Error {
   status: number;
@@ -27,6 +26,19 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+export async function getMe() {
+  return request<{
+    user: {
+      id: string;
+      name: string;
+      email: string;
+      role: string;
+      cityId?: string;
+      modules?: { key: string; name?: string; canWrite: boolean; cityId?: string; zoneIds?: string[]; wardIds?: string[] }[];
+    };
+  }>("/auth/me");
+}
+
 export async function login(body: { email: string; password: string }) {
   return request<{ token: string; user: { cityName?: string; modules?: { key: string; name?: string; canWrite: boolean }[] } }>(
     "/auth/login",
@@ -36,76 +48,6 @@ export async function login(body: { email: string; password: string }) {
     }
   );
 }
-export async function listSweepingBeats() {
-  return request<{ beats: any[] }>("/modules/sweeping/employee/beats");
-}
-export async function submitSweepingInspection(body: {
-  sweepingBeatId: string;
-  latitude: number;
-  longitude: number;
-  answers: {
-    questionCode: string;
-    answer: boolean;
-    photos: string[];
-  }[];
-}) {
-  return request<{ inspection: any }>("/modules/sweeping/inspections/submit", {
-    method: "POST",
-    body: JSON.stringify(body)
-  });
-}
-export async function listSweepingQcInspections() {
-  return request<{ inspections: any[] }>("/modules/sweeping/qc/inspections");
-}
-export async function sweepingQcDecision(
-  inspectionId: string,
-  decision: "APPROVED" | "REJECTED" | "ACTION_REQUIRED"
-) {
-  return request<{ inspection: any }>(`/modules/sweeping/qc/inspections/${inspectionId}/decision`, {
-    method: "POST",
-    body: JSON.stringify({ decision })
-  });
-}
-export async function listSweepingActionRequired() {
-  return request<{ inspections: any[] }>("/modules/sweeping/action/required");
-}
-export async function submitSweepingAction(
-  inspectionId: string,
-  body: { remarks: string; photos: string[] }
-) {
-  return request<{ actionResponse: any }>(`/modules/sweeping/action/${inspectionId}/respond`, {
-    method: "POST",
-    body: JSON.stringify(body)
-  });
-}
-export async function uploadSweepingKml(wardId: string, file: FormData) {
-  const token = await getToken();
-  const res = await fetch(
-    `${API_BASE_URL}/modules/sweeping/admin/upload-kml/${wardId}`,
-    {
-      method: "POST",
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-      body: file
-    }
-  );
-
-  if (!res.ok) throw new ApiError(res.status, await res.text());
-  return res.json();
-}
-export async function assignSweepingBeat(body: {
-  sweepingBeatId: string;
-  employeeId: string;
-}) {
-  return request<{ beat: any }>("/modules/sweeping/admin/assign-beat", {
-    method: "POST",
-    body: JSON.stringify(body)
-  });
-}
-export const listEmployeeInspections = async () => {
-  return request<{ inspections: any[] }>("/qc/inspections");
-};
-
-
 
 export async function fetchCityInfo() {
   return request<{ city: { id: string; name: string } }>("/city/info");
@@ -124,20 +66,6 @@ export async function listGeo(level: "ZONE" | "WARD") {
     `/city/geo?level=${level}`
   );
 }
-export async function listQcSweepingBeats() {
-  return request<{ beats: any[] }>("/modules/sweeping/qc/beats");
-}
-
-export async function assignSweepingBeatQc(body: {
-  sweepingBeatId: string;
-  employeeId: string;
-}) {
-  return request<{ beat: any }>("/modules/sweeping/admin/assign-beat", {
-    method: "POST",
-    body: JSON.stringify(body)
-  });
-}
-
 
 export async function approveRegistrationRequest(
   id: string,
@@ -286,6 +214,33 @@ export async function rejectTwinbinBin(id: string) {
   });
 }
 
+export async function listTwinbinApproved() {
+  // We can reuse getModuleRecords which maps to generic records endpoint
+  // But strictly we need APPROVED bins to assign.
+  // The generic endpoint '/modules/twinbin/records' returns all types.
+  // Ideally we want '/modules/twinbin/bins/approved' if it existed, or filter client side.
+  // Backend `twinbin/router.ts` doesn't have explicit `approved` endpoint for BINS.
+  // But `getRecords` returns everything.
+  // Let's us `getModuleRecords("twinbin")` and filter in the component or add a specific helper here.
+  // Actually, let's use the generic records fetcher but wrap it for clarity,
+  // OR since the user wants specific "Approved Bins" list, we can implement it by filtering the generic response if backend supports it.
+  // Backend `recordsRouter.ts` supports ?status=... but it aggregates visits too.
+  // Let's simply add `assignTwinbinBin` here which is the critical missing piece.
+  // And for listing, we will use `getModuleRecords` in the screen or add a helper `listTwinbinRecords`.
+  // Wait, `listTwinbinPending` uses `/modules/twinbin/bins/pending`.
+  // Does backend have `/modules/twinbin/bins/approved`? No.
+  // But we added `/modules/twinbin/bins/:id/assign`.
+  // We can use `getModuleRecords('twinbin')` and filter for `type === 'BIN_REGISTRATION' && status === 'APPROVED'`.
+  return getModuleRecords("twinbin");
+}
+
+export async function assignTwinbinBin(id: string, body: { assignedEmployeeIds: string[] }) {
+  return request<{ bin: any }>(`/modules/twinbin/bins/${id}/assign`, {
+    method: "POST",
+    body: JSON.stringify(body)
+  });
+}
+
 export async function markTwinbinVisitActionRequired(id: string, qcRemark: string) {
   return request<{ visit: any }>(`/modules/twinbin/visits/${id}/action-required`, {
     method: "POST",
@@ -413,4 +368,16 @@ export async function getModuleRecords(moduleKey: string) {
   return request<{ city: string; module: string; count: number; records: any[] }>(
     `/modules/${moduleKey}/records`
   );
+}
+
+export async function getTaskforceRecords(filters?: { page?: number; limit?: number; tab?: string }) {
+  const params = new URLSearchParams();
+  if (filters?.page) params.append("page", filters.page.toString());
+  if (filters?.limit) params.append("limit", filters.limit.toString());
+  if (filters?.tab) params.append("tab", filters.tab);
+  return request<{
+    data: any[];
+    meta: { page: number; limit: number; total: number; totalPages: number };
+    stats: { pending: number; approved: number; rejected: number; actionRequired: number; total: number };
+  }>(`/modules/taskforce/records?${params.toString()}`);
 }

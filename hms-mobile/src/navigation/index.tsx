@@ -1,8 +1,15 @@
 import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+
 import { LoginScreen, RegisterScreen } from "../modules/auth";
-import { CityLandingScreen, MyEmployeesScreen, RegistrationRequestsScreen } from "../modules/city";
+import {
+  CityLandingScreen,
+  MyEmployeesScreen,
+  RegistrationRequestsScreen,
+} from "../modules/city";
+
 import { ModuleHomeWrapper } from "../modules/common";
+
 import {
   TwinbinHomeScreen,
   TwinbinRegisterScreen,
@@ -10,6 +17,8 @@ import {
   TwinbinQcHomeScreen,
   TwinbinQcPendingScreen,
   TwinbinQcReviewScreen,
+  TwinbinQcApprovedScreen,
+  TwinbinQcAssignScreen,
   TwinbinAssignedScreen,
   TwinbinBinDetailScreen,
   TwinbinVisitPendingScreen,
@@ -17,8 +26,9 @@ import {
   TwinbinActionRequiredScreen,
   TwinbinActionRequiredDetailScreen,
   TwinbinReportPendingScreen,
-  TwinbinReportReviewScreen
+  TwinbinReportReviewScreen,
 } from "../modules/twinbin";
+
 import {
   TaskforceHomeScreen,
   TaskforceRegisterScreen,
@@ -26,17 +36,8 @@ import {
   TaskforceAssignedScreen,
   TaskforceFeederDetailScreen,
   TaskforceQcReportsScreen,
-  TaskforceQcReportReviewScreen
+  TaskforceQcReportReviewScreen,
 } from "../modules/taskforce";
-
-import SweepingBeatsScreen from "../modules/sweeping/screens/SweepingBeatsScreen";
-import SweepingInspectionScreen from "../modules/sweeping/screens/SweepingInspectionScreen";
-import QcSweepingList from "../modules/sweeping/screens/QcSweepingList";
-import QcSweepingDetail from "../modules/sweeping/screens/QcSweepingDetail";
-import QcSweepingHome from "../modules/sweeping/screens/QcSweepingHome";
-import ActionOfficerSweepingScreen from "../modules/sweeping/screens/ActionOfficerSweepingScreen";
-import QcBeatAssignmentScreen from "../modules/sweeping/screens/QcBeatAssignmentScreen";
-import EmployeeInspectionHistory from "../modules/sweeping/screens/EmployeeInspectionHistory";
 
 /* ✅ Cleanliness Of Toilets Module (ADDED ONLY) */
 import {
@@ -51,7 +52,6 @@ import {
   ToiletMasterScreen,
   ToiletHelpScreen,
 } from "../modules/cleanlinessOfToilets";
-
 
 import { useAuthContext } from "../auth/AuthProvider";
 import { RootStackParamList } from "./types";
@@ -77,7 +77,6 @@ export function RootNavigator() {
   }
 
   return (
-
     <Stack.Navigator
       key="app"
       screenOptions={{
@@ -92,59 +91,142 @@ export function RootNavigator() {
       <Stack.Screen
         name="CityLanding"
         component={CityLandingScreen}
-        initialParams={{ cityName: auth.status === "authenticated" ? auth.cityName : undefined }}
+        initialParams={{
+          cityName:
+            auth.status === "authenticated" ? auth.cityName : undefined,
+        }}
         options={{ headerShown: false }}
       />
+
       <Stack.Screen name="Module" component={ModuleHomeWrapper} options={{ headerShown: false }} />
       <Stack.Screen name="MyEmployees" component={MyEmployeesScreen} options={{ title: "My Employees" }} />
-      <Stack.Screen name="RegistrationRequests" component={RegistrationRequestsScreen} options={{ title: "Registration Requests" }} />
-{/* Twinbin */}
-<Stack.Screen name="TwinbinHome" component={TwinbinHomeScreen} options={{ title: "Litter Bins" }} />
-<Stack.Screen name="TwinbinRegister" component={TwinbinRegisterScreen} />
-<Stack.Screen name="TwinbinMyRequests" component={TwinbinMyRequestsScreen} />
-<Stack.Screen name="TwinbinQcHome" component={TwinbinQcHomeScreen} />
-<Stack.Screen name="TwinbinQcPending" component={TwinbinQcPendingScreen} />
-<Stack.Screen name="TwinbinQcReview" component={TwinbinQcReviewScreen} />
-<Stack.Screen name="TwinbinAssigned" component={TwinbinAssignedScreen} />
-<Stack.Screen name="TwinbinBinDetail" component={TwinbinBinDetailScreen} />
-<Stack.Screen name="TwinbinVisitPending" component={TwinbinVisitPendingScreen} />
-<Stack.Screen name="TwinbinVisitReview" component={TwinbinVisitReviewScreen} />
-<Stack.Screen name="TwinbinActionRequired" component={TwinbinActionRequiredScreen} />
-<Stack.Screen name="TwinbinActionRequiredDetail" component={TwinbinActionRequiredDetailScreen} />
-<Stack.Screen name="TwinbinReportPending" component={TwinbinReportPendingScreen} />
-<Stack.Screen name="TwinbinReportReview" component={TwinbinReportReviewScreen} />
+      <Stack.Screen
+        name="RegistrationRequests"
+        component={RegistrationRequestsScreen}
+        options={{ title: "Registration Requests" }}
+      />
 
-{/* Taskforce */}
-<Stack.Screen name="TaskforceHome" component={TaskforceHomeScreen} />
-<Stack.Screen name="TaskforceRegister" component={TaskforceRegisterScreen} />
-<Stack.Screen name="TaskforceMyRequests" component={TaskforceMyRequestsScreen} />
-<Stack.Screen name="TaskforceAssigned" component={TaskforceAssignedScreen} />
-<Stack.Screen name="TaskforceFeederDetail" component={TaskforceFeederDetailScreen} />
-<Stack.Screen name="TaskforceQcReports" component={TaskforceQcReportsScreen} />
-<Stack.Screen name="TaskforceQcReportReview" component={TaskforceQcReportReviewScreen} />
+      {/* Twinbin */}
+      <Stack.Screen name="TwinbinHome" component={TwinbinHomeScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="TwinbinRegister" component={TwinbinRegisterScreen} options={{ headerShown: false }} />
+      <Stack.Screen
+        name="TwinbinMyRequests"
+        component={TwinbinMyRequestsScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen name="TwinbinQcHome" component={TwinbinQcHomeScreen} options={{ title: "Litter Bins QC" }} />
 
-{/* Sweeping */}
-<Stack.Screen name="SweepingBeats" component={SweepingBeatsScreen} />
-<Stack.Screen name="SweepingInspection" component={SweepingInspectionScreen} />
-<Stack.Screen name="QcSweepingHome" component={QcSweepingHome} />
-<Stack.Screen name="QcSweepingList" component={QcSweepingList} />
-<Stack.Screen name="QcSweepingDetail" component={QcSweepingDetail} />
-<Stack.Screen name="ActionOfficerSweeping" component={ActionOfficerSweepingScreen}/>
-<Stack.Screen name="QcBeatAssignment" component={QcBeatAssignmentScreen} />
-<Stack.Screen name="EmployeeInspectionHistory" component={EmployeeInspectionHistory} />
+      <Stack.Screen
+        name="TwinbinQcPending"
+        component={TwinbinQcPendingScreen}
+        options={{ title: "Pending Bins" }}
+      />
+      <Stack.Screen
+        name="TwinbinQcReview"
+        component={TwinbinQcReviewScreen}
+        options={{ title: "Review Bin" }}
+      />
+      <Stack.Screen
+        name="TwinbinAssigned"
+        component={TwinbinAssignedScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="TwinbinBinDetail"
+        component={TwinbinBinDetailScreen}
+        options={{ title: "Bin Detail" }}
+      />
+      <Stack.Screen
+        name="TwinbinVisitPending"
+        component={TwinbinVisitPendingScreen}
+        options={{ title: "Pending Visits" }}
+      />
+      <Stack.Screen
+        name="TwinbinVisitReview"
+        component={TwinbinVisitReviewScreen}
+        options={{ title: "Review Visit" }}
+      />
+      <Stack.Screen
+        name="TwinbinActionRequired"
+        component={TwinbinActionRequiredScreen}
+        options={{ title: "Action Required" }}
+      />
+      <Stack.Screen
+        name="TwinbinActionRequiredDetail"
+        component={TwinbinActionRequiredDetailScreen}
+        options={{ title: "Action Detail" }}
+      />
+      <Stack.Screen
+        name="TwinbinReportPending"
+        component={TwinbinReportPendingScreen}
+        options={{ title: "Pending Reports" }}
+      />
+      <Stack.Screen
+        name="TwinbinReportReview"
+        component={TwinbinReportReviewScreen}
+        options={{ title: "Review Report" }}
+      />
 
-{/* Toilets (from main) */}
-<Stack.Screen name="ToiletHome" component={ToiletHomeScreen} />
-<Stack.Screen name="ToiletEmployeeTabs" component={ToiletEmployeeTabs} />
-<Stack.Screen name="ToiletQcTabs" component={ToiletQcTabs} />
-<Stack.Screen name="ToiletInspection" component={ToiletInspectionScreen} />
-<Stack.Screen name="ToiletReview" component={ToiletReviewScreen} />
-<Stack.Screen name="ToiletRegister" component={ToiletRegisterScreen} />
-<Stack.Screen name="ToiletMyRequests" component={ToiletMyRequestsScreen} />
-<Stack.Screen name="ToiletPendingRegistration" component={ToiletPendingRegistrationScreen} />
-<Stack.Screen name="ToiletMaster" component={ToiletMasterScreen} />
-<Stack.Screen name="ToiletHelp" component={ToiletHelpScreen} />
+      {/* Taskforce */}
+      <Stack.Screen name="TaskforceHome" component={TaskforceHomeScreen} options={{ headerShown: false }} />
+      <Stack.Screen
+        name="TaskforceRegister"
+        component={TaskforceRegisterScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="TaskforceMyRequests"
+        component={TaskforceMyRequestsScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="TaskforceAssigned"
+        component={TaskforceAssignedScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="TaskforceFeederDetail"
+        component={TaskforceFeederDetailScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="TaskforceQcReports"
+        component={TaskforceQcReportsScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="TaskforceQcReportReview"
+        component={TaskforceQcReportReviewScreen}
+        options={{ headerShown: false }}
+      />
+
+      {/* ✅ Cleanliness Of Toilets (ADDED) */}
+      <Stack.Screen name="ToiletHome" component={ToiletHomeScreen} options={{ title: "Toilets" }} />
+      <Stack.Screen
+        name="ToiletEmployeeTabs"
+        component={ToiletEmployeeTabs}
+        options={{ title: "Daily Operations" }}
+      />
+      <Stack.Screen name="ToiletQcTabs" component={ToiletQcTabs} options={{ title: "QC Dashboard" }} />
+      <Stack.Screen
+        name="ToiletInspection"
+        component={ToiletInspectionScreen}
+        options={{ title: "Inspection" }}
+      />
+      <Stack.Screen name="ToiletReview" component={ToiletReviewScreen} options={{ title: "Review" }} />
+      <Stack.Screen name="ToiletRegister" component={ToiletRegisterScreen} options={{ title: "Register Toilet" }} />
+      <Stack.Screen
+        name="ToiletMyRequests"
+        component={ToiletMyRequestsScreen}
+        options={{ title: "My Requests" }}
+      />
+      <Stack.Screen
+        name="ToiletPendingRegistration"
+        component={ToiletPendingRegistrationScreen}
+        options={{ title: "Pending" }}
+      />
+      <Stack.Screen name="ToiletMaster" component={ToiletMasterScreen} options={{ title: "All Toilets" }} />
+      <Stack.Screen name="ToiletHelp" component={ToiletHelpScreen} options={{ title: "Help" }} />
     </Stack.Navigator>
   );
-
 }

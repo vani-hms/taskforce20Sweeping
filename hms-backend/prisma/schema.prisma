@@ -1,7 +1,7 @@
 generator client {
-  provider = "prisma-client-js"
-  output   = "../generated/prisma"
-  engineType = "binary"
+  provider   = "prisma-client-js"
+  output     = "../generated/prisma"
+  engineType = "library"
 }
 
 datasource db {
@@ -17,37 +17,36 @@ model HMS {
 }
 
 model City {
-  id                         String                      @id @default(uuid()) @db.Uuid
-  hmsId                      String
-  name                       String
-  code                       String                      @unique
-  createdAt                  DateTime                    @default(now())
-  enabled                    Boolean                     @default(true)
-  ulbCode                    String?
-  hms                        HMS                         @relation(fields: [hmsId], references: [id], onDelete: Cascade)
-  modules                    CityModule[]
-  zones                      GeoNode[]
-  iecForms                   IECForm[]
-  permissions                Permission[]
-  sweepingRecords           SweepingRecord[]
-  taskforceActivities        TaskforceActivity[]
-  taskforceCases             TaskforceCase[]
-  taskforceRecords           TaskforceRecord[]
-  taskforceFeederPoints      TaskforceFeederPoint[]
-  litterBins                 LitterBin[]
-  litterBinRecords           LitterBinRecord[]
-  litterBinVisitReports      LitterBinVisitReport[]
-  litterBinReports           LitterBinReport[]
-  users                      UserCity[]
-  moduleRoles                UserModuleRole[]
-  registrationRequests       UserRegistrationRequest[]
-  TaskforceFeederReport      TaskforceFeederReport[]
-  sweepingBeats        SweepingBeat[]
-  sweepingInspections  SweepingInspection[]
-  sweepingActions      SweepingActionResponse[]
+  id                    String                    @id @default(uuid()) @db.Uuid
+  hmsId                 String
+  name                  String
+  code                  String                    @unique
+  createdAt             DateTime                  @default(now())
+  enabled               Boolean                   @default(true)
+  ulbCode               String?
+  hms                   HMS                       @relation(fields: [hmsId], references: [id], onDelete: Cascade)
+  modules               CityModule[]
+  zones                 GeoNode[]
+  iecForms              IECForm[]
+  permissions           Permission[]
+  sweepingRecords       SweepingRecord[]
+  taskforceActivities   TaskforceActivity[]
+  taskforceCases        TaskforceCase[]
+  taskforceRecords      TaskforceRecord[]
+  taskforceFeederPoints TaskforceFeederPoint[]
+  litterBins            LitterBin[]
+  litterBinRecords      LitterBinRecord[]
+  litterBinVisitReports LitterBinVisitReport[]
+  litterBinReports      LitterBinReport[]
+  users                 UserCity[]
+  moduleRoles           UserModuleRole[]
+  registrationRequests  UserRegistrationRequest[]
+  TaskforceFeederReport TaskforceFeederReport[]
+  toilets               Toilet[]
+  toiletInspections     ToiletInspection[]
+  toiletAssignments     ToiletAssignment[]
 
   @@index([hmsId])
-  @@map("city")  
 }
 
 model Module {
@@ -55,6 +54,7 @@ model Module {
   name                String              @unique
   isActive            Boolean             @default(true)
   createdAt           DateTime            @default(now())
+  displayName         String?
   cityModules         CityModule[]
   iecForms            IECForm[]
   permissions         Permission[]
@@ -77,33 +77,31 @@ model CityModule {
 }
 
 model User {
-  id                              String                      @id @default(uuid()) @db.Uuid
-  email                           String                      @unique
+  id                              String                  @id @default(uuid()) @db.Uuid
+  email                           String                  @unique
   name                            String
   password                        String
-  createdAt                       DateTime                    @default(now())
-  updatedAt                       DateTime                    @updatedAt
+  createdAt                       DateTime                @default(now())
+  updatedAt                       DateTime                @updatedAt
   sweepingRecords                 SweepingRecord[]
   taskforceRecords                TaskforceRecord[]
-  taskforceFeederPointsApproved   TaskforceFeederPoint[]      @relation("TaskforceFeederApprovedBy")
-  taskforceFeederPointsRequested  TaskforceFeederPoint[]      @relation("TaskforceFeederRequestedBy")
-  taskforceFeederReportsSubmitted TaskforceFeederReport[]     @relation("TaskforceReportSubmittedBy")
-  taskforceFeederReportsReviewed  TaskforceFeederReport[]     @relation("TaskforceReportReviewedBy")
-  twinbinLitterBinsApproved       LitterBin[]                 @relation("TwinbinApprovedBy")
-  twinbinLitterBinsRequested      LitterBin[]                 @relation("TwinbinRequestedBy")
+  taskforceFeederPointsApproved   TaskforceFeederPoint[]  @relation("TaskforceFeederApprovedBy")
+  taskforceFeederPointsRequested  TaskforceFeederPoint[]  @relation("TaskforceFeederRequestedBy")
+  taskforceFeederReportsSubmitted TaskforceFeederReport[] @relation("TaskforceReportSubmittedBy")
+  taskforceFeederReportsReviewed  TaskforceFeederReport[] @relation("TaskforceReportReviewedBy")
+  twinbinLitterBinsApproved       LitterBin[]             @relation("TwinbinApprovedBy")
+  twinbinLitterBinsRequested      LitterBin[]             @relation("TwinbinRequestedBy")
   twinbinRecords                  LitterBinRecord[]
-  twinbinVisitActions             LitterBinVisitReport[]      @relation("TwinbinVisitActionTakenBy")
-  twinbinVisitsReviewed           LitterBinVisitReport[]      @relation("TwinbinVisitReviewedBy")
-  twinbinVisitsSubmitted          LitterBinVisitReport[]      @relation("TwinbinVisitSubmittedBy")
-  twinbinReportsSubmitted         LitterBinReport[]           @relation("TwinbinReportSubmittedBy")
-  twinbinReportsReviewed          LitterBinReport[]           @relation("TwinbinReportReviewedBy")
+  twinbinVisitActions             LitterBinVisitReport[]  @relation("TwinbinVisitActionTakenBy")
+  twinbinVisitsReviewed           LitterBinVisitReport[]  @relation("TwinbinVisitReviewedBy")
+  twinbinVisitsSubmitted          LitterBinVisitReport[]  @relation("TwinbinVisitSubmittedBy")
+  twinbinReportsSubmitted         LitterBinReport[]       @relation("TwinbinReportSubmittedBy")
+  twinbinReportsReviewed          LitterBinReport[]       @relation("TwinbinReportReviewedBy")
+  toiletsRequested                Toilet[]                @relation("ToiletRequestedBy")
+  toiletInspections               ToiletInspection[]      @relation("ToiletInspectionBy")
+  toiletAssignments               ToiletAssignment[]      @relation("ToiletAssignmentTo")
   cities                          UserCity[]
   modules                         UserModuleRole[]
-  sweepingBeatsAssigned     SweepingBeat[]         @relation("SweepingBeatAssignedEmployee")
-  sweepingInspections       SweepingInspection[]   @relation("SweepingInspectionEmployee")
-  sweepingQcReviews         SweepingInspection[]   @relation("SweepingInspectionQcReviewer")
-  sweepingActionResponses   SweepingActionResponse[] @relation("SweepingActionOfficer")
-
 }
 
 model UserCity {
@@ -167,7 +165,6 @@ model GeoNode {
   parent         GeoNode?        @relation("GeoChildren", fields: [parentId], references: [id], onDelete: Cascade)
   children       GeoNode[]       @relation("GeoChildren")
   taskforceCases TaskforceCase[]
-  sweepingBeats SweepingBeat[]
 
   @@index([cityId, level])
   @@index([cityId, path])
@@ -257,11 +254,11 @@ model LitterBinRecord {
 }
 
 model LitterBin {
-  id                  String               @id @default(uuid()) @db.Uuid
-  cityId              String               @db.Uuid
-  requestedById       String               @db.Uuid
-  zoneId              String?              @db.Uuid
-  wardId              String?              @db.Uuid
+  id                  String                 @id @default(uuid()) @db.Uuid
+  cityId              String                 @db.Uuid
+  requestedById       String                 @db.Uuid
+  zoneId              String?                @db.Uuid
+  wardId              String?                @db.Uuid
   areaName            String
   areaType            AreaType
   locationName        String
@@ -272,13 +269,13 @@ model LitterBin {
   latitude            Float
   longitude           Float
   status              TwinbinBinStatus
-  assignedEmployeeIds String[]             @default([])
-  approvedByQcId      String?              @db.Uuid
-  createdAt           DateTime             @default(now())
-  updatedAt           DateTime             @updatedAt
-  approvedByQc        User?                @relation("TwinbinApprovedBy", fields: [approvedByQcId], references: [id])
-  city                City                 @relation(fields: [cityId], references: [id], onDelete: Cascade)
-  requestedBy         User                 @relation("TwinbinRequestedBy", fields: [requestedById], references: [id], onDelete: Cascade)
+  assignedEmployeeIds String[]               @default([])
+  approvedByQcId      String?                @db.Uuid
+  createdAt           DateTime               @default(now())
+  updatedAt           DateTime               @updatedAt
+  approvedByQc        User?                  @relation("TwinbinApprovedBy", fields: [approvedByQcId], references: [id])
+  city                City                   @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  requestedBy         User                   @relation("TwinbinRequestedBy", fields: [requestedById], references: [id], onDelete: Cascade)
   visits              LitterBinVisitReport[]
   reports             LitterBinReport[]
 
@@ -328,6 +325,10 @@ model LitterBinReport {
   submittedById  String              @db.Uuid
   reviewedByQcId String?             @db.Uuid
   status         TwinbinReportStatus
+  currentOwnerRole Role              @default(QC)
+  actionOfficerId String?            @db.Uuid
+  actionOfficerRemark String?
+  actionOfficerRespondedAt DateTime?
   latitude       Float
   longitude      Float
   distanceMeters Float
@@ -341,6 +342,8 @@ model LitterBinReport {
 
   @@index([cityId])
   @@index([binId])
+  @@index([currentOwnerRole])
+  @@index([actionOfficerId])
   @@map("LitterBinReport")
 }
 
@@ -402,6 +405,10 @@ model TaskforceFeederReport {
   distanceMeters Float
   payload        Json
   status         TaskforceReportStatus
+  currentOwnerRole Role                @default(QC)
+  actionOfficerId String?              @db.Uuid
+  actionOfficerRemark String?
+  actionOfficerRespondedAt DateTime?
   reviewedByQcId String?               @db.Uuid
   reviewedAt     DateTime?
   createdAt      DateTime              @default(now())
@@ -440,126 +447,83 @@ model UserRegistrationRequest {
   @@index([cityId])
 }
 
-/// ================================
-/// SWEEPING MODULE — ADD ONLY
-/// ================================
+model Toilet {
+  id                  String       @id @default(uuid()) @db.Uuid
+  cityId              String       @db.Uuid
+  requestedById       String       @db.Uuid
+  wardId              String?      @db.Uuid
+  zoneId              String?      @db.Uuid
+  name                String
+  type                ToiletType
+  gender              ToiletGender
+  code                String?      @unique
+  operatorName        String?
+  numberOfSeats       Int?         @default(0)
+  latitude            Float
+  longitude           Float
+  address             String?
+  status              ToiletStatus @default(PENDING)
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+  assignedEmployeeIds String[]     @default([])
 
-model SweepingBeat {
-  id                 String   @id @default(uuid()) @db.Uuid
-  cityId             String   @db.Uuid
-  geoNodeBeatId      String
-  areaType           AreaType
-  assignedEmployeeId String?  @db.Uuid
-  isActive           Boolean  @default(true)
-  assignedAt         DateTime?
-  createdAt          DateTime @default(now())
+  city        City               @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  requestedBy User               @relation("ToiletRequestedBy", fields: [requestedById], references: [id], onDelete: Cascade)
+  inspections ToiletInspection[]
+  assignments ToiletAssignment[]
 
-  // ✅ ADD THESE (geo-fencing support)
-  latitude           Float
-  longitude          Float
-  radiusMeters       Float
-  polygonGeoJson Json?
-
-  city             City    @relation(fields: [cityId], references: [id], onDelete: Cascade)
-  geoNodeBeat      GeoNode @relation(fields: [geoNodeBeatId], references: [id], onDelete: Cascade)
-  assignedEmployee User?   @relation("SweepingBeatAssignedEmployee", fields: [assignedEmployeeId], references: [id])
-
-  inspections      SweepingInspection[]
-
-  @@unique([cityId, geoNodeBeatId])
   @@index([cityId])
-  @@index([assignedEmployeeId])
 }
 
-
-model SweepingInspection {
-  id             String   @id @default(uuid()) @db.Uuid
-  cityId         String   @db.Uuid
-  sweepingBeatId String   @db.Uuid
-  employeeId     String   @db.Uuid
-  inspectionDate DateTime @db.Date
+model ToiletInspection {
+  id             String           @id @default(uuid()) @db.Uuid
+  cityId         String           @db.Uuid
+  toiletId       String           @db.Uuid
+  employeeId     String           @db.Uuid
+  status         InspectionStatus @default(SUBMITTED)
   latitude       Float
   longitude      Float
-  status         SweepingInspectionStatus @default(SUBMITTED)
+  distanceMeters Float?
+  answers        Json?
+  qcComment      String?
+  actionNote     String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
 
-  qcReviewedById String?  @db.Uuid
-  qcReviewedAt   DateTime?
-
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  city           City          @relation(fields: [cityId], references: [id], onDelete: Cascade)
-  sweepingBeat   SweepingBeat  @relation(fields: [sweepingBeatId], references: [id], onDelete: Cascade)
-
-  employee       User          @relation("SweepingInspectionEmployee", fields: [employeeId], references: [id])
-  qcReviewedBy   User?         @relation("SweepingInspectionQcReviewer", fields: [qcReviewedById], references: [id])
-
-  answers        SweepingInspectionAnswer[]
-  photos         SweepingInspectionPhoto[]
-  actionResponse SweepingActionResponse?
+  toilet   Toilet @relation(fields: [toiletId], references: [id], onDelete: Cascade)
+  employee User   @relation("ToiletInspectionBy", fields: [employeeId], references: [id], onDelete: Cascade)
+  city     City   @relation(fields: [cityId], references: [id], onDelete: Cascade)
 
   @@index([cityId])
-  @@index([sweepingBeatId])
-  @@index([employeeId])
-  @@index([status])
+  @@index([toiletId])
 }
 
-model SweepingInspectionAnswer {
-  id           String   @id @default(uuid()) @db.Uuid
-  inspectionId String   @db.Uuid
-  questionCode String
-  answer       Boolean
-  createdAt    DateTime @default(now())
+model ToiletAssignment {
+  id         String   @id @default(uuid()) @db.Uuid
+  cityId     String   @db.Uuid
+  toiletId   String   @db.Uuid
+  employeeId String   @db.Uuid
+  category   String?
+  assignedAt DateTime @default(now())
 
-  inspection   SweepingInspection @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
-  photos       SweepingInspectionPhoto[]
+  city     City   @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  toilet   Toilet @relation(fields: [toiletId], references: [id], onDelete: Cascade)
+  employee User   @relation("ToiletAssignmentTo", fields: [employeeId], references: [id], onDelete: Cascade)
 
-  @@index([inspectionId])
+  @@unique([toiletId, employeeId])
 }
 
-model SweepingInspectionPhoto {
-  id               String   @id @default(uuid()) @db.Uuid
-  inspectionId     String   @db.Uuid
-  answerId         String?  @db.Uuid
-  actionResponseId String?  @db.Uuid
-  photoUrl         String
-  createdAt        DateTime @default(now())
-
-  inspection     SweepingInspection        @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
-  answer         SweepingInspectionAnswer? @relation(fields: [answerId], references: [id], onDelete: Cascade)
-  actionResponse SweepingActionResponse?   @relation(fields: [actionResponseId], references: [id], onDelete: Cascade)
-
-  @@index([inspectionId])
-  @@index([answerId])
+model ToiletInspectionQuestion {
+  id           String      @id @default(uuid()) @db.Uuid
+  text         String
+  type         String      @default("YES_NO") // YES_NO, TEXT, OPTIONS
+  options      String[]    @default([])
+  requirePhoto Boolean     @default(false)
+  forType      ToiletType? // CT, PT, or null for both
+  order        Int         @default(0)
+  isActive     Boolean     @default(true)
+  createdAt    DateTime    @default(now())
 }
-
-model SweepingActionResponse {
-  id              String   @id @default(uuid()) @db.Uuid
-  cityId          String   @db.Uuid
-  inspectionId    String   @unique @db.Uuid
-  actionOfficerId String   @db.Uuid
-  remarks         String
-  submittedAt     DateTime
-  createdAt       DateTime @default(now())
-
-  city           City               @relation(fields: [cityId], references: [id], onDelete: Cascade)
-  inspection     SweepingInspection @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
-  actionOfficer  User               @relation("SweepingActionOfficer", fields: [actionOfficerId], references: [id])
-
-  photos         SweepingInspectionPhoto[]
-
-  @@index([cityId])
-  @@index([actionOfficerId])
-}
-
-enum SweepingInspectionStatus {
-  SUBMITTED
-  APPROVED
-  REJECTED
-  ACTION_REQUIRED
-  ACTION_SUBMITTED
-}
-
 
 enum Role {
   HMS_SUPER_ADMIN
@@ -606,6 +570,7 @@ enum TwinbinVisitStatus {
 
 enum TwinbinReportStatus {
   SUBMITTED
+  PENDING_QC
   APPROVED
   REJECTED
   ACTION_REQUIRED
@@ -627,6 +592,7 @@ enum TaskforceRequestStatus {
 
 enum TaskforceReportStatus {
   SUBMITTED
+  PENDING_QC
   APPROVED
   REJECTED
   ACTION_REQUIRED
@@ -636,6 +602,31 @@ enum TwinbinBinStatus {
   PENDING_QC
   APPROVED
   REJECTED
+}
+
+enum ToiletType {
+  CT
+  PT
+}
+
+enum ToiletGender {
+  MALE
+  FEMALE
+  UNISEX
+  DISABLED
+}
+
+enum ToiletStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum InspectionStatus {
+  SUBMITTED
+  APPROVED
+  REJECTED
+  ACTION_REQUIRED
 }
 
 enum RegistrationStatus {

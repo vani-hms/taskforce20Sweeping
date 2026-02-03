@@ -9,6 +9,8 @@ export type RootStackParamList = {
   TwinbinRegister: undefined;
   TwinbinMyRequests: undefined;
   TwinbinQcHome: undefined;
+  TwinbinQcApproved: undefined;
+  TwinbinQcAssign: { bin: any };
   TwinbinQcPending: undefined;
   TwinbinQcReview: { bin: any };
   TwinbinAssigned: undefined;
@@ -26,16 +28,15 @@ export type RootStackParamList = {
   TaskforceFeederDetail: { feeder: any };
   TaskforceQcReports: undefined;
   TaskforceQcReportReview: { report: any };
-  SweepingBeats: undefined;
-  SweepingEmployee: undefined;
-  SweepingInspection: { beat: any };
-  QcSweepingList: undefined;
-  QcSweepingDetail: { inspection: any };
-  ActionOfficerSweeping: undefined;
-  QcBeatAssignment: undefined;
-  QcSweepingHome: undefined;
-  EmployeeInspectionHistory: undefined;
-
-
-
+  // Toilet
+  ToiletHome: undefined;
+  ToiletEmployeeTabs: undefined;
+  ToiletQcTabs: undefined;
+  ToiletInspection: { toilet: any };
+  ToiletReview: { inspection: any };
+  ToiletRegister: undefined;
+  ToiletMyRequests: undefined;
+  ToiletPendingRegistration: undefined;
+  ToiletMaster: undefined;
+  ToiletHelp: undefined;
 };

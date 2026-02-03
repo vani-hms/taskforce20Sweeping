@@ -8,7 +8,8 @@ import { RootStackParamList } from "../../../navigation";
 import { submitTaskforceReport } from "../../../api/auth";
 import { API_BASE_URL } from "../../../api/baseUrl";
 import { getToken } from "../../../auth/storage";
-import { Camera, Image as ImageIcon, X, Plus } from "lucide-react-native";
+import { Camera, Image as ImageIcon, X, Plus, Ban } from "lucide-react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import TaskforceLayout from "../components/TaskforceLayout";
 
@@ -359,6 +360,34 @@ export default function TaskforceFeederDetailScreen({ navigation, route }: Props
     }
   };
 
+  const markAsEliminated = async () => {
+    Alert.alert(
+      "Eliminate Feeder Point",
+      "Are you sure you want to eliminate this feeder point? It will be moved to the Eliminated section on your dashboard.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Yes, Eliminate",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const saved = await AsyncStorage.getItem("eliminated_feeders");
+              const current = saved ? JSON.parse(saved) : [];
+              if (!current.includes(feeder.id)) {
+                current.push(feeder.id);
+                await AsyncStorage.setItem("eliminated_feeders", JSON.stringify(current));
+              }
+              Alert.alert("Success", "Feeder point eliminated.");
+              navigation.goBack();
+            } catch (err) {
+              Alert.alert("Error", "Failed to eliminate feeder point.");
+            }
+          }
+        }
+      ]
+    );
+  };
+
   return (
     <TaskforceLayout
       title={feeder.feederPointName}
@@ -370,8 +399,16 @@ export default function TaskforceFeederDetailScreen({ navigation, route }: Props
         <Text style={styles.meta}>{feeder.locationDescription}</Text>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Distance to feeder</Text>
-          {distance === null ? <ActivityIndicator color="#38bdf8" /> : <Text style={styles.distance}>{distance.toFixed(1)} m</Text>}
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
+            <View>
+              <Text style={styles.sectionTitle}>Distance to feeder</Text>
+              {distance === null ? <ActivityIndicator color="#38bdf8" /> : <Text style={styles.distance}>{distance.toFixed(1)} m</Text>}
+            </View>
+            <TouchableOpacity style={styles.eliminateBtn} onPress={markAsEliminated}>
+              <Ban size={18} color="#ef4444" />
+              <Text style={styles.eliminateBtnText}>Eliminate</Text>
+            </TouchableOpacity>
+          </View>
           {!withinFence && <Text style={styles.warning}>You must be within 100 meters to submit.</Text>}
           {locError ? <Text style={styles.error}>{locError}</Text> : null}
         </View>
@@ -703,5 +740,21 @@ const styles = StyleSheet.create({
     elevation: 8
   },
   submitDisabled: { opacity: 0.5 },
-  submitText: { color: "#ffffff", fontWeight: "800", fontSize: 16, letterSpacing: 0.2 }
+  submitText: { color: "#ffffff", fontWeight: "800", fontSize: 16, letterSpacing: 0.2 },
+  eliminateBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+    backgroundColor: "#fef2f2",
+    borderWidth: 1,
+    borderColor: "#fee2e2",
+  },
+  eliminateBtnText: {
+    color: "#ef4444",
+    fontSize: 13,
+    fontWeight: "700",
+  },
 });

@@ -326,95 +326,47 @@ export const TwinbinApi = {
 
 
 export const SweepingApi = {
-  /* =====================================================
-     EMPLOYEE
-  ===================================================== */
+
   listMyBeats: () =>
     apiFetch<{ beats: any[] }>("/modules/sweeping/employee/beats"),
 
-  submitInspection: (body: {
-    sweepingBeatId: string;
-    latitude: number;
-    longitude: number;
-    answers: {
-      questionCode: string;
-      answer: boolean;
-      photos: string[];
-    }[];
-  }) =>
-    apiFetch<{ inspection: any }>(
-      "/modules/sweeping/inspections/submit",
-      { method: "POST", body: JSON.stringify(body) }
-    ),
+  submitInspection: (body: any) =>
+    apiFetch("/modules/sweeping/inspections/submit", {
+      method: "POST",
+      body: JSON.stringify(body)
+    }),
 
-  /* =====================================================
-     QC
-  ===================================================== */
   qcInspections: () =>
-    apiFetch<{ inspections: any[] }>("/modules/sweeping/qc/inspections"),
+    apiFetch("/modules/sweeping/qc/inspections"),
 
-  qcDecision: (
-    inspectionId: string,
-    decision: "APPROVED" | "REJECTED" | "ACTION_REQUIRED"
-  ) =>
-    apiFetch<{ inspection: any }>(
-      `/modules/sweeping/qc/inspections/${inspectionId}/decision`,
-      {
-        method: "POST",
-        body: JSON.stringify({ decision })
-      }
-    ),
+  qcDecision: (inspectionId: string, decision: string) =>
+    apiFetch(`/modules/sweeping/qc/inspections/${inspectionId}/decision`, {
+      method: "POST",
+      body: JSON.stringify({ decision })
+    }),
 
   qcBeats: () =>
-    apiFetch<{ beats: any[] }>("/modules/sweeping/qc/beats"),
+    apiFetch("/modules/sweeping/qc/beats"),
 
   adminDashboard: () =>
     apiFetch("/modules/sweeping/admin/dashboard"),
 
   assignBeat: (body: { sweepingBeatId: string; employeeId: string }) =>
-    apiFetch<{ beat: any }>("/modules/sweeping/admin/assign-beat", {
+    apiFetch("/modules/sweeping/admin/assign-beat", {
       method: "POST",
       body: JSON.stringify(body)
     }),
 
   qcInspection: (id: string) =>
-    apiFetch<{ inspection: any }>(`/modules/sweeping/qc/inspections/${id}`),
+    apiFetch(`/modules/sweeping/qc/inspections/${id}`),
 
-  /* =====================================================
-     ACTION OFFICER
-  ===================================================== */
   actionRequired: () =>
-    apiFetch<{ inspections: any[] }>("/modules/sweeping/action/required"),
+    apiFetch("/modules/sweeping/action/required"),
 
-  submitAction: (
-    inspectionId: string,
-    body: { remarks: string; photos: string[] }
-  ) =>
-    apiFetch<{ actionResponse: any }>(
-      `/modules/sweeping/action/${inspectionId}/respond`,
-      {
-        method: "POST",
-        body: JSON.stringify(body)
-      }
-    ),
-
-  /* =====================================================
-     ADMIN
-  ===================================================== */
-
-  getMyStats: (period: string) =>
-    apiFetch(`/modules/sweeping/my/stats?period=${period}`),
-
-  listMyInspections: () =>
-    apiFetch("/modules/sweeping/my/inspections"),
-
-  approvalInbox: () =>
-    apiFetch("/modules/sweeping/approvals"),
-
-  reviewInspection: (id: string, payload: any) =>
-    apiFetch(`/modules/sweeping/inspection/${id}/review`, {
+  submitAction: (inspectionId: string, body: any) =>
+    apiFetch(`/modules/sweeping/action/${inspectionId}/respond`, {
       method: "POST",
-      body: JSON.stringify(payload)
+      body: JSON.stringify(body)
     }),
 
   listBeats: () =>
@@ -428,6 +380,7 @@ export const SweepingApi = {
 
   getWardGeo: () =>
     apiFetch("/modules/sweeping/wards/geo"),
+
   getBeatGeo: () =>
     apiFetch("/modules/sweeping/beats/geo"),
 
@@ -441,6 +394,6 @@ export const SweepingApi = {
     apiFetch(`/modules/sweeping/admin/beats/upload/${wardId}`, {
       method: "POST",
       body: file,
-      headers: {} // let browser set multipart/form-data
+      headers: {}
     })
 };

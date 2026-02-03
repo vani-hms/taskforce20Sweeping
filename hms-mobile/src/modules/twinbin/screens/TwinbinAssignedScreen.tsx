@@ -5,6 +5,7 @@ import { listTwinbinAssigned, ApiError } from "../../../api/auth";
 import { RootStackParamList } from "../../../navigation";
 import { Colors, Spacing, Typography, Layout } from "../../../theme";
 import { MapPin, AlertCircle, Calendar } from "lucide-react-native";
+import TwinbinLayout from "../components/TwinbinLayout";
 
 type Props = NativeStackScreenProps<RootStackParamList, "TwinbinAssigned">;
 
@@ -30,59 +31,66 @@ export default function TwinbinAssignedScreen({ navigation }: Props) {
     load();
   }, []);
 
-  if (loading) {
-    return (
-      <View style={[Layout.screenContainer, { justifyContent: "center" }]}>
-        <ActivityIndicator size="large" color={Colors.primary} />
-      </View>
-    );
-  }
-
   return (
-    <View style={Layout.screenContainer}>
-      {error ? (
-        <View style={styles.errorBox}>
-          <AlertCircle size={20} color={Colors.danger} />
-          <Text style={{ color: Colors.danger, marginLeft: 8 }}>{error}</Text>
-        </View>
-      ) : null}
-
-      {!bins.length && !error ? (
-        <View style={styles.emptyState}>
-          <Text style={Typography.h3}>No bins assigned</Text>
-          <Text style={Typography.body}>You don't have any pending bin inspections.</Text>
-        </View>
-      ) : (
-        <FlatList
-          data={bins}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={{ paddingBottom: Spacing.xl }}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={[Layout.card, { marginBottom: Spacing.m }]}
-              onPress={() => navigation.navigate("TwinbinBinDetail", { bin: item })}
-            >
-              <View style={styles.headerRow}>
-                <Text style={Typography.h3}>{item.areaName}</Text>
-                <View style={styles.badge}>
-                  <Text style={styles.badgeText}>{item.condition || "Unknown"}</Text>
-                </View>
+    <TwinbinLayout
+      title="Assigned Bins"
+      subtitle="Inspect and report on your assigned bins"
+      navigation={navigation}
+      showBack={true}
+    >
+      <View style={Layout.screenContainer}>
+        {loading ? (
+          <View style={{ flex: 1, justifyContent: "center" }}>
+            <ActivityIndicator size="large" color={Colors.primary} />
+          </View>
+        ) : (
+          <>
+            {error ? (
+              <View style={styles.errorBox}>
+                <AlertCircle size={20} color={Colors.danger} />
+                <Text style={{ color: Colors.danger, marginLeft: 8 }}>{error}</Text>
               </View>
+            ) : null}
 
-              <View style={styles.infoRow}>
-                <MapPin size={16} color={Colors.textMuted} />
-                <Text style={Typography.muted}>{item.locationName}</Text>
+            {!bins.length && !error ? (
+              <View style={styles.emptyState}>
+                <Text style={Typography.h3}>No bins assigned</Text>
+                <Text style={Typography.body}>You don't have any pending bin inspections.</Text>
               </View>
+            ) : (
+              <FlatList
+                data={bins}
+                keyExtractor={(item) => item.id}
+                contentContainerStyle={{ paddingBottom: Spacing.xl }}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    style={[Layout.card, { marginBottom: Spacing.m }]}
+                    onPress={() => navigation.navigate("TwinbinBinDetail", { bin: item })}
+                  >
+                    <View style={styles.headerRow}>
+                      <Text style={Typography.h3}>{item.areaName}</Text>
+                      <View style={styles.badge}>
+                        <Text style={styles.badgeText}>{item.condition || "Unknown"}</Text>
+                      </View>
+                    </View>
 
-              <View style={styles.infoRow}>
-                <Calendar size={16} color={Colors.textMuted} />
-                <Text style={Typography.caption}>{new Date(item.createdAt).toLocaleDateString()}</Text>
-              </View>
-            </TouchableOpacity>
-          )}
-        />
-      )}
-    </View>
+                    <View style={styles.infoRow}>
+                      <MapPin size={16} color={Colors.textMuted} />
+                      <Text style={Typography.muted}>{item.locationName}</Text>
+                    </View>
+
+                    <View style={styles.infoRow}>
+                      <Calendar size={16} color={Colors.textMuted} />
+                      <Text style={Typography.caption}>{new Date(item.createdAt).toLocaleDateString()}</Text>
+                    </View>
+                  </TouchableOpacity>
+                )}
+              />
+            )}
+          </>
+        )}
+      </View>
+    </TwinbinLayout>
   );
 }
 

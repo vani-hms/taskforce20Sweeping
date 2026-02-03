@@ -281,7 +281,9 @@ async function approveBin(req: any, res: any, next: any) {
     if (!bin.zoneId || !bin.wardId || !scope.zoneIds.includes(bin.zoneId) || !scope.wardIds.includes(bin.wardId)) {
       throw new HttpError(403, "Bin not in QC scope");
     }
-    if (bin.status !== TwinbinBinStatus.PENDING_QC) throw new HttpError(400, "Bin not pending");
+    if (bin.status !== TwinbinBinStatus.PENDING_QC && bin.status !== TwinbinBinStatus.APPROVED) {
+      throw new HttpError(400, "Bin not pending or approved");
+    }
 
     if (assignedEmployeeIds.length) {
       const employees = await prisma.userCity.findMany({
@@ -769,9 +771,26 @@ router.post("/visits/:id/action-required", validateBody(actionRequiredSchema), a
       throw new HttpError(403, "Visit not in QC scope");
     }
 
+    if (!visit.bin?.zoneId || !visit.bin?.wardId) {
+      throw new HttpError(400, "Visit bin missing zone/ward for Action Officer assignment");
+    }
+
+    const actionOfficerId = await resolveActionOfficerId({
+      cityId,
+      moduleId,
+      zoneId: visit.bin.zoneId,
+      wardId: visit.bin.wardId
+    });
+
     const updated = await prisma.litterBinVisitReport.update({
       where: { id: visit.id },
-      data: { actionStatus: "ACTION_REQUIRED", qcRemark: req.body.qcRemark, reviewedByQcId: userId }
+      data: {
+        actionStatus: "ACTION_REQUIRED",
+        qcRemark: req.body.qcRemark,
+        reviewedByQcId: userId,
+        currentOwnerRole: Role.ACTION_OFFICER,
+        actionOfficerId
+      }
     });
 
     res.json({ visit: updated });
@@ -1035,7 +1054,79 @@ router.get("/action-officer/pending", async (req, res, next) => {
       }
     });
 
-    res.json({ reports });
+    const visits = await prisma.litterBinVisitReport.findMany({
+      where: {
+        cityId,
+        actionStatus: "ACTION_REQUIRED",
+        currentOwnerRole: Role.ACTION_OFFICER,
+        actionOfficerId: userId
+      },
+      orderBy: { createdAt: "desc" },
+      include: {
+        bin: {
+          select: {
+            id: true,
+            areaName: true,
+            locationName: true,
+            zoneId: true,
+            wardId: true
+          }
+        },
+        submittedBy: { select: { id: true, name: true, email: true } },
+        reviewedByQc: { select: { id: true, name: true, email: true } }
+      }
+    });
+
+    // Merge and normalize types
+    const merged = [
+      ...reports.map(r => ({ ...r, type: 'DAILY_REPORT' })),
+      ...visits.map(v => ({ ...v, type: 'VISIT_REPORT' }))
+    ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    res.json({ reports: merged });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get("/action-officer/history", async (req, res, next) => {
+  try {
+    const cityId = req.auth!.cityId!;
+    const userId = req.auth!.sub!;
+    const moduleId = await getModuleIdByName(MODULE_KEY);
+    await assertModuleAccess(req, res, moduleId, [Role.ACTION_OFFICER]);
+
+    const reports = await prisma.litterBinReport.findMany({
+      where: {
+        cityId,
+        actionOfficerId: userId,
+        actionOfficerRespondedAt: { not: null }
+      },
+      orderBy: { createdAt: "desc" },
+      include: {
+        bin: { select: { id: true, areaName: true, locationName: true, zoneId: true, wardId: true } }
+      }
+    });
+
+    const visits = await prisma.litterBinVisitReport.findMany({
+      where: {
+        cityId,
+        actionStatus: "ACTION_TAKEN",
+        actionTakenById: userId
+      },
+      orderBy: { createdAt: "desc" },
+      include: {
+        bin: { select: { id: true, areaName: true, locationName: true, zoneId: true, wardId: true } }
+      }
+    });
+
+    // Merge and normalize types
+    const merged = [
+      ...reports.map(r => ({ ...r, type: 'DAILY_REPORT', status: 'ACTION_TAKEN' as const })),
+      ...visits.map(v => ({ ...v, type: 'VISIT_REPORT', status: 'ACTION_TAKEN' as const }))
+    ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    res.json({ reports: merged });
   } catch (err) {
     next(err);
   }
@@ -1065,8 +1156,8 @@ router.post("/action-officer/:id/submit", validateBody(actionOfficerReportSchema
       where: { id: report.id },
       data: {
         status: "PENDING_QC",
-        currentOwnerRole: Role.QC,
-        actionOfficerId: null,
+        // currentOwnerRole: Role.QC, // Keep ownership with AO so they can see it in history
+        // actionOfficerId: null, // Keep assignment for history
         actionOfficerRemark: req.body.actionNote || null,
         actionOfficerRespondedAt: new Date()
       }
@@ -1134,3 +1225,5 @@ router.post("/bins/:id/assign", validateBody(assignSchema), async (req, res, nex
 });
 
 export default router;
+
+// Force restart for prisma changes

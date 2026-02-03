@@ -68,8 +68,8 @@ router.get("/:moduleKey/records", async (req, res, next) => {
           reportWhere.cityId = cityId;
         }
 
-        // QC should only see reports currently owned by QC
-        reportWhere.currentOwnerRole = Role.QC;
+        // QC should see ALL reports in scope, including those with Action Officer
+        // reportWhere.currentOwnerRole = Role.QC; // REMOVED
       }
 
       // Pagination & Tab Params
@@ -123,20 +123,7 @@ router.get("/:moduleKey/records", async (req, res, next) => {
           prisma.litterBin.count({ where: approvedWhere })
         ]);
       } else {
-        // HISTORY / ALL: This is hard to paginate strictly across tables without a union view.
-        // Strategy: For now, fetch 'limit' from EACH to ensure we have enough to show mixed,
-        // but strict pagination is compromised. 
-        // BETTER: Just fetch most recent from all 3 types up to limit?
-        // User said "Do NOT fetch all records at once".
-        // Let's implement a simple "Latest" view for History, non-paginated or simple-bounded.
-        // Or, if user insists on deep pagination for History, we might need a dedicated timeline table.
-        // Current Plan: Fetch strict limit from EACH table, combine, sort, slice.
-        // This works for Page 1. For Page 2 it is inaccurate (skipping).
-        // Acceptance Criteria: "Works smoothly with 1000+ records".
-        // Most users use tabs. History is a dump.
-        // Let's keep it simple: Fetch standard limit from each, combine.
-        // For meta.total, sum of counts.
-
+        // HISTORY / ALL
         const [b, v, r, cB, cV, cR] = await Promise.all([
           prisma.litterBin.findMany({ where, orderBy: { createdAt: "desc" }, take: limit }),
           prisma.litterBinVisitReport.findMany({ where: visitWhere, include: { bin: true }, orderBy: { createdAt: "desc" }, take: limit }),
@@ -147,10 +134,6 @@ router.get("/:moduleKey/records", async (req, res, next) => {
         ]);
         bins = b; visits = v; reports = r;
         totalRecords = cB + cV + cR;
-        // Note: We are ignoring 'skip' here because offset based mixed pagination is flawed physically.
-        // We basically return the "Top N" items for History.
-        // If user clicks Page 2 in History, we can fail or just show next chunk if we did complex cursor.
-        // Let's strictly support Pagination for Specific Tabs, and "Recent Activity" logic for History.
       }
 
       // ... (Rest of resolution logic maps to these results)
@@ -187,6 +170,8 @@ router.get("/:moduleKey/records", async (req, res, next) => {
         id: v.id,
         type: "VISIT_REPORT",
         status: v.status,
+        actionStatus: v.actionStatus,
+        currentOwnerRole: v.currentOwnerRole,
         areaName: v.bin?.areaName,
         locationName: v.bin?.locationName,
         zoneId: v.bin?.zoneId,
@@ -200,6 +185,8 @@ router.get("/:moduleKey/records", async (req, res, next) => {
         id: r.id,
         type: "CITIZEN_REPORT",
         status: r.status === "SUBMITTED" ? "PENDING_QC" : r.status,
+        actionStatus: r.actionOfficerRespondedAt ? 'ACTION_TAKEN' : (r.status === 'ACTION_REQUIRED' ? 'ACTION_REQUIRED' : undefined),
+        currentOwnerRole: r.currentOwnerRole,
         areaName: r.bin?.areaName,
         locationName: r.bin?.locationName,
         zoneId: r.bin?.zoneId,

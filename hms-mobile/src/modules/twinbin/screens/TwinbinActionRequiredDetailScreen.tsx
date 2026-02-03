@@ -37,7 +37,7 @@ export default function TwinbinActionRequiredDetailScreen({ route, navigation }:
     setError("");
     try {
       await submitTwinbinActionTaken(visit.id, { actionRemark: remark, actionPhotoUrl: photo });
-      Alert.alert("Submitted", "Action taken submitted", [{ text: "OK", onPress: () => navigation.goBack() }]);
+      Alert.alert("Success", "Action Marked as Complete", [{ text: "OK", onPress: () => navigation.goBack() }]);
     } catch (err: any) {
       setError(err instanceof ApiError ? err.message : "Failed to submit");
     } finally {
@@ -74,7 +74,7 @@ export default function TwinbinActionRequiredDetailScreen({ route, navigation }:
         onPress={submit}
         disabled={submitting}
       >
-        <Text style={styles.buttonText}>{submitting ? "Submitting..." : "Submit Action"}</Text>
+        <Text style={styles.buttonText}>{submitting ? "Marking as Complete..." : "Mark as Action Complete"}</Text>
       </TouchableOpacity>
     </ScrollView>
   );

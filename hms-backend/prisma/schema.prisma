@@ -301,6 +301,10 @@ model LitterBinVisitReport {
   actionPhotoUrl    String?
   actionTakenAt     DateTime?
   reviewedByQcId    String?            @db.Uuid
+  currentOwnerRole  Role               @default(QC)
+  actionOfficerId   String?            @db.Uuid
+  actionOfficerRemark String?
+  actionOfficerRespondedAt DateTime?
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
   actionTakenBy     User?              @relation("TwinbinVisitActionTakenBy", fields: [actionTakenById], references: [id])

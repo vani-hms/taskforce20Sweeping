@@ -406,6 +406,7 @@ export const TwinbinApi = {
   actionRequiredReport: (id: string) =>
     apiFetch<{ report: any }>(`/modules/twinbin/reports/${id}/action-required`, { method: "POST" }),
   actionOfficerPending: () => apiFetch<{ reports: any[] }>("/modules/twinbin/action-officer/pending"),
+  actionOfficerHistory: () => apiFetch<{ reports: any[] }>("/modules/twinbin/action-officer/history"),
   actionOfficerSubmit: (id: string, body?: { actionNote?: string }) =>
     apiFetch<{ report: any }>(`/modules/twinbin/action-officer/${id}/submit`, {
       method: "POST",

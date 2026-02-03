@@ -13,6 +13,7 @@ export default function TwinbinPage() {
   const isQC = roles.includes("QC");
   const isActionOfficer = roles.includes("ACTION_OFFICER");
 
+
   return (
     <Protected>
       <ModuleGuard module="LITTERBINS" roles={["EMPLOYEE", "CITY_ADMIN", "HMS_SUPER_ADMIN", "ULB_OFFICER", "QC"]}>

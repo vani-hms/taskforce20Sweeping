@@ -8,20 +8,25 @@ export default function ReportsTab() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [dateFilter, setDateFilter] = useState('today');
+    const [customDate, setCustomDate] = useState('');
 
     useEffect(() => {
         loadReports();
-    }, [dateFilter]);
+    }, [dateFilter, customDate]);
 
     const loadReports = async () => {
         setLoading(true);
         setError('');
         try {
-            const statsRes = await ToiletApi.getDashboardStats();
+            const params: any = {};
+            if (dateFilter === 'custom' && customDate) {
+                params.startDate = customDate;
+            }
+            const statsRes = await ToiletApi.getDashboardStats(params);
             setStats(statsRes);
 
             // Fetch recent inspections for the table
-            const inspectionsRes = await ToiletApi.listInspections();
+            const inspectionsRes = await ToiletApi.listInspections({ pageSize: 10 });
             setReports(inspectionsRes.inspections || []);
         } catch (err) {
             if (err instanceof ApiError && (err.status === 401 || err.status === 403)) {
@@ -37,39 +42,109 @@ export default function ReportsTab() {
     const isAdmin = stats && 'todayInspections' in stats;
 
     return (
-        <div className="reports-tab">
+        <div className="reports-tab" style={{ animation: 'fadeIn 0.5s ease-out' }}>
+            <style jsx>{`
+                @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+                .date-picker-input {
+                    border: 1px solid #e2e8f0;
+                    border-radius: 10px;
+                    padding: 6px 12px;
+                    font-size: 11px;
+                    font-weight: 800;
+                    color: #1e293b;
+                    outline: none;
+                    cursor: pointer;
+                    background: #f8fafc;
+                    transition: all 0.2s;
+                }
+                .date-picker-input:focus {
+                    border-color: #3b82f6;
+                    background: #fff;
+                }
+            `}</style>
+
             {isAdmin ? (
                 <div className="admin-dashboard">
-                    <div className="stats-compact-grid">
-                        <StatCard label="INSPECTIONS SUBMITTED TODAY" value={stats.todayInspections} sub="Daily Report Count" color="#3b82f6" />
-                        <StatCard label="NEW TOILETS ADDED TODAY" value={stats.todayRegistrations} sub="New Assets Registered" color="#10b981" />
-                        <StatCard label="TOTAL TOILETS MANAGED" value={stats.totalToilets} sub="City-wide Assets" color="#6366f1" />
-                        <StatCard label="ACTIVE STAFF MEMBERS" value={stats.onDutyEmployees} sub="Currently On Duty" color="#f59e0b" />
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+                        <h2 style={{ fontSize: 18, fontWeight: 900, color: '#0f172a', margin: 0 }}>Operational Intelligence</h2>
+                        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                            {['today', 'week', 'month'].map(f => (
+                                <button
+                                    key={f}
+                                    className={`btn btn-sm ${dateFilter === f ? 'btn-primary' : 'btn-outline'}`}
+                                    onClick={() => setDateFilter(f)}
+                                    style={{ borderRadius: 10, fontSize: 11, fontWeight: 800 }}
+                                >
+                                    {f.toUpperCase()}
+                                </button>
+                            ))}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, backgroundColor: '#f1f5f9', padding: '4px 10px', borderRadius: 12 }}>
+                                <span style={{ fontSize: 10, fontWeight: 900, color: '#64748b' }}>📅 </span>
+                                <input
+                                    type="date"
+                                    className="date-picker-input"
+                                    value={customDate}
+                                    onChange={(e) => {
+                                        setCustomDate(e.target.value);
+                                        setDateFilter('custom');
+                                    }}
+                                />
+                            </div>
+                        </div>
                     </div>
 
+                    {stats[dateFilter] ? (
+                        <div className="stats-compact-grid">
+                            <StatCard label={`${dateFilter === 'custom' ? customDate : dateFilter.toUpperCase()} SUBMISSIONS`} value={stats[dateFilter].submitted} sub="Total reports" color="#3b82f6" />
+                            <StatCard label="APPROVED BY QC" value={stats[dateFilter].approved} sub="Status: Verified" color="#059669" />
+                            <StatCard label="REJECTED BY QC" value={stats[dateFilter].rejected} sub="Status: Non-Compliant" color="#ef4444" />
+                            <StatCard label="PENDING REVIEW" value={stats[dateFilter].actionRequired} sub="Status: Action Required" color="#f59e0b" />
+                        </div>
+                    ) : (
+                        <div className="stats-compact-grid">
+                            <StatCard label="INSPECTIONS TODAY" value={stats.todayInspections} sub="Total submissions" color="#3b82f6" />
+                            <StatCard label="NEW ASSETS TODAY" value={stats.todayRegistrations} sub="Asset registration" color="#10b981" />
+                            <StatCard label="ASSIGNED QC" value={stats.qcCount || 0} sub="Quality Control Team" color="#8b5cf6" />
+                            <StatCard label="ASSIGNED AO" value={stats.aoCount || 0} sub="Action Officers" color="#f43f5e" />
+                        </div>
+                    )}
+
                     <div className="stats-compact-grid mt-4">
-                        <StatCard label="COVERAGE (ZONES/WARDS)" value={stats.totalZones + stats.totalWards} sub={`${stats.totalZones} Zones, ${stats.totalWards} Wards`} color="#64748b" />
-                        <StatCard label="TOTAL APPROVED REPORTS" value={stats.approvedInspections} sub="Lifetime Approved" color="#059669" />
-                        <StatCard label="TOTAL REJECTED REPORTS" value={stats.rejectedInspections} sub="Lifetime Rejected" color="#dc2626" />
-                        <StatCard label="PENDING QC VERIFICATION" value={stats.pendingReview} sub="Awaiting Review" color="#d97706" />
+                        <StatCard label="TOTAL INFRASTRUCTURE" value={stats.totalToilets} sub="Verified Assets" color="#6366f1" />
+                        <StatCard label="STAFF ON DUTY" value={stats.onDutyEmployees} sub="Active Personnel" color="#f59e0b" />
+                        <StatCard label="TOTAL APPROVED" value={stats.approvedInspections} sub="Compliant records" color="#059669" />
+                        <StatCard label="PENDING VERIFICATION" value={stats.pendingReview} sub="QC Queue" color="#d97706" />
                     </div>
                 </div>
             ) : (
                 <div className="employee-dashboard">
-                    <div className="tab-filters mb-4">
-                        {['today', 'week', 'month'].map(f => (
-                            <button key={f} className={`btn btn-sm ${dateFilter === f ? 'btn-primary' : 'btn-outline'}`} onClick={() => setDateFilter(f)}>
-                                {f.toUpperCase()}
-                            </button>
-                        ))}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+                        <div className="tab-filters">
+                            {['today', 'week', 'month'].map(f => (
+                                <button key={f} className={`btn btn-sm ${dateFilter === f ? 'btn-primary' : 'btn-outline'}`} onClick={() => setDateFilter(f)} style={{ borderRadius: 10 }}>
+                                    {f.toUpperCase()}
+                                </button>
+                            ))}
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <input
+                                type="date"
+                                className="date-picker-input"
+                                value={customDate}
+                                onChange={(e) => {
+                                    setCustomDate(e.target.value);
+                                    setDateFilter('custom');
+                                }}
+                            />
+                        </div>
                     </div>
 
-                    {stats && stats[dateFilter] && (
+                    {stats && (stats[dateFilter] || stats.today) && (
                         <div className="stats-compact-grid">
-                            <StatCard label="SUBMITTED" value={stats[dateFilter].submitted} sub="Reports" color="#3b82f6" />
-                            <StatCard label="APPROVED" value={stats[dateFilter].approved} sub="By QC" color="#10b981" />
-                            <StatCard label="REJECTED" value={stats[dateFilter].rejected} sub="By QC" color="#ef4444" />
-                            <StatCard label="PENDING" value={stats[dateFilter].actionRequired} sub="Needs Review" color="#f59e0b" />
+                            <StatCard label="SUBMITTED" value={(stats[dateFilter] || stats.today).submitted} sub="Reports" color="#3b82f6" />
+                            <StatCard label="APPROVED" value={(stats[dateFilter] || stats.today).approved} sub="By QC" color="#10b981" />
+                            <StatCard label="REJECTED" value={(stats[dateFilter] || stats.today).rejected} sub="By QC" color="#ef4444" />
+                            <StatCard label="PENDING" value={(stats[dateFilter] || stats.today).actionRequired} sub="Needs Review" color="#f59e0b" />
                         </div>
                     )}
                 </div>
@@ -99,7 +174,7 @@ export default function ReportsTab() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {reports.length > 0 ? reports.map((report) => (
+                                {reports.length > 0 ? reports.slice(0, 10).map((report) => (
                                     <tr key={report.id}>
                                         <td className="font-bold">{report.toilet?.name || '---'}</td>
                                         <td>{report.employee?.name || '---'}</td>
@@ -163,7 +238,7 @@ export default function ReportsTab() {
                 .modern-table th {
                     text-align: left;
                     font-size: 12px;
-                    color: #64748b;
+                    color: #0f172a;
                     padding: 12px 8px;
                     border-bottom: 2px solid #f1f5f9;
                 }
@@ -179,30 +254,41 @@ export default function ReportsTab() {
 
 function StatCard({ label, value, sub, color }: any) {
     return (
-        <div className="card stat-card-compact" style={{ borderLeft: `4px solid ${color}` }}>
+        <div className="card stat-card-compact" style={{ borderLeft: `6px solid ${color}`, position: 'relative', overflow: 'hidden' }}>
             <div className="stat-label">{label}</div>
-            <div className="stat-value" style={{ color }}>{value}</div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+                <div className="stat-value" style={{ color: '#1e293b' }}>{value}</div>
+            </div>
             <div className="stat-sub">{sub}</div>
             <style jsx>{`
                 .stat-card-compact {
-                    padding: 12px 16px;
+                    padding: 16px 20px;
                     display: flex;
                     flex-direction: column;
-                    gap: 2px;
+                    gap: 4px;
+                    background: #ffffff;
+                    transition: transform 0.2s, box-shadow 0.2s;
+                }
+                .stat-card-compact:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05);
                 }
                 .stat-label {
                     font-size: 10px;
                     font-weight: 900;
                     color: #94a3b8;
-                    letter-spacing: 0.05em;
+                    letter-spacing: 0.1em;
+                    text-transform: uppercase;
                 }
                 .stat-value {
-                    font-size: 24px;
+                    font-size: 28px;
                     font-weight: 900;
+                    letter-spacing: -0.02em;
                 }
                 .stat-sub {
                     font-size: 12px;
                     color: #64748b;
+                    font-weight: 500;
                 }
             `}</style>
         </div>

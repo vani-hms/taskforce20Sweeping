@@ -26,6 +26,7 @@ router.get("/:moduleKey/records", async (req, res, next) => {
     if (moduleKey === "LITTERBINS") {
       const isCityAdmin = req.auth?.roles?.includes(Role.CITY_ADMIN);
       const isQc = req.auth?.roles?.includes(Role.QC);
+      const isAo = req.auth?.roles?.includes(Role.ACTION_OFFICER);
 
       let where: any = {}; // QC: Start with empty, no cityId
       let visitWhere: any = {};

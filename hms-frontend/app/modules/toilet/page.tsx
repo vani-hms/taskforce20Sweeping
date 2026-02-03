@@ -16,7 +16,7 @@ export default function ToiletModulePage() {
 
   const tabs: { id: string; label: string; roles: Role[] }[] = [
     { id: "reports", label: "Dashboard", roles: ["QC", "ACTION_OFFICER", "CITY_ADMIN", "HMS_SUPER_ADMIN"] },
-    { id: "all", label: "All Registered Toilets", roles: ["CITY_ADMIN", "HMS_SUPER_ADMIN"] },
+    { id: "all", label: "All Registered Toilets", roles: ["QC", "ACTION_OFFICER", "CITY_ADMIN", "HMS_SUPER_ADMIN"] },
     { id: "approvals", label: "Verification & Approvals", roles: ["QC", "ACTION_OFFICER", "CITY_ADMIN", "HMS_SUPER_ADMIN"] },
     { id: "assignments", label: "Staff Assignments", roles: ["CITY_ADMIN", "HMS_SUPER_ADMIN"] },
   ];

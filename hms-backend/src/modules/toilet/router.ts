@@ -28,8 +28,8 @@ function haversineMeters(lat1: number, lon1: number, lat2: number, lon2: number)
 
 const registerSchema = z.object({
   name: z.string().min(1),
-  type: z.nativeEnum(ToiletType),
-  gender: z.nativeEnum(ToiletGender),
+  type: z.enum(['CT', 'PT', 'URINALS']),
+  gender: z.enum(['MALE', 'FEMALE', 'UNISEX', 'DISABLED', 'DIFFERENTLY_ABLED']),
   wardId: z.string().uuid().optional(),
   latitude: z.number(),
   longitude: z.number(),
@@ -41,6 +41,10 @@ const registerSchema = z.object({
 
 router.post("/register", validateBody(registerSchema), async (req, res, next) => {
   try {
+    const fs = require('fs');
+    const logMsg = `[${new Date().toISOString()}] [TOILET_REG] Incoming request: ${JSON.stringify(req.body)}\n`;
+    fs.appendFileSync('debug_log.txt', logMsg);
+    console.log(`[TOILET_REG] Incoming request:`, req.body);
     const cityId = req.auth!.cityId!;
     const userId = req.auth!.sub!;
     const moduleId = await getModuleIdByName(MODULE_KEY);
@@ -93,11 +97,32 @@ router.get("/my-requests", async (req, res, next) => {
 router.get("/pending", async (req, res, next) => {
   try {
     const cityId = req.auth!.cityId!;
+    const userId = req.auth!.sub!;
+    const roles = req.auth!.roles || [];
     const moduleId = await getModuleIdByName(MODULE_KEY);
     await assertModuleAccess(req, res, moduleId, [Role.QC, Role.CITY_ADMIN]);
 
+    const isOnlyQC = roles.includes(Role.QC) && !roles.includes(Role.CITY_ADMIN) && !roles.includes(Role.HMS_SUPER_ADMIN);
+
+    let scopeFilter: any = {};
+    if (isOnlyQC) {
+      const scope = await getQcScope({ userId, cityId, moduleId });
+      if (scope.zoneIds.length > 0 || scope.wardIds.length > 0) {
+        scopeFilter = {
+          OR: [
+            { zoneId: { in: scope.zoneIds } },
+            { wardId: { in: scope.wardIds } }
+          ]
+        };
+      }
+    }
+
     const toilets = await prisma.toilet.findMany({
-      where: { cityId, status: ToiletStatus.PENDING },
+      where: {
+        cityId,
+        status: ToiletStatus.PENDING,
+        ...scopeFilter
+      },
       orderBy: { createdAt: "desc" },
       include: {
         requestedBy: { select: { id: true, name: true, email: true } }
@@ -198,10 +223,11 @@ router.post("/bulk-import", validateBody(bulkImportSchema), async (req, res, nex
         if (gInput === "MALE") gender = ToiletGender.MALE;
         else if (gInput === "FEMALE") gender = ToiletGender.FEMALE;
         else if (gInput === "ALL" || gInput === "UNISEX") gender = ToiletGender.UNISEX;
-        else if (gInput === "DISABLED") gender = ToiletGender.DISABLED;
+        else if (gInput === "DISABLED" || gInput === "DIFFERENTLY_ABLED" || gInput === "DIFFERENTLY ABLED") gender = ToiletGender.DIFFERENTLY_ABLED;
 
         let type: ToiletType = ToiletType.CT;
         if (typeStr?.toUpperCase() === "PT") type = ToiletType.PT;
+        else if (typeStr?.toUpperCase() === "URINALS" || typeStr?.toUpperCase() === "URINAL") type = ToiletType.URINALS;
 
         await prisma.toilet.create({
           data: {
@@ -262,7 +288,7 @@ router.post("/:id/approve", validateBody(approveSchema), async (req, res, next) 
           cityId,
           toiletId: toilet.id,
           employeeId: empId,
-          category: toilet.type === ToiletType.CT ? "CT" : "PT"
+          category: toilet.type === ToiletType.CT ? "CT" : (toilet.type === ToiletType.URINALS ? "URINAL" : "PT")
         })),
         skipDuplicates: true
       });
@@ -321,9 +347,15 @@ router.get("/stats", async (req, res, next) => {
     const moduleId = await getModuleIdByName(MODULE_KEY);
     await assertModuleAccess(req, res, moduleId, [Role.QC, Role.EMPLOYEE, Role.ACTION_OFFICER, Role.CITY_ADMIN]);
 
-    const isAdminOrQC = roles.includes(Role.CITY_ADMIN) || roles.includes(Role.QC) || roles.includes(Role.HMS_SUPER_ADMIN) || roles.includes(Role.ACTION_OFFICER);
+    const isSuperAdmin = roles.includes(Role.HMS_SUPER_ADMIN);
+    const isCityAdmin = roles.includes(Role.CITY_ADMIN);
+    const isQC = roles.includes(Role.QC);
+    const isAO = roles.includes(Role.ACTION_OFFICER);
+    const isEmployee = roles.includes(Role.EMPLOYEE);
 
-    if (roles.includes(Role.EMPLOYEE) && !isAdminOrQC) {
+    const isOnlyQCorAO = (isQC || isAO) && !isCityAdmin && !isSuperAdmin;
+
+    if (isEmployee && !isCityAdmin && !isQC && !isAO && !isSuperAdmin) {
       const totalToilets = await prisma.toilet.count({
         where: { cityId, assignedEmployeeIds: { has: userId } }
       });
@@ -371,10 +403,27 @@ router.get("/stats", async (req, res, next) => {
       const cityObj = await prisma.city.findUnique({ where: { id: cityId }, select: { name: true } });
       const userCity = await prisma.userCity.findFirst({ where: { userId, cityId } });
       let wardNames = "";
+      let wardIds: string[] = [];
       if (userCity?.wardIds?.length) {
-        const wNodes = await prisma.geoNode.findMany({ where: { id: { in: userCity.wardIds } }, select: { name: true } });
+        wardIds = userCity.wardIds;
+        const wNodes = await prisma.geoNode.findMany({ where: { id: { in: wardIds } }, select: { name: true } });
         wardNames = wNodes.map(n => n.name).join(", ");
       }
+
+      // Fetch QC and AO
+      const qcUsers = await prisma.userCity.findMany({
+        where: { cityId, role: Role.QC },
+        include: { user: { select: { name: true, phone: true } } }
+      });
+      const aoUsers = await prisma.userCity.findMany({
+        where: { cityId, role: Role.ACTION_OFFICER },
+        include: { user: { select: { name: true, phone: true } } }
+      });
+
+      const supportStaff = {
+        qc: qcUsers.map(u => ({ name: u.user.name, phone: u.user.phone })),
+        ao: aoUsers.map(u => ({ name: u.user.name, phone: u.user.phone }))
+      };
 
       return res.json({
         cityName: cityObj?.name,
@@ -388,8 +437,23 @@ router.get("/stats", async (req, res, next) => {
         totalToilets: totalAssigned,
         totalWards: wardGroups.length,
         pendingReports,
-        approvedReports
+        approvedReports,
+        supportStaff
       });
+    }
+
+    // Role.QC or Role.ACTION_OFFICER or Role.CITY_ADMIN
+    let scopeFilter: any = {};
+    if (isOnlyQCorAO) {
+      const scope = await getQcScope({ userId, cityId, moduleId });
+      if (scope.zoneIds.length > 0 || scope.wardIds.length > 0) {
+        scopeFilter = {
+          OR: [
+            { zoneId: { in: scope.zoneIds } },
+            { wardId: { in: scope.wardIds } }
+          ]
+        };
+      }
     }
 
     const startOfToday = new Date();
@@ -398,6 +462,12 @@ router.get("/stats", async (req, res, next) => {
     const startOfMonth = new Date();
     startOfMonth.setDate(1);
     startOfMonth.setHours(0, 0, 0, 0);
+
+    const baseWhere = { cityId, ...scopeFilter };
+    const inspectionBaseWhere = { cityId, toilet: scopeFilter };
+
+    const customStartQuery = req.query.startDate ? new Date(req.query.startDate as string) : null;
+    const customEndQuery = req.query.endDate ? new Date(req.query.endDate as string) : (customStartQuery ? new Date(customStartQuery.getTime() + 86400000) : null);
 
     const [
       totalToilets,
@@ -408,41 +478,57 @@ router.get("/stats", async (req, res, next) => {
       todayRegistrations,
       approvedInspections,
       rejectedInspections,
-      // Time-series stats for backward compatibility
       todayStats,
       weekStats,
-      monthStats
+      monthStats,
+      customStats,
+      qcCount,
+      aoCount,
+      currentUser
     ] = await Promise.all([
-      prisma.toilet.count({ where: { cityId } }),
-      prisma.geoNode.count({ where: { cityId, level: 'ZONE' } }),
-      prisma.geoNode.count({ where: { cityId, level: 'WARD' } }),
-      prisma.toiletAssignment.groupBy({ by: ['employeeId'], where: { cityId } }).then(groups => groups.length),
-      prisma.toiletInspection.count({ where: { cityId, createdAt: { gte: startOfToday } } }),
-      prisma.toilet.count({ where: { cityId, createdAt: { gte: startOfToday } } }),
-      prisma.toiletInspection.count({ where: { cityId, status: InspectionStatus.APPROVED } }),
-      prisma.toiletInspection.count({ where: { cityId, status: InspectionStatus.REJECTED } }),
-      // Helper for time-series
+      prisma.toilet.count({ where: baseWhere }),
+      prisma.geoNode.count({ where: { cityId, level: 'ZONE', ...(isOnlyQCorAO && scopeFilter.OR ? { id: { in: (scopeFilter.OR[0].zoneId.in || []) } } : {}) } }),
+      prisma.geoNode.count({ where: { cityId, level: 'WARD', ...(isOnlyQCorAO && scopeFilter.OR ? { id: { in: (scopeFilter.OR[1].wardId.in || []) } } : {}) } }),
+      prisma.toiletAssignment.groupBy({
+        by: ['employeeId'],
+        where: { cityId, toilet: scopeFilter }
+      }).then(groups => groups.length),
+      prisma.toiletInspection.count({ where: { ...inspectionBaseWhere, createdAt: { gte: startOfToday } } }),
+      prisma.toilet.count({ where: { ...baseWhere, createdAt: { gte: startOfToday } } }),
+      prisma.toiletInspection.count({ where: { ...inspectionBaseWhere, status: InspectionStatus.APPROVED } }),
+      prisma.toiletInspection.count({ where: { ...inspectionBaseWhere, status: InspectionStatus.REJECTED } }),
+
       Promise.all([
-        prisma.toiletInspection.count({ where: { cityId, createdAt: { gte: startOfToday } } }),
-        prisma.toiletInspection.count({ where: { cityId, status: InspectionStatus.APPROVED, createdAt: { gte: startOfToday } } }),
-        prisma.toiletInspection.count({ where: { cityId, status: InspectionStatus.REJECTED, createdAt: { gte: startOfToday } } }),
-        prisma.toiletInspection.count({ where: { cityId, status: InspectionStatus.SUBMITTED, createdAt: { gte: startOfToday } } }),
+        prisma.toiletInspection.count({ where: { ...inspectionBaseWhere, createdAt: { gte: startOfToday } } }),
+        prisma.toiletInspection.count({ where: { ...inspectionBaseWhere, status: InspectionStatus.APPROVED, createdAt: { gte: startOfToday } } }),
+        prisma.toiletInspection.count({ where: { ...inspectionBaseWhere, status: InspectionStatus.REJECTED, createdAt: { gte: startOfToday } } }),
+        prisma.toiletInspection.count({ where: { ...inspectionBaseWhere, status: InspectionStatus.SUBMITTED, createdAt: { gte: startOfToday } } }),
       ]),
       Promise.all([
-        prisma.toiletInspection.count({ where: { cityId, createdAt: { gte: startOfWeek } } }),
-        prisma.toiletInspection.count({ where: { cityId, status: InspectionStatus.APPROVED, createdAt: { gte: startOfWeek } } }),
-        prisma.toiletInspection.count({ where: { cityId, status: InspectionStatus.REJECTED, createdAt: { gte: startOfWeek } } }),
-        prisma.toiletInspection.count({ where: { cityId, status: InspectionStatus.SUBMITTED, createdAt: { gte: startOfWeek } } }),
+        prisma.toiletInspection.count({ where: { ...inspectionBaseWhere, createdAt: { gte: startOfWeek } } }),
+        prisma.toiletInspection.count({ where: { ...inspectionBaseWhere, status: InspectionStatus.APPROVED, createdAt: { gte: startOfWeek } } }),
+        prisma.toiletInspection.count({ where: { ...inspectionBaseWhere, status: InspectionStatus.REJECTED, createdAt: { gte: startOfWeek } } }),
+        prisma.toiletInspection.count({ where: { ...inspectionBaseWhere, status: InspectionStatus.SUBMITTED, createdAt: { gte: startOfWeek } } }),
       ]),
       Promise.all([
-        prisma.toiletInspection.count({ where: { cityId, createdAt: { gte: startOfMonth } } }),
-        prisma.toiletInspection.count({ where: { cityId, status: InspectionStatus.APPROVED, createdAt: { gte: startOfMonth } } }),
-        prisma.toiletInspection.count({ where: { cityId, status: InspectionStatus.REJECTED, createdAt: { gte: startOfMonth } } }),
-        prisma.toiletInspection.count({ where: { cityId, status: InspectionStatus.SUBMITTED, createdAt: { gte: startOfMonth } } }),
-      ])
+        prisma.toiletInspection.count({ where: { ...inspectionBaseWhere, createdAt: { gte: startOfMonth } } }),
+        prisma.toiletInspection.count({ where: { ...inspectionBaseWhere, status: InspectionStatus.APPROVED, createdAt: { gte: startOfMonth } } }),
+        prisma.toiletInspection.count({ where: { ...inspectionBaseWhere, status: InspectionStatus.REJECTED, createdAt: { gte: startOfMonth } } }),
+        prisma.toiletInspection.count({ where: { ...inspectionBaseWhere, status: InspectionStatus.SUBMITTED, createdAt: { gte: startOfMonth } } }),
+      ]),
+      customStartQuery ? Promise.all([
+        prisma.toiletInspection.count({ where: { ...inspectionBaseWhere, createdAt: { gte: customStartQuery, lt: customEndQuery! } } }),
+        prisma.toiletInspection.count({ where: { ...inspectionBaseWhere, status: InspectionStatus.APPROVED, createdAt: { gte: customStartQuery, lt: customEndQuery! } } }),
+        prisma.toiletInspection.count({ where: { ...inspectionBaseWhere, status: InspectionStatus.REJECTED, createdAt: { gte: customStartQuery, lt: customEndQuery! } } }),
+        prisma.toiletInspection.count({ where: { ...inspectionBaseWhere, status: InspectionStatus.SUBMITTED, createdAt: { gte: customStartQuery, lt: customEndQuery! } } }),
+      ]) : Promise.resolve(null),
+      prisma.userCity.count({ where: { cityId, role: Role.QC } }),
+      prisma.userCity.count({ where: { cityId, role: Role.ACTION_OFFICER } }),
+      prisma.user.findUnique({ where: { id: req.auth!.sub }, select: { name: true } })
     ]);
 
     res.json({
+      employeeName: currentUser?.name,
       totalToilets,
       totalZones,
       totalWards,
@@ -451,9 +537,12 @@ router.get("/stats", async (req, res, next) => {
       todayRegistrations,
       approvedInspections,
       rejectedInspections,
+      qcCount,
+      aoCount,
       today: { submitted: todayStats[0], approved: todayStats[1], rejected: todayStats[2], actionRequired: todayStats[3] },
       week: { submitted: weekStats[0], approved: weekStats[1], rejected: weekStats[2], actionRequired: weekStats[3] },
       month: { submitted: monthStats[0], approved: monthStats[1], rejected: monthStats[2], actionRequired: monthStats[3] },
+      custom: customStats ? { submitted: customStats[0], approved: customStats[1], rejected: customStats[2], actionRequired: customStats[3] } : null,
       // compatibility
       pendingReview: todayStats[3],
       inspectionsDone: todayStats[1]
@@ -531,18 +620,37 @@ router.post("/inspections/submit", validateBody(inspectionSchema), async (req, r
 router.get("/reports/summary", async (req, res, next) => {
   try {
     const cityId = req.auth!.cityId!;
+    const userId = req.auth!.sub!;
+    const roles = req.auth!.roles || [];
     const moduleId = await getModuleIdByName(MODULE_KEY);
     await assertModuleAccess(req, res, moduleId, [Role.QC, Role.ACTION_OFFICER, Role.CITY_ADMIN]);
 
-    const summaryData = await prisma.toiletInspection.groupBy({
-      by: ['status'],
-      where: { cityId }
-    });
+    const isOnlyQCorAO = (roles.includes(Role.QC) || roles.includes(Role.ACTION_OFFICER)) &&
+      !roles.includes(Role.CITY_ADMIN) &&
+      !roles.includes(Role.HMS_SUPER_ADMIN);
 
-    // More detailed summary
+    let scopeFilter: any = {};
+    if (isOnlyQCorAO) {
+      const scope = await getQcScope({ userId, cityId, moduleId });
+      if (scope.zoneIds.length > 0 || scope.wardIds.length > 0) {
+        scopeFilter = {
+          OR: [
+            { zoneId: { in: scope.zoneIds } },
+            { wardId: { in: scope.wardIds } }
+          ]
+        };
+      }
+    }
+
     const statuses = Object.values(InspectionStatus);
     const summary = await Promise.all(statuses.map(async (status) => {
-      const count = await prisma.toiletInspection.count({ where: { cityId, status } });
+      const count = await prisma.toiletInspection.count({
+        where: {
+          cityId,
+          status,
+          toilet: scopeFilter
+        }
+      });
       return { status, count };
     }));
 
@@ -555,17 +663,60 @@ router.get("/reports/summary", async (req, res, next) => {
 router.get("/all", async (req, res, next) => {
   try {
     const cityId = req.auth!.cityId!;
+    const userId = req.auth!.sub!;
+    const roles = req.auth!.roles || [];
     const moduleId = await getModuleIdByName(MODULE_KEY);
     await assertModuleAccess(req, res, moduleId, [Role.QC, Role.ACTION_OFFICER, Role.CITY_ADMIN]);
 
-    const toilets = await prisma.toilet.findMany({
-      where: { cityId },
+    const isOnlyQCorAO = (roles.includes(Role.QC) || roles.includes(Role.ACTION_OFFICER)) &&
+      !roles.includes(Role.CITY_ADMIN) &&
+      !roles.includes(Role.HMS_SUPER_ADMIN);
+
+    let scopeFilter: any = {};
+    if (isOnlyQCorAO) {
+      const scope = await getQcScope({ userId, cityId, moduleId });
+      if (scope.zoneIds.length > 0 || scope.wardIds.length > 0) {
+        scopeFilter = {
+          OR: [
+            { zoneId: { in: scope.zoneIds } },
+            { wardId: { in: scope.wardIds } }
+          ]
+        };
+      }
+    }
+
+    const toiletsRaw = await prisma.toilet.findMany({
+      where: {
+        cityId,
+        ...scopeFilter
+      },
       include: {
         requestedBy: { select: { name: true } },
-        assignments: { include: { employee: { select: { name: true, email: true } } } }
+        assignments: {
+          include: { employee: { select: { name: true, email: true } } },
+          orderBy: { assignedAt: "desc" }
+        }
       },
       orderBy: { createdAt: "desc" }
     });
+
+    const wardIds = Array.from(new Set(toiletsRaw.map(t => t.wardId).filter(Boolean))) as string[];
+    const zoneIds = Array.from(new Set(toiletsRaw.map(t => t.zoneId).filter(Boolean))) as string[];
+
+    const geoNodes = await prisma.geoNode.findMany({
+      where: { id: { in: [...wardIds, ...zoneIds] } },
+      include: { parent: { select: { name: true } } }
+    });
+
+    const geoMap = new Map(geoNodes.map(n => [n.id, n]));
+
+    const toilets = toiletsRaw.map(t => ({
+      ...t,
+      ward: t.wardId ? {
+        name: geoMap.get(t.wardId)?.name,
+        parent: geoMap.get(t.wardId)?.parent ? { name: geoMap.get(t.wardId)?.parent?.name } : (t.zoneId ? { name: geoMap.get(t.zoneId)?.name } : null)
+      } : null
+    }));
 
     console.log(`[TOILET_ALL] cityId: ${cityId}, user: ${req.auth?.sub}, found: ${toilets.length}`);
     res.json({ toilets });
@@ -598,7 +749,7 @@ router.post("/assignments/bulk", validateBody(bulkAssignSchema), async (req, res
           where: { id },
           data: {
             assignedEmployeeIds: {
-              push: employeeId
+              set: [employeeId]
             }
           }
         })
@@ -622,34 +773,122 @@ router.post("/assignments/bulk", validateBody(bulkAssignSchema), async (req, res
   }
 });
 
+router.post("/assignments/remove", async (req, res, next) => {
+  try {
+    const cityId = req.auth!.cityId!;
+    const moduleId = await getModuleIdByName(MODULE_KEY);
+    await assertModuleAccess(req, res, moduleId, [Role.CITY_ADMIN]);
+
+    const { employeeId, toiletId } = req.body;
+    console.log(`[TOILET_UNASSIGN] req: employeeId=${employeeId}, toiletId=${toiletId}, city=${cityId}`);
+
+    if (!employeeId || !toiletId) {
+      console.warn(`[TOILET_UNASSIGN] Missing fields`);
+      throw new HttpError(400, "employeeId and toiletId are required");
+    }
+
+    const toilet = await prisma.toilet.findUnique({
+      where: { id: toiletId },
+      select: { id: true, assignedEmployeeIds: true }
+    });
+
+    if (!toilet) {
+      console.warn(`[TOILET_UNASSIGN] Toilet ${toiletId} not found`);
+      throw new HttpError(404, "Toilet not found");
+    }
+
+    const assignment = await prisma.toiletAssignment.findUnique({
+      where: { toiletId_employeeId: { toiletId, employeeId } }
+    });
+    console.log(`[TOILET_UNASSIGN] Assignment exists: ${!!assignment}`);
+
+    const updatedIds = toilet.assignedEmployeeIds.filter(id => id !== employeeId);
+
+    await prisma.$transaction([
+      prisma.toilet.update({
+        where: { id: toiletId },
+        data: {
+          assignedEmployeeIds: {
+            set: updatedIds
+          }
+        }
+      }),
+      prisma.toiletAssignment.deleteMany({
+        where: {
+          toiletId,
+          employeeId,
+          cityId
+        }
+      })
+    ]);
+
+    res.json({ success: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.get("/inspections", async (req, res, next) => {
   try {
     const cityId = req.auth!.cityId!;
+    const userId = req.auth!.sub!;
+    const roles = req.auth!.roles || [];
     const status = req.query.status as InspectionStatus | undefined;
     const employeeId = req.query.employeeId as string | undefined;
     const moduleId = await getModuleIdByName(MODULE_KEY);
     await assertModuleAccess(req, res, moduleId, [Role.QC, Role.EMPLOYEE, Role.ACTION_OFFICER, Role.CITY_ADMIN]);
 
-    const isEmployeeOnly = req.auth!.roles.includes(Role.EMPLOYEE) &&
-      !req.auth!.roles.includes(Role.QC) &&
-      !req.auth!.roles.includes(Role.ACTION_OFFICER) &&
-      !req.auth!.roles.includes(Role.CITY_ADMIN);
+    const isEmployeeOnly = roles.includes(Role.EMPLOYEE) &&
+      !roles.includes(Role.QC) &&
+      !roles.includes(Role.ACTION_OFFICER) &&
+      !roles.includes(Role.CITY_ADMIN);
 
-    const inspections = await prisma.toiletInspection.findMany({
-      where: {
-        cityId,
-        ...(status ? { status } : {}),
-        ...(employeeId ? { employeeId } : (isEmployeeOnly ? { employeeId: req.auth!.sub } : {}))
-      },
-      include: {
-        toilet: true,
-        employee: { select: { name: true, email: true } }
-      },
-      orderBy: { createdAt: "desc" }
-    });
+    const isOnlyQCorAO = (roles.includes(Role.QC) || roles.includes(Role.ACTION_OFFICER)) &&
+      !roles.includes(Role.CITY_ADMIN) &&
+      !roles.includes(Role.HMS_SUPER_ADMIN);
 
-    console.log(`[INSPECTIONS] cityId: ${cityId}, status: ${status}, roles: ${req.auth?.roles}, found: ${inspections.length}`);
-    res.json({ inspections });
+    let scopeFilter: any = {};
+    if (isOnlyQCorAO) {
+      const scope = await getQcScope({ userId, cityId, moduleId });
+      if (scope.zoneIds.length > 0 || scope.wardIds.length > 0) {
+        scopeFilter = {
+          OR: [
+            { zoneId: { in: scope.zoneIds } },
+            { wardId: { in: scope.wardIds } }
+          ]
+        };
+      }
+    }
+
+    const page = parseInt(req.query.page as string) || 1;
+    const pageSize = parseInt(req.query.pageSize as string) || 50;
+    const skip = (page - 1) * pageSize;
+
+    const where = {
+      cityId,
+      ...(status ? { status } : {}),
+      ...(employeeId ? { employeeId } : (isEmployeeOnly ? { employeeId: req.auth!.sub } : {})),
+      toilet: scopeFilter
+    };
+
+    const [total, inspections] = await Promise.all([
+      prisma.toiletInspection.count({ where }),
+      prisma.toiletInspection.findMany({
+        where,
+        include: {
+          toilet: true,
+          employee: { select: { name: true, email: true } },
+          reviewedByQc: { select: { name: true } },
+          actionTakenBy: { select: { name: true } }
+        },
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: pageSize
+      })
+    ]);
+
+    console.log(`[INSPECTIONS] cityId: ${cityId}, status: ${status}, page: ${page}, found: ${inspections.length}/${total}`);
+    res.json({ inspections, total, page, pageSize });
   } catch (err) {
     next(err);
   }
@@ -662,7 +901,9 @@ router.get("/inspections/:id", async (req, res, next) => {
       where: { id: req.params.id as string },
       include: {
         toilet: true,
-        employee: { select: { id: true, name: true, email: true } }
+        employee: { select: { id: true, name: true, email: true } },
+        reviewedByQc: { select: { name: true } },
+        actionTakenBy: { select: { name: true } }
       }
     });
 
@@ -698,7 +939,10 @@ router.get("/:id", async (req, res, next) => {
       where: { id: req.params.id as string },
       include: {
         requestedBy: { select: { name: true, email: true } },
-        assignments: { include: { employee: { select: { name: true, email: true } } } },
+        assignments: {
+          include: { employee: { select: { name: true, email: true } } },
+          orderBy: { assignedAt: "desc" }
+        },
         inspections: {
           include: { employee: { select: { name: true } } },
           orderBy: { createdAt: "desc" },
@@ -723,6 +967,7 @@ router.post("/inspections/:id/review", validateBody(reviewSchema), async (req, r
   try {
     const cityId = req.auth!.cityId!;
     const userRoles = req.auth!.roles;
+    const userId = req.auth!.sub!;
     const moduleId = await getModuleIdByName(MODULE_KEY);
     await assertModuleAccess(req, res, moduleId, [Role.QC, Role.ACTION_OFFICER, Role.CITY_ADMIN]);
 
@@ -740,11 +985,14 @@ router.post("/inspections/:id/review", validateBody(reviewSchema), async (req, r
     const updateData: any = { status };
 
     if (isQC) {
+      updateData.reviewedByQcId = userId;
       if (status === InspectionStatus.ACTION_REQUIRED || status === InspectionStatus.REJECTED) {
         updateData.qcComment = comment;
       }
     } else if (isAO && !isQC) { // Ensure pure AO restricted
       if (inspection.status !== InspectionStatus.ACTION_REQUIRED) throw new HttpError(400, "Action Officer can only review items marked Action Required");
+
+      updateData.actionTakenById = userId;
 
       if (status === InspectionStatus.REJECTED) {
         updateData.actionNote = comment;

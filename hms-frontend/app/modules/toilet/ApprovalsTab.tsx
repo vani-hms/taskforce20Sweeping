@@ -208,12 +208,34 @@ export default function ApprovalsTab() {
                                         <p style={{ marginBottom: 8 }}><strong>Toilet:</strong> {selectedRequest.toilet?.name}</p>
                                         <p style={{ marginBottom: 8 }}><strong>Employee:</strong> {selectedRequest.employee?.name}</p>
                                         <p style={{ marginBottom: 8 }}><strong>Distance:</strong> {Math.round(selectedRequest.distanceMeters || 0)}m from asset</p>
-                                        {selectedRequest.qcComment && (
-                                            <div style={{ marginTop: 12, padding: 10, backgroundColor: '#fff7ed', borderRadius: 8, borderLeft: '3px solid #f97316' }}>
-                                                <div className="small font-bold text-orange-800">QC COMMENT:</div>
-                                                <div className="small">{selectedRequest.qcComment}</div>
-                                            </div>
-                                        )}
+
+                                        {/* Audit Trail */}
+                                        <div style={{ marginTop: 16, padding: 12, backgroundColor: '#f0f9ff', borderRadius: 12, border: '1px solid #e0f2fe' }}>
+                                            <div className="muted small font-bold" style={{ marginBottom: 8 }}>AUDIT TRAIL</div>
+                                            {selectedRequest.reviewedByQc && (
+                                                <p style={{ fontSize: 13, marginBottom: 4 }}>
+                                                    🔍 <strong>Reviewed By QC/Admin:</strong> {selectedRequest.reviewedByQc.name}
+                                                </p>
+                                            )}
+                                            {selectedRequest.actionTakenBy && (
+                                                <p style={{ fontSize: 13, marginBottom: 4 }}>
+                                                    ⚠️ <strong>Action Taken By:</strong> {selectedRequest.actionTakenBy.name}
+                                                </p>
+                                            )}
+                                            {selectedRequest.qcComment && (
+                                                <div style={{ marginTop: 8, padding: 8, backgroundColor: '#fff7ed', borderRadius: 6, fontSize: 12, color: '#9a3412' }}>
+                                                    <strong>QC Instructions:</strong> {selectedRequest.qcComment}
+                                                </div>
+                                            )}
+                                            {selectedRequest.actionNote && (
+                                                <div style={{ marginTop: 4, padding: 8, backgroundColor: '#ecfdf5', borderRadius: 6, fontSize: 12, color: '#065f46' }}>
+                                                    <strong>Action Notes:</strong> {selectedRequest.actionNote}
+                                                </div>
+                                            )}
+                                            {!selectedRequest.reviewedByQc && !selectedRequest.actionTakenBy && (
+                                                <p style={{ fontSize: 12, fontStyle: 'italic', color: '#94a3b8' }}>No review audit yet</p>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
 
@@ -240,8 +262,8 @@ export default function ApprovalsTab() {
                                 </div>
 
                                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
-                                    {/* QC Actions */}
-                                    {selectedRequest.status === 'SUBMITTED' && (
+                                    {/* Action Buttons Restricted to QC/AO roles, City Admin only views if purely City Admin */}
+                                    {(user?.roles.includes('QC') || user?.roles.includes('HMS_SUPER_ADMIN')) && selectedRequest.status === 'SUBMITTED' && (
                                         <>
                                             <button className="btn btn-primary btn-sm" style={{ flex: '1 0 45%', backgroundColor: '#10b981', borderColor: '#10b981' }} onClick={() => handleAction(selectedRequest.id, 'APPROVED', true)}>✅ Approve</button>
                                             <button className="btn btn-secondary btn-sm" style={{ flex: '1 0 45%', backgroundColor: '#ef4444', borderColor: '#ef4444', color: 'white' }} onClick={() => handleAction(selectedRequest.id, 'REJECTED', true)}>✕ Reject</button>
@@ -249,12 +271,17 @@ export default function ApprovalsTab() {
                                         </>
                                     )}
 
-                                    {/* Action Officer Actions */}
-                                    {selectedRequest.status === 'ACTION_REQUIRED' && (
+                                    {user?.roles.includes('ACTION_OFFICER') && selectedRequest.status === 'ACTION_REQUIRED' && (
                                         <>
                                             <button className="btn btn-primary btn-sm" style={{ flex: '1 0 45%' }} onClick={() => handleAction(selectedRequest.id, 'APPROVED', true)}>No Action Needed (Approve)</button>
                                             <button className="btn btn-secondary btn-sm" style={{ flex: '1 0 45%', backgroundColor: '#dc2626' }} onClick={() => handleAction(selectedRequest.id, 'REJECTED', true)}>Action Taken (Resolve)</button>
                                         </>
+                                    )}
+
+                                    {user?.roles.includes('CITY_ADMIN') && !user?.roles.includes('QC') && !user?.roles.includes('ACTION_OFFICER') && isInspection(selectedRequest) && (
+                                        <div style={{ width: '100%', padding: 12, backgroundColor: '#f1f5f9', borderRadius: 8, textAlign: 'center', fontSize: 13, color: '#64748b' }}>
+                                            ℹ️ Only QC and Action Officers can review inspections.
+                                        </div>
                                     )}
                                 </div>
                             </>
@@ -266,7 +293,7 @@ export default function ApprovalsTab() {
             <style jsx>{`
                 .table-responsive { overflow-x: auto; }
                 .modern-table { width: 100%; border-collapse: collapse; }
-                .modern-table th { text-align: left; font-size: 11px; font-weight: 900; color: #94a3b8; text-transform: uppercase; padding: 12px 8px; border-bottom: 2px solid #f1f5f9; }
+                .modern-table th { text-align: left; font-size: 11px; font-weight: 900; color: #0f172a; text-transform: uppercase; padding: 12px 8px; border-bottom: 2px solid #f1f5f9; }
                 .modern-table td { padding: 12px 8px; border-bottom: 1px solid #f1f5f9; }
                 .active-row { background-color: #f8fafc; border-left: 4px solid #1d4ed8 !important; }
                 .status-pill { padding: 2px 8px; border-radius: 4px; font-size: 9px; font-weight: 900; }

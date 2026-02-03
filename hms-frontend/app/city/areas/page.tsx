@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from "react";
-import { ApiError, GeoApi } from "@lib/apiClient";
+import { ApiError, GeoApi, apiFetch } from "@lib/apiClient";
 
 type GeoNode = { id: string; name: string; parentId?: string | null; level: string; areaType?: string };
 
@@ -10,6 +10,7 @@ const AREA_TYPES = [
   { label: "Commercial", value: "COMMERCIAL" },
   { label: "Slum", value: "SLUM" }
 ];
+
 
 interface EditState {
   id: string;
@@ -33,13 +34,12 @@ export default function AreasPage() {
   const [areaStatus, setAreaStatus] = useState("");
   const [savingArea, setSavingArea] = useState(false);
 
+
   // Create Beat
-  const [zoneForBeat, setZoneForBeat] = useState("");
-  const [wardForBeat, setWardForBeat] = useState("");
-  const [areaForBeat, setAreaForBeat] = useState("");
-  const [beatName, setBeatName] = useState("");
-  const [beatStatus, setBeatStatus] = useState("");
-  const [savingBeat, setSavingBeat] = useState(false);
+
+  const [beatFile, setBeatFile] = useState<File | null>(null);
+  const [uploadStatus, setUploadStatus] = useState("");
+
 
   // Edit / Delete
   const [editing, setEditing] = useState<EditState | null>(null);
@@ -103,8 +103,6 @@ export default function AreasPage() {
   }, [beats]);
 
   const availableWardsForArea = zoneForArea ? wardsByZone[zoneForArea] || [] : [];
-  const availableWardsForBeat = zoneForBeat ? wardsByZone[zoneForBeat] || [] : [];
-  const availableAreasForBeat = wardForBeat ? areasByWard[wardForBeat] || [] : [];
 
   const handleCreateArea = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -125,23 +123,33 @@ export default function AreasPage() {
     }
   };
 
-  const handleCreateBeat = async (e: React.FormEvent) => {
+
+  const handleUploadBeat = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!zoneForBeat || !wardForBeat || !areaForBeat || !beatName) return;
-    setSavingBeat(true);
-    setBeatStatus("Saving...");
+    if (!beatFile) return;
+
+    const form = new FormData();
+    form.append("file", beatFile);
+
+    setUploadStatus("Uploading...");
+
     try {
-      await GeoApi.create({ level: "BEAT", name: beatName, parentId: areaForBeat });
-      setBeatStatus("Beat created");
-      setBeatName("");
+      const res = await apiFetch("/modules/sweeping/admin/upload-kml", {
+        method: "POST",
+        body: form,
+        headers: {}
+      });
+
+      alert(`Upload successful. Beats created`);
+      setBeatFile(null);
+      setUploadStatus("");
       await loadGeo();
     } catch (err) {
-      const msg = err instanceof ApiError ? err.message : "Failed to create beat";
-      setBeatStatus(msg);
-    } finally {
-      setSavingBeat(false);
+      console.error(err);
+      setUploadStatus("Upload failed");
     }
   };
+
 
   const startEdit = (node: GeoNode) => {
     setEditing({ id: node.id, name: node.name, areaType: node.areaType });
@@ -425,84 +433,43 @@ export default function AreasPage() {
 
         <div className="card">
           <h3>Beat</h3>
-          <p className="muted" style={{ marginTop: -6 }}>
-            Create beats under area names.
+
+          {/* ================= KML UPLOAD ================= */}
+
+          <h3>Beat (KML Upload)</h3>
+
+          <p className="muted">
+            Upload ward-wise KML files containing beat polygons.
+            Ward is auto-detected from beat names inside KML.
+            Please ensure wards already exist.
           </p>
-          <form onSubmit={handleCreateBeat} className="form">
-            <label>Select Zone</label>
-            <select
-              className="input"
-              value={zoneForBeat}
-              onChange={(e) => {
-                setZoneForBeat(e.target.value);
-                setWardForBeat("");
-                setAreaForBeat("");
-              }}
-              required
-              disabled={zones.length === 0}
-            >
-              <option value="">Select zone</option>
-              {zones.map((z) => (
-                <option key={z.id} value={z.id}>
-                  {z.name}
-                </option>
-              ))}
-            </select>
 
-            <label>Select Ward</label>
-            <select
-              className="input"
-              value={wardForBeat}
-              onChange={(e) => {
-                setWardForBeat(e.target.value);
-                setAreaForBeat("");
-              }}
-              required
-              disabled={!zoneForBeat || availableWardsForBeat.length === 0}
-            >
-              <option value="">Select ward</option>
-              {availableWardsForBeat.map((w) => (
-                <option key={w.id} value={w.id}>
-                  {w.name}
-                </option>
-              ))}
-            </select>
+          <form onSubmit={handleUploadBeat} className="form">
 
-            <label>Select Area</label>
-            <select
-              className="input"
-              value={areaForBeat}
-              onChange={(e) => setAreaForBeat(e.target.value)}
-              required
-              disabled={!wardForBeat || availableAreasForBeat.length === 0}
-            >
-              <option value="">Select area</option>
-              {availableAreasForBeat.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.name} ({a.areaType || "—"})
-                </option>
-              ))}
-            </select>
+            <label>Beat KML File</label>
 
-            <label>Beat Name</label>
             <input
-              className="input"
-              value={beatName}
-              onChange={(e) => setBeatName(e.target.value)}
-              required
-              disabled={!areaForBeat}
+              type="file"
+              accept=".kml"
+              onChange={(e) => setBeatFile(e.target.files?.[0] || null)}
             />
 
             <button
-              className="btn btn-primary"
+              className="btn btn-secondary"
               type="submit"
-              disabled={!zoneForBeat || !wardForBeat || !areaForBeat || !beatName || savingBeat}
+              disabled={!beatFile}
             >
-              {savingBeat ? "Saving..." : "Create Beat"}
+              Upload Beat File
             </button>
-            {beatStatus && <div className="muted">{beatStatus}</div>}
+
+            {uploadStatus && <div className="muted">{uploadStatus}</div>}
           </form>
+
+
+          <hr style={{ margin: "12px 0" }} />
+
         </div>
+
       </div>
 
       <div className="card">
@@ -512,3 +479,6 @@ export default function AreasPage() {
     </div>
   );
 }
+
+
+// now can we stop here and try to test each and every flow of qc admin city admin action officer and emoployee so i need to create dummy kml file to test this so how can we create kml file from which we can work on this 

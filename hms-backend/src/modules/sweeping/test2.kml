@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>Ward 1</name>
+
+    <Placemark>
+      <name>Ward 1 Boundary</name>
+
+      <Style>
+        <LineStyle>
+          <color>ff0000ff</color>
+          <width>2</width>
+        </LineStyle>
+        <PolyStyle>
+          <color>7f00ff00</color>
+        </PolyStyle>
+      </Style>
+
+      <Polygon>
+        <outerBoundaryIs>
+          <LinearRing>
+            <coordinates>
+              75.8577,22.7196,0
+              75.8605,22.7196,0
+              75.8605,22.7220,0
+              75.8577,22.7220,0
+              75.8577,22.7196,0
+            </coordinates>
+          </LinearRing>
+        </outerBoundaryIs>
+      </Polygon>
+
+    </Placemark>
+  </Document>
+</kml>

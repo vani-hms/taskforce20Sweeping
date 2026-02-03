@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+<Document>
+
+<Placemark>
+<name>Ward1 1KM Test Beat</name>
+
+<Style>
+<LineStyle>
+<color>ff00ff00</color>
+<width>2</width>
+</LineStyle>
+<PolyStyle>
+<color>3300ff00</color>
+</PolyStyle>
+</Style>
+
+<Polygon>
+<outerBoundaryIs>
+<LinearRing>
+<coordinates>
+75.8979406,22.775552,0
+75.9159406,22.775552,0
+75.9159406,22.757552,0
+75.8979406,22.757552,0
+75.8979406,22.775552,0
+</coordinates>
+</LinearRing>
+</outerBoundaryIs>
+</Polygon>
+
+</Placemark>
+
+</Document>
+</kml>

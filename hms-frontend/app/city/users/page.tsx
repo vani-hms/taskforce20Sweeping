@@ -39,16 +39,6 @@ const toModuleMap = (modules: UserModule[] = []) =>
     acc[m.id] = { canWrite: m.canWrite, zoneIds: m.zoneIds || [], wardIds: m.wardIds || [] };
     return acc;
   }, {});
-const summarizeModules = (modules: UserModule[]) =>
-  modules.length
-    ? modules.map((m) => `${moduleLabel(m.key, m.name)}${m.canWrite ? " (Write)" : " (Read)"}`).join(", ")
-    : "—";
-
-const formatNames = (ids: Iterable<string>, lookup: Record<string, string>) => {
-  const arr = Array.from(ids);
-  if (!arr.length) return "—";
-  return arr.map((id) => lookup[id] || id).join(", ");
-};
 
 export default function CityUsersPage() {
   const [email, setEmail] = useState("");
@@ -74,8 +64,6 @@ export default function CityUsersPage() {
     () => [...users].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
     [users]
   );
-  const zoneLookup = useMemo(() => Object.fromEntries(zones.map((z) => [z.id, z.name])), [zones]);
-  const wardLookup = useMemo(() => Object.fromEntries(wards.map((w) => [w.id, w.name])), [wards]);
 
   const loadModules = async () => {
     setLoadingModules(true);
@@ -159,15 +147,14 @@ export default function CityUsersPage() {
     setNewZoneIds((prev) => {
       const next = new Set(prev);
       next.has(id) ? next.delete(id) : next.add(id);
-      // keep module scopes in sync for QC to inherit
       setNewUserModules((mods) =>
         role === "QC"
           ? Object.fromEntries(
-              Object.entries(mods).map(([mid, val]) => [
-                mid,
-                { ...val, zoneIds: Array.from(next), wardIds: val.wardIds }
-              ])
-            )
+            Object.entries(mods).map(([mid, val]) => [
+              mid,
+              { ...val, zoneIds: Array.from(next), wardIds: val.wardIds }
+            ])
+          )
           : mods
       );
       return next;
@@ -181,11 +168,11 @@ export default function CityUsersPage() {
       setNewUserModules((mods) =>
         role === "QC"
           ? Object.fromEntries(
-              Object.entries(mods).map(([mid, val]) => [
-                mid,
-                { ...val, wardIds: Array.from(next), zoneIds: val.zoneIds }
-              ])
-            )
+            Object.entries(mods).map(([mid, val]) => [
+              mid,
+              { ...val, wardIds: Array.from(next), zoneIds: val.zoneIds }
+            ])
+          )
           : mods
       );
       return next;
@@ -276,11 +263,11 @@ export default function CityUsersPage() {
       const modules =
         current.role === "QC"
           ? Object.fromEntries(
-              Object.entries(current.modules).map(([mid, val]) => [
-                mid,
-                { ...val, zoneIds: Array.from(nextZones), wardIds: val.wardIds }
-              ])
-            )
+            Object.entries(current.modules).map(([mid, val]) => [
+              mid,
+              { ...val, zoneIds: Array.from(nextZones), wardIds: val.wardIds }
+            ])
+          )
           : current.modules;
       return { ...prev, [userId]: { ...current, zoneIds: nextZones, modules } };
     });
@@ -295,11 +282,11 @@ export default function CityUsersPage() {
       const modules =
         current.role === "QC"
           ? Object.fromEntries(
-              Object.entries(current.modules).map(([mid, val]) => [
-                mid,
-                { ...val, wardIds: Array.from(nextWards), zoneIds: val.zoneIds }
-              ])
-            )
+            Object.entries(current.modules).map(([mid, val]) => [
+              mid,
+              { ...val, wardIds: Array.from(nextWards), zoneIds: val.zoneIds }
+            ])
+          )
           : current.modules;
       return { ...prev, [userId]: { ...current, wardIds: nextWards, modules } };
     });
@@ -321,9 +308,9 @@ export default function CityUsersPage() {
         canWrite,
         ...(payload.role === "QC"
           ? {
-              zoneIds: zoneIds && zoneIds.length ? zoneIds : Array.from(payload.zoneIds),
-              wardIds: wardIds && wardIds.length ? wardIds : Array.from(payload.wardIds)
-            }
+            zoneIds: zoneIds && zoneIds.length ? zoneIds : Array.from(payload.zoneIds),
+            wardIds: wardIds && wardIds.length ? wardIds : Array.from(payload.wardIds)
+          }
           : {})
       }));
       await CityUserApi.update(id, {
@@ -471,186 +458,309 @@ export default function CityUsersPage() {
       </div>
 
       <div className="card">
-        <div className="flex justify-between items-center mb-3">
+        <div className="flex justify-between items-center mb-6">
           <div>
-            <h3 className="text-lg font-semibold">Users in this city</h3>
-            <p className="muted">Edit roles and module permissions inline.</p>
+            <h3 className="text-xl font-bold">Users in this city</h3>
+            <p className="muted text-sm">Managing roles and specific module visibility.</p>
           </div>
-          {(loadingUsers || loadingModules) && <span className="muted">Loading...</span>}
+          {(loadingUsers || loadingModules) && (
+            <div className="flex items-center gap-2 text-sm muted">
+              <div className="skeleton" style={{ width: 16, height: 16, borderRadius: '50%' }} />
+              Loading...
+            </div>
+          )}
         </div>
-        {error && <div className="text-red-600 text-sm mb-3">{error}</div>}
-        {!loadingUsers && sortedUsers.length === 0 && <div className="muted">No users found for this city.</div>}
+
+        {error && <div className="alert error mb-4">{error}</div>}
+
+        {!loadingUsers && sortedUsers.length === 0 && (
+          <div className="p-12 text-center border-2 border-dashed border-slate-200 rounded-xl">
+            <p className="muted">No users found for this city.</p>
+          </div>
+        )}
+
         {!loadingUsers && sortedUsers.length > 0 && (
-          <div className="overflow-x-auto">
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Email</th>
-                  <th>Role</th>
-                  <th>Zones / Wards</th>
-                  <th>Assigned Modules</th>
-                  <th>Edit Assignments</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sortedUsers.map((u) => {
-                  const edit = editing[u.id] || { name: u.name, role: u.role, modules: {} };
-                  return (
-                    <tr key={u.id}>
-                      <td>
-                        <input
-                          className="input"
-                          value={edit.name}
-                          onChange={(e) =>
-                            setEditing((prev) => ({ ...prev, [u.id]: { ...edit, name: e.target.value } }))
-                          }
-                        />
-                      </td>
-                      <td className="text-sm text-slate-600">{u.email}</td>
-                      <td>
-                        <select
-                          className="input"
-                          value={edit.role}
-                          onChange={(e) => updateEditingRole(u.id, e.target.value as Role)}
-                        >
-                          {allowedRoles.map((r) => (
-                            <option key={r} value={r}>
-                              {roleLabel(r)}
-                            </option>
-                          ))}
-                        </select>
-                      </td>
-                      <td>
-                        <div className="space-y-2 text-sm">
-                          <div>
-                            <div className="muted text-xs mb-1">
-                              Zones{" "}
-                              <span className="text-slate-500">
-                                ({formatNames(edit.zoneIds, zoneLookup)})
-                              </span>
-                            </div>
-                            <div className="pill-grid">
-                              {zones.map((z) => (
-                                <label key={z.id} className="pill">
-                                  <input
-                                    type="checkbox"
-                                    checked={edit.zoneIds.has(z.id)}
-                                    onChange={() => toggleUserZone(u.id, z.id)}
-                                  />{" "}
-                                  {z.name}
-                                </label>
-                              ))}
-                            </div>
-                          </div>
-                          <div>
-                            <div className="muted text-xs mb-1">
-                              Wards{" "}
-                              <span className="text-slate-500">
-                                ({formatNames(edit.wardIds, wardLookup)})
-                              </span>
-                            </div>
-                            <div className="pill-grid">
-                              {wards
-                                .filter((w) => edit.zoneIds.size === 0 || (w.parentId && edit.zoneIds.has(w.parentId)))
-                                .map((w) => (
-                                  <label key={w.id} className="pill">
-                                    <input
-                                      type="checkbox"
-                                      checked={edit.wardIds.has(w.id)}
-                                      onChange={() => toggleUserWard(u.id, w.id)}
-                                    />{" "}
-                                    {w.name}
-                                  </label>
-                                ))}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="text-sm text-slate-700">{summarizeModules(u.modules)}</td>
-                      <td>
-                        <div className="space-y-1">
-                          {availableModules.map((m) => {
-                            const selected = edit.modules[m.id];
-                            return (
-                              <div key={m.id} className="flex items-center justify-between gap-3 text-sm">
-                                <label className="flex items-center gap-2">
-                                  <input
-                                    type="checkbox"
-                                    checked={Boolean(selected)}
-                                    onChange={(e) => toggleUserModule(u.id, m.id, e.target.checked)}
-                                  />
-                                  <span>{moduleLabel(m.key, m.name)}</span>
-                                </label>
-                                <label className="flex items-center gap-1 text-xs text-slate-700">
-                                  <input
-                                    type="checkbox"
-                                    disabled={!selected || edit.role === "COMMISSIONER"}
-                                    checked={selected?.canWrite || false}
-                                    onChange={(e) => toggleUserWrite(u.id, m.id, e.target.checked)}
-                                  />
-                                  <span>Write</span>
-                                </label>
-                                {edit.role === "QC" && selected && (
-                                  <div className="text-xs text-slate-600 flex flex-col gap-1">
-                                    <div>
-                                      Zones: {selected.zoneIds?.length ? selected.zoneIds.length : "—"} | Wards:{" "}
-                                      {selected.wardIds?.length ? selected.wardIds.length : "—"}
-                                    </div>
-                                    <button
-                                      type="button"
-                                      className="btn btn-secondary btn-xs"
-                                      onClick={() =>
-                                        setEditing((prev) => {
-                                          const cur = prev[u.id];
-                                          if (!cur) return prev;
-                                          const modules = {
-                                            ...cur.modules,
-                                            [m.id]: {
-                                              ...cur.modules[m.id],
-                                              zoneIds: Array.from(cur.zoneIds),
-                                              wardIds: Array.from(cur.wardIds)
-                                            }
-                                          };
-                                          return { ...prev, [u.id]: { ...cur, modules } };
-                                        })
-                                      }
-                                    >
-                                      Apply city scope
-                                    </button>
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })}
-                          {!availableModules.length && <span className="muted text-xs">No modules available.</span>}
-                        </div>
-                      </td>
-                      <td className="flex gap-2">
-                        <button
-                          className="btn btn-secondary"
-                          onClick={() => updateUser(u.id)}
-                          disabled={savingUserId === u.id}
-                        >
-                          {savingUserId === u.id ? "Saving..." : "Save"}
-                        </button>
-                        <button
-                          className="btn btn-danger"
-                          onClick={() => deleteUser(u.id)}
-                          disabled={savingUserId === u.id}
-                        >
-                          Delete
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+          <div className="space-y-4">
+            {sortedUsers.map((u) => (
+              <UserRow
+                key={u.id}
+                u={u}
+                edit={editing[u.id] || { name: u.name, role: u.role, modules: {}, zoneIds: new Set(), wardIds: new Set() }}
+                zones={zones}
+                wards={wards}
+                availableModules={availableModules}
+                savingUserId={savingUserId}
+                onUpdateUser={updateUser}
+                onDeleteUser={deleteUser}
+                onUpdateEditingRole={updateEditingRole}
+                onToggleUserZone={toggleUserZone}
+                onToggleUserWard={toggleUserWard}
+                onToggleUserModule={toggleUserModule}
+                onToggleUserWrite={toggleUserWrite}
+                setEditing={setEditing}
+              />
+            ))}
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function UserRow({
+  u,
+  edit,
+  zones,
+  wards,
+  availableModules,
+  savingUserId,
+  onUpdateUser,
+  onDeleteUser,
+  onUpdateEditingRole,
+  onToggleUserZone,
+  onToggleUserWard,
+  onToggleUserModule,
+  onToggleUserWrite,
+  setEditing
+}: {
+  u: CityUser;
+  edit: EditableUser;
+  zones: any[];
+  wards: any[];
+  availableModules: CityModule[];
+  savingUserId: string | null;
+  onUpdateUser: (id: string) => void;
+  onDeleteUser: (id: string) => void;
+  onUpdateEditingRole: (id: string, role: Role) => void;
+  onToggleUserZone: (id: string, zid: string) => void;
+  onToggleUserWard: (id: string, wid: string) => void;
+  onToggleUserModule: (id: string, mid: string, checked: boolean) => void;
+  onToggleUserWrite: (id: string, mid: string, canWrite: boolean) => void;
+  setEditing: React.Dispatch<React.SetStateAction<Record<string, EditableUser>>>;
+}) {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  return (
+    <div className={`border rounded-xl transition-all duration-300 ${isExpanded ? 'border-primary shadow-xl ring-1 ring-primary/5 bg-white' : 'border-slate-200 hover:border-slate-300 shadow-sm bg-white/50'}`}>
+      {/* Summary Row */}
+      <div className="p-4 flex items-center justify-between gap-4 cursor-pointer" onClick={() => setIsExpanded(!isExpanded)}>
+        <div className="flex items-center gap-4 flex-1">
+          <div className="avatar shadow-sm border border-primary/10">{u.name.charAt(0).toUpperCase()}</div>
+          <div>
+            <div className="font-bold text-slate-900 flex items-center gap-2">
+              {u.name}
+              {u.role === 'QC' && <span className="badge badge-sm badge-success" style={{ fontSize: '8px', padding: '2px 6px' }}>QC active</span>}
+            </div>
+            <div className="text-xs muted font-medium">{u.email}</div>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-6">
+          <div className="text-right hidden sm:block">
+            <div className="badge">{roleLabel(u.role)}</div>
+            <div className="text-[10px] muted uppercase font-bold tracking-wider mt-1 scale-90 origin-right">Role</div>
+          </div>
+
+          <div className="text-right hidden md:block">
+            <div className="text-sm font-bold text-slate-700">
+              {Object.keys(edit.modules).length} Module{Object.keys(edit.modules).length !== 1 ? 's' : ''}
+            </div>
+            <div className="text-[10px] muted uppercase font-bold tracking-wider scale-90 origin-right">Assigned</div>
+          </div>
+
+          <button className={`btn btn-sm min-w-[100px] ${isExpanded ? 'btn-primary shadow-md' : 'btn-secondary'}`}>
+            {isExpanded ? 'Collapse' : 'Manage Access'}
+          </button>
+        </div>
+      </div>
+
+      {/* Expanded Detail View */}
+      {isExpanded && (
+        <div className="border-t border-slate-100 bg-slate-50/40 p-6 flex flex-col gap-6 animate-in fade-in slide-in-from-top-2 duration-300">
+          <div className="grid lg:grid-cols-2 gap-8">
+            {/* Column 1: Core Identity & Geo Scope */}
+            <div className="space-y-6">
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div className="field">
+                  <label className="text-xs font-bold text-slate-500">Edit Name</label>
+                  <input
+                    className="input"
+                    value={edit.name}
+                    onClick={(e) => e.stopPropagation()}
+                    onChange={(e) =>
+                      setEditing((prev) => ({ ...prev, [u.id]: { ...edit, name: e.target.value } }))
+                    }
+                  />
+                </div>
+                <div className="field">
+                  <label className="text-xs font-bold text-slate-500">Global Role</label>
+                  <select
+                    className="input"
+                    value={edit.role}
+                    onClick={(e) => e.stopPropagation()}
+                    onChange={(e) => onUpdateEditingRole(u.id, e.target.value as Role)}
+                  >
+                    {allowedRoles.map((r) => (
+                      <option key={r} value={r}>
+                        {roleLabel(r)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-black uppercase tracking-widest text-slate-400">Territorial Scope</h4>
+                  {edit.role === 'QC' && <span className="text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded font-bold uppercase">Required for QC</span>}
+                </div>
+
+                <div className="space-y-5 bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                  <div>
+                    <div className="text-xs font-bold mb-3 flex justify-between items-center text-slate-600">
+                      <span>Available Zones</span>
+                      <span className="badge badge-sm">{edit.zoneIds.size}</span>
+                    </div>
+                    <div className="pill-grid">
+                      {zones.map((z) => (
+                        <label key={z.id} className={`pill ${edit.zoneIds.has(z.id) ? 'pill-active' : ''}`} onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            className="hidden"
+                            checked={edit.zoneIds.has(z.id)}
+                            onChange={() => onToggleUserZone(u.id, z.id)}
+                          />
+                          {z.name}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="pt-4 border-t border-slate-50">
+                    <div className="text-xs font-bold mb-3 flex justify-between items-center text-slate-600">
+                      <span>Related Wards</span>
+                      <span className="badge badge-sm">{edit.wardIds.size}</span>
+                    </div>
+                    <div className="pill-grid max-h-[160px] overflow-y-auto pr-2 custom-scrollbar">
+                      {wards
+                        .filter((w) => edit.zoneIds.size === 0 || (w.parentId && edit.zoneIds.has(w.parentId)))
+                        .map((w) => (
+                          <label key={w.id} className={`pill ${edit.wardIds.has(w.id) ? 'pill-active' : ''}`} onClick={(e) => e.stopPropagation()}>
+                            <input
+                              type="checkbox"
+                              className="hidden"
+                              checked={edit.wardIds.has(w.id)}
+                              onChange={() => onToggleUserWard(u.id, w.id)}
+                            />
+                            {w.name}
+                          </label>
+                        ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Column 2: Module Permissions */}
+            <div className="space-y-3">
+              <h4 className="text-xs font-black uppercase tracking-widest text-slate-400">Capability Management</h4>
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden divide-y divide-slate-100">
+                {availableModules.map((m) => {
+                  const selected = edit.modules[m.id];
+                  return (
+                    <div key={m.id} className={`px-4 py-3 transition-colors ${selected ? 'bg-indigo-50/30' : 'hover:bg-slate-50'}`}>
+                      <div className="flex items-center justify-between gap-4">
+                        <label className="flex items-center gap-3 cursor-pointer flex-1 py-1" onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            className="checkbox"
+                            checked={Boolean(selected)}
+                            onChange={(e) => onToggleUserModule(u.id, m.id, e.target.checked)}
+                          />
+                          <div className="flex flex-col">
+                            <span className={`text-sm font-bold ${selected ? 'text-indigo-900' : 'text-slate-600'}`}>{moduleLabel(m.key, m.name)}</span>
+                            {selected && edit.role === "QC" && (
+                              <span className="text-[10px] text-indigo-500 font-bold mt-0.5 uppercase tracking-tighter">
+                                Scope: {selected.zoneIds?.length || 0}Z / {selected.wardIds?.length || 0}W
+                              </span>
+                            )}
+                          </div>
+                        </label>
+
+                        {selected && (
+                          <div className="flex items-center gap-3">
+                            <label className={`flex items-center gap-2 text-[11px] font-bold px-3 py-1.5 rounded-lg border transition-all cursor-pointer ${selected?.canWrite ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-100 text-slate-500 border-slate-200'}`} onClick={(e) => e.stopPropagation()}>
+                              <input
+                                type="checkbox"
+                                className="hidden"
+                                disabled={edit.role === "COMMISSIONER"}
+                                checked={selected?.canWrite || false}
+                                onChange={(e) => onToggleUserWrite(u.id, m.id, e.target.checked)}
+                              />
+                              {selected?.canWrite ? 'WRITE' : 'READ ONLY'}
+                            </label>
+
+                            {edit.role === "QC" && (
+                              <button
+                                type="button"
+                                className="btn btn-xs btn-secondary border-dashed"
+                                title="Copy city scope to this module"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setEditing((prev) => {
+                                    const cur = prev[u.id];
+                                    if (!cur) return prev;
+                                    const modules = {
+                                      ...cur.modules,
+                                      [m.id]: {
+                                        ...cur.modules[m.id],
+                                        zoneIds: Array.from(cur.zoneIds),
+                                        wardIds: Array.from(cur.wardIds)
+                                      }
+                                    };
+                                    return { ...prev, [u.id]: { ...cur, modules } };
+                                  });
+                                }}
+                              >
+                                Sync
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* Footer Actions */}
+          <div className="pt-6 border-t border-slate-200 flex items-center justify-between bg-white -mx-6 -mb-6 p-6 rounded-b-xl">
+            <div className="flex flex-col">
+              <div className="text-[10px] text-slate-400 uppercase font-black tracking-widest leading-none">Record Unique ID</div>
+              <div className="text-[10px] font-bold text-slate-300 font-mono mt-1">{u.id}</div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                className="btn btn-danger btn-sm border-none shadow-sm"
+                onClick={(e) => { e.stopPropagation(); onDeleteUser(u.id); }}
+                disabled={savingUserId === u.id}
+              >
+                Permanently Delete
+              </button>
+              <button
+                className="btn btn-primary btn-sm min-w-[140px] shadow-lg shadow-primary/20"
+                onClick={(e) => { e.stopPropagation(); onUpdateUser(u.id); }}
+                disabled={savingUserId === u.id}
+              >
+                {savingUserId === u.id ? 'Saving Changes...' : 'Push Updates'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

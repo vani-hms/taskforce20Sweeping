@@ -9,9 +9,12 @@ import toiletRouter from "./modules/toilet/router";
 import twinbinRouter from "./modules/twinbin/router";
 import recordsRouter from "./modules/recordsRouter";
 import publicRouter from "./public/router";
+import storageRouter from "./storage/router";
 import { errorHandler } from "./middleware/errorHandler";
 import { prisma } from "./prisma";
 import { syncAllCityModules } from "./utils/cityModuleSync";
+import path from "path";
+import fs from "fs";
 
 dotenv.config();
 
@@ -41,12 +44,20 @@ app.use((req, res, next) => {
 app.use(express.json({ limit: "20mb" }));
 app.use(express.urlencoded({ limit: "20mb", extended: true }));
 
+// Serve static uploads
+const uploadDir = path.join(process.cwd(), "uploads");
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+app.use("/uploads", express.static(uploadDir));
+
 app.get("/health", (_req, res) => res.json({ ok: true }));
 
 app.use("/public", publicRouter);
 app.use("/auth", authRouter);
 app.use("/hms", hmsRouter);
 app.use("/city", cityRouter);
+app.use("/storage", storageRouter);
 app.use("/modules", recordsRouter);
 app.use("/modules/taskforce", taskforceRouter);
 app.use("/modules/toilet", toiletRouter);

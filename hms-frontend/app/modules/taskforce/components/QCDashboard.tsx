@@ -314,14 +314,10 @@ export default function TaskforceQCDashboard() {
                             </div>
                         </div>
                     </div>
-<<<<<<< Updated upstream
-                    <div className="flex gap-2">
+                    <div className="section-actions">
                         <button className="btn btn-outline" onClick={openEmployeesModal}>
                             Employees
                         </button>
-=======
-                    <div className="section-actions">
->>>>>>> Stashed changes
                         <button
                             className={`btn ${viewTab === 'dashboard' ? 'btn-primary' : 'btn-outline'}`}
                             onClick={() => setViewTab('dashboard')}

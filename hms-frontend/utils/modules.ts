@@ -33,21 +33,31 @@ export function canonicalizeModules<T extends { key: string }>(modules: T[] = []
 
 export function routeForModule(key: CanonicalModuleKey) {
   if (key === "LITTERBINS") return "litterbins";
-  if (key === "TASKFORCE") return "taskforce/qc"; // land QC flows directly on QC dashboard
-  if (key === "SWEEPING") return "modules"; // placeholder until dedicated UI exists
+  if (key === "TASKFORCE") return "taskforce";
   return key.toLowerCase();
 }
 
 export function moduleEmployeePath(key: CanonicalModuleKey) {
-  return `/modules/${routeForModule(key)}/employee`;
+  const base = routeForModule(key);
+  if (key === "TASKFORCE") return `/modules/${base}/tasks`;
+  return `/modules/${base}/employee`;
 }
 
 export function moduleQcPath(key: CanonicalModuleKey) {
-  return `/modules/${routeForModule(key)}/qc`;
+  const base = routeForModule(key);
+  // Modules with dedicated QC sub-routes
+  if (key === "LITTERBINS" || key === "TASKFORCE") {
+    return `/modules/${base}/qc`;
+  }
+  // Sweeping has no dedicated UI yet, land on module list
+  if (key === "SWEEPING") return "/modules";
+  // Others (like TOILET) use the main module page which handles roles with tabs
+  return `/modules/${base}`;
 }
 
 export function moduleAdminPath(key: CanonicalModuleKey) {
-  return `/modules/${routeForModule(key)}/admin`;
+  const base = routeForModule(key);
+  return `/modules/${base}/admin`;
 }
 
 export function moduleEntryPath(user: AuthUser | null, key: CanonicalModuleKey) {

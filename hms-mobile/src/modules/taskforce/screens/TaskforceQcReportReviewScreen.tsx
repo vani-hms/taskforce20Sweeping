@@ -5,6 +5,8 @@ import { RouteProp } from "@react-navigation/native";
 import { RootStackParamList } from "../../../navigation";
 import { approveTaskforceReport, rejectTaskforceReport, actionRequiredTaskforceReport, ApiError } from "../../../api/auth";
 
+import TaskforceLayout from "../components/TaskforceLayout";
+
 type Nav = NativeStackNavigationProp<RootStackParamList, "TaskforceQcReportReview">;
 type Route = RouteProp<RootStackParamList, "TaskforceQcReportReview">;
 
@@ -36,62 +38,68 @@ export default function TaskforceQcReportReviewScreen({ navigation, route }: { n
   }));
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 24 }}>
-      <Text style={styles.title}>Report Detail</Text>
-      <View style={styles.card}>
-        <Row label="Feeder" value={report.feederPoint?.feederPointName} />
-        <Row label="Area" value={report.feederPoint?.areaName} />
-        <Row label="Employee" value={report.submittedBy?.name || "-"} />
-        <Row label="Distance" value={`${(report.distanceMeters || 0).toFixed(1)} m`} />
-        <Row label="Submitted" value={new Date(report.createdAt).toLocaleString()} />
-      </View>
-      <Text style={styles.subTitle}>Questionnaire</Text>
-      <FlatList
-        data={questions}
-        keyExtractor={(item) => item.key}
-        scrollEnabled={false}
-        ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
-        renderItem={({ item }) => (
-          <View style={styles.qCard}>
-            <View style={styles.qHeader}>
-              <Text style={styles.qLabel}>{item.label}</Text>
-              <View style={[styles.chip, item.answer === "YES" ? styles.chipYes : styles.chipNo]}>
-                <Text style={styles.chipText}>{item.answer || "N/A"}</Text>
+    <TaskforceLayout
+      title="Review Report"
+      subtitle={report.feederPoint?.feederPointName}
+      navigation={navigation}
+      showBack={true}
+    >
+      <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 24 }}>
+        <View style={styles.card}>
+          <Row label="Feeder" value={report.feederPoint?.feederPointName} />
+          <Row label="Area" value={report.feederPoint?.areaName} />
+          <Row label="Employee" value={report.submittedBy?.name || "-"} />
+          <Row label="Distance" value={`${(report.distanceMeters || 0).toFixed(1)} m`} />
+          <Row label="Submitted" value={new Date(report.createdAt).toLocaleString()} />
+        </View>
+        <Text style={styles.subTitle}>Questionnaire</Text>
+        <FlatList
+          data={questions}
+          keyExtractor={(item) => item.key}
+          scrollEnabled={false}
+          ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
+          renderItem={({ item }) => (
+            <View style={styles.qCard}>
+              <View style={styles.qHeader}>
+                <Text style={styles.qLabel}>{item.label}</Text>
+                <View style={[styles.chip, item.answer === "YES" ? styles.chipYes : styles.chipNo]}>
+                  <Text style={styles.chipText}>{item.answer || "N/A"}</Text>
+                </View>
               </View>
+              {item.photoUrl ? (
+                <TouchableOpacity onPress={() => setPreview(item.photoUrl)} style={styles.thumbWrap}>
+                  <Image source={{ uri: item.photoUrl }} style={styles.thumb} />
+                  <Text style={styles.muted}>Tap to view</Text>
+                </TouchableOpacity>
+              ) : (
+                <Text style={styles.muted}>No photo provided</Text>
+              )}
             </View>
-            {item.photoUrl ? (
-              <TouchableOpacity onPress={() => setPreview(item.photoUrl)} style={styles.thumbWrap}>
-                <Image source={{ uri: item.photoUrl }} style={styles.thumb} />
-                <Text style={styles.muted}>Tap to view</Text>
-              </TouchableOpacity>
-            ) : (
-              <Text style={styles.muted}>No photo provided</Text>
-            )}
-          </View>
-        )}
-      />
-      {error ? <Text style={styles.error}>{error}</Text> : null}
-      {status ? <Text style={styles.muted}>{status}</Text> : null}
-      <View style={[styles.row, styles.stickyActions]}>
-        <TouchableOpacity style={[styles.button, styles.approve]} onPress={() => act("APPROVED")} disabled={!!status}>
-          <Text style={styles.buttonText}>Approve</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={[styles.button, styles.warn]} onPress={() => act("ACTION_REQUIRED")} disabled={!!status}>
-          <Text style={styles.buttonText}>Action Required</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={[styles.button, styles.reject]} onPress={() => act("REJECTED")} disabled={!!status}>
-          <Text style={styles.buttonText}>Reject</Text>
-        </TouchableOpacity>
-      </View>
-
-      <Modal visible={!!preview} transparent animationType="fade" onRequestClose={() => setPreview(null)}>
-        <View style={styles.modalBackdrop}>
-          <TouchableOpacity style={styles.modalBackdrop} onPress={() => setPreview(null)}>
-            {preview ? <Image source={{ uri: preview }} style={styles.fullImage} /> : null}
+          )}
+        />
+        {error ? <Text style={styles.error}>{error}</Text> : null}
+        {status ? <Text style={styles.muted}>{status}</Text> : null}
+        <View style={[styles.row, styles.stickyActions]}>
+          <TouchableOpacity style={[styles.button, styles.approve]} onPress={() => act("APPROVED")} disabled={!!status}>
+            <Text style={styles.buttonText}>Approve</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.button, styles.warn]} onPress={() => act("ACTION_REQUIRED")} disabled={!!status}>
+            <Text style={styles.buttonText}>Action Required</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.button, styles.reject]} onPress={() => act("REJECTED")} disabled={!!status}>
+            <Text style={styles.buttonText}>Reject</Text>
           </TouchableOpacity>
         </View>
-      </Modal>
-    </ScrollView>
+
+        <Modal visible={!!preview} transparent animationType="fade" onRequestClose={() => setPreview(null)}>
+          <View style={styles.modalBackdrop}>
+            <TouchableOpacity style={styles.modalBackdrop} onPress={() => setPreview(null)}>
+              {preview ? <Image source={{ uri: preview }} style={styles.fullImage} /> : null}
+            </TouchableOpacity>
+          </View>
+        </Modal>
+      </ScrollView>
+    </TaskforceLayout>
   );
 }
 
@@ -105,8 +113,7 @@ function Row({ label, value }: { label: string; value: string }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f5f7fb", padding: 16 },
-  title: { fontSize: 22, fontWeight: "700", marginBottom: 12 },
+  container: { flex: 1, backgroundColor: "#f8fafc", padding: 16 },
   subTitle: { fontSize: 16, fontWeight: "700", marginTop: 12, marginBottom: 6 },
   card: {
     backgroundColor: "#fff",

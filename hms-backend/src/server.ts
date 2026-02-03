@@ -7,12 +7,14 @@ import cityRouter from "./city/router";
 import taskforceRouter from "./modules/taskforce/router";
 import toiletRouter from "./modules/toilet/router";
 import twinbinRouter from "./modules/twinbin/router";
-import sweepingRouter from "./modules/sweeping/router";
 import recordsRouter from "./modules/recordsRouter";
 import publicRouter from "./public/router";
+import storageRouter from "./storage/router";
 import { errorHandler } from "./middleware/errorHandler";
 import { prisma } from "./prisma";
 import { syncAllCityModules } from "./utils/cityModuleSync";
+import path from "path";
+import fs from "fs";
 
 dotenv.config();
 
@@ -22,11 +24,12 @@ const allowedOrigins = (process.env.CORS_ORIGIN || "http://localhost:3000")
   .split(",")
   .map((o) => o.trim());
 
-// Manual CORS to ensure exact origin (no wildcard) when using credentials
+// Permissive CORS for development/mobile
 app.use((req, res, next) => {
   const origin = req.headers.origin;
-  if (origin && allowedOrigins.includes(origin)) {
-    res.header("Access-Control-Allow-Origin", origin);
+  // If origin is present, check against allowed list. If missing (mobile), allow it.
+  if (!origin || allowedOrigins.includes(origin)) {
+    res.header("Access-Control-Allow-Origin", origin || "*");
     res.header("Vary", "Origin");
   }
   res.header("Access-Control-Allow-Credentials", "true");
@@ -41,17 +44,24 @@ app.use((req, res, next) => {
 app.use(express.json({ limit: "20mb" }));
 app.use(express.urlencoded({ limit: "20mb", extended: true }));
 
+// Serve static uploads
+const uploadDir = path.join(process.cwd(), "uploads");
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+app.use("/uploads", express.static(uploadDir));
+
 app.get("/health", (_req, res) => res.json({ ok: true }));
 
 app.use("/public", publicRouter);
 app.use("/auth", authRouter);
 app.use("/hms", hmsRouter);
 app.use("/city", cityRouter);
+app.use("/storage", storageRouter);
 app.use("/modules", recordsRouter);
 app.use("/modules/taskforce", taskforceRouter);
 app.use("/modules/toilet", toiletRouter);
 app.use("/modules/twinbin", twinbinRouter);
-app.use("/modules/sweeping", sweepingRouter);
 
 app.use(errorHandler);
 

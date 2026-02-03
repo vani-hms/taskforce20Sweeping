@@ -15,6 +15,7 @@ type FeederPoint = {
   wardId?: string | null;
   status: string;
   createdAt: string;
+  assignedAt?: string;
 };
 
 export default function TaskforceAssignedPage() {
@@ -70,20 +71,27 @@ export default function TaskforceAssignedPage() {
             <div className="table">
               <div className="table-head">
                 <div>Name</div>
-                <div>Area</div>
+                <div>Location</div>
                 <div>Zone/Ward</div>
                 <div>Status</div>
+                <div>Assigned</div>
                 <div>Action</div>
               </div>
               {rows.map((f) => (
                 <div className="table-row" key={f.id}>
                   <div>{f.feederPointName}</div>
-                  <div>{f.areaName}</div>
+                  <div>
+                    <div>{f.areaName}</div>
+                    <div className="muted text-xs">{f.locationDescription}</div>
+                  </div>
                   <div>
                     {f.zoneName} / {f.wardName}
                   </div>
                   <div>
                     <span className="badge">{f.status}</span>
+                  </div>
+                  <div>
+                    {f.assignedAt ? new Date(f.assignedAt).toLocaleString() : "-"}
                   </div>
                   <div>
                     <Link className="btn btn-primary btn-sm" href={`/modules/taskforce/assigned/${f.id}`}>

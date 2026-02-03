@@ -3,6 +3,8 @@ import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, 
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../../../navigation";
 import { listTaskforceAssigned } from "../../../api/auth";
+import TaskforceLayout from "../components/TaskforceLayout";
+import { MapPin, Calendar, ArrowRight } from "lucide-react-native";
 
 type Nav = NativeStackNavigationProp<RootStackParamList, "TaskforceAssigned">;
 
@@ -12,9 +14,13 @@ type Feeder = {
   areaName: string;
   areaType: string;
   locationDescription: string;
+  zoneName?: string;
   zoneId?: string | null;
+  wardName?: string;
   wardId?: string | null;
   status: string;
+  assignedAt?: string;
+  updatedAt?: string;
 };
 
 export default function TaskforceAssignedScreen({ navigation }: { navigation: Nav }) {
@@ -45,58 +51,126 @@ export default function TaskforceAssignedScreen({ navigation }: { navigation: Na
       style={styles.card}
       onPress={() => navigation.navigate("TaskforceFeederDetail", { feeder: item })}
     >
-      <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-        <Text style={styles.title}>{item.feederPointName}</Text>
-        <Text style={styles.badge}>{item.status}</Text>
+      <View style={styles.cardHeader}>
+        <View style={styles.titleGroup}>
+          <Text style={styles.title}>{item.feederPointName}</Text>
+          <Text style={styles.areaInfo}>{item.areaName} • {item.areaType}</Text>
+        </View>
+        <View style={styles.statusBadge}>
+          <Text style={styles.badgeText}>{item.status}</Text>
+        </View>
       </View>
-      <Text style={styles.muted}>{item.areaName} · {item.areaType}</Text>
-      <Text style={styles.meta}>{item.locationDescription}</Text>
+
+      <View style={styles.divider} />
+
+      <View style={styles.cardBody}>
+        <View style={styles.metaRow}>
+          <MapPin size={14} color="#64748b" />
+          <Text style={styles.metaText} numberOfLines={1}>{item.locationDescription}</Text>
+        </View>
+        <View style={styles.metaRow}>
+          <Calendar size={14} color="#64748b" />
+          <Text style={styles.metaText}>
+            {item.assignedAt ? new Date(item.assignedAt).toLocaleDateString() : "-"}
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.cardFooter}>
+        <Text style={styles.footerAction}>View Details</Text>
+        <ArrowRight size={16} color="#0f172a" />
+      </View>
     </TouchableOpacity>
   );
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.header}>Assigned Feeder Points</Text>
-      {loading ? (
-        <ActivityIndicator color="#0ea5e9" size="large" />
-      ) : error ? (
-        <Text style={styles.error}>{error}</Text>
-      ) : feeders.length === 0 ? (
-        <Text style={styles.muted}>No feeder points assigned.</Text>
-      ) : (
-        <FlatList
-          data={feeders}
-          keyExtractor={(item) => item.id}
-          renderItem={renderItem}
-          contentContainerStyle={{ paddingVertical: 12, gap: 12 }}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} />}
-        />
-      )}
-    </View>
+    <TaskforceLayout
+      title="Assigned Feeders"
+      subtitle="Select a point to start survey"
+      navigation={navigation}
+      showBack={true}
+    >
+      <View style={styles.container}>
+        {loading ? (
+          <ActivityIndicator color="#0f172a" size="large" />
+        ) : error ? (
+          <Text style={styles.error}>{error}</Text>
+        ) : feeders.length === 0 ? (
+          <Text style={styles.muted}>No feeder points assigned.</Text>
+        ) : (
+          <FlatList
+            data={feeders}
+            keyExtractor={(item) => item.id}
+            renderItem={renderItem}
+            contentContainerStyle={{ paddingVertical: 12, paddingBottom: 40 }}
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} />}
+          />
+        )}
+      </View>
+    </TaskforceLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, backgroundColor: "#0f172a" },
-  header: { color: "#e2e8f0", fontSize: 22, fontWeight: "700", marginBottom: 8 },
+  container: { flex: 1, padding: 16, backgroundColor: "#f8fafc" },
   card: {
-    backgroundColor: "#0b253a",
-    borderRadius: 12,
-    padding: 14,
+    backgroundColor: "#ffffff",
+    borderRadius: 24,
+    padding: 20,
+    marginBottom: 16,
     borderWidth: 1,
-    borderColor: "#1e3a8a"
+    borderColor: "#f1f5f9",
+    shadowColor: "#0f172a",
+    shadowOpacity: 0.06,
+    shadowOffset: { width: 0, height: 10 },
+    shadowRadius: 20,
+    elevation: 4
   },
-  title: { color: "#e2e8f0", fontSize: 16, fontWeight: "700" },
-  badge: {
-    backgroundColor: "#1e3a8a",
-    color: "#bfdbfe",
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 10,
-    fontSize: 12,
-    overflow: "hidden"
+  cardHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 12,
   },
-  muted: { color: "#94a3b8", marginTop: 4 },
-  meta: { color: "#cbd5e1", marginTop: 6, fontSize: 13 },
-  error: { color: "#fca5a5" }
+  titleGroup: {
+    flex: 1,
+    marginRight: 8,
+  },
+  title: { color: "#0f172a", fontSize: 18, fontWeight: "800", letterSpacing: -0.5 },
+  areaInfo: { color: "#64748b", fontSize: 13, marginTop: 2, fontWeight: "500" },
+  statusBadge: {
+    backgroundColor: "#f1f5f9",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  badgeText: { color: "#475569", fontSize: 11, fontWeight: "700", textTransform: "uppercase" },
+  divider: {
+    height: 1,
+    backgroundColor: "#f1f5f9",
+    marginVertical: 12,
+  },
+  cardBody: {
+    gap: 8,
+  },
+  metaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  metaText: { color: "#475569", fontSize: 13, fontWeight: "500" },
+  cardFooter: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    marginTop: 16,
+    gap: 4,
+  },
+  footerAction: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#0f172a",
+  },
+  muted: { color: "#64748b", textAlign: "center", marginTop: 40, fontSize: 15 },
+  error: { color: "#dc2626", textAlign: "center", marginTop: 20, fontWeight: "600" }
 });

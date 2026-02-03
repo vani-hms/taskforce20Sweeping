@@ -5,7 +5,7 @@ import { Protected } from "@components/Guards";
 import { ApiError, ModuleRecordsApi } from "@lib/apiClient";
 import { useAuth } from "@hooks/useAuth";
 
-type RecordsResponse = { city: string; module: string; count: number; records: any[] };
+type RecordsResponse = { city: string; module: string; data: any[]; meta: { total: number } };
 
 export default function ModuleRecordsPage({ params }: { params: { moduleKey: string } }) {
   const { moduleKey } = params;
@@ -59,12 +59,12 @@ export default function ModuleRecordsPage({ params }: { params: { moduleKey: str
             <p className="muted">City: {data.city}</p>
             <div className="card">
               <h3>Records</h3>
-              <p>Total: {data.count}</p>
-              {data.records.length === 0 ? (
+              <p>Total: {data.meta?.total || 0}</p>
+              {data.data.length === 0 ? (
                 <div className="muted">No records yet.</div>
               ) : (
                 <ul className="list">
-                  {data.records.map((r: any) => (
+                  {data.data.map((r: any) => (
                     <li key={r.id}>
                       <div className="text-sm text-slate-700">Status: {r.status}</div>
                       <div className="text-xs text-slate-500">{r.id}</div>

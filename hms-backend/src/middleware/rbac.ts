@@ -7,15 +7,15 @@ const WRITE_METHODS = ["POST", "PUT", "PATCH", "DELETE"];
 export function requireCityContext() {
   return (req: Request, _res: Response, next: NextFunction) => {
     if (!req.auth?.cityId) {
-      console.log("⚠️ City missing, bypassing for dev");
+      return next(new HttpError(400, "Active city context required"));
     }
-
     next();
   };
 }
 
 // Basic role guard (with HMS bypass)
 export function requireRoles(roles: Role[]) {
+
   return (req: Request, _res: Response, next: NextFunction) => {
     if (!req.auth) return next(new HttpError(401, "Unauthenticated"));
     if (req.auth.roles.includes("HMS_SUPER_ADMIN" as Role)) return next();

@@ -3,17 +3,14 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../../../navigation";
 import { approveTwinbinBin, rejectTwinbinBin, ApiError, listGeo } from "../../../api/auth";
-import { listEmployees } from "../../../api/employees";
 import { useAuthContext } from "../../../auth/AuthProvider";
 import { Colors, Spacing, Typography, Layout, UI } from "../../../theme";
-import { Map, CheckSquare, Square, ThumbsUp, ThumbsDown, User } from "lucide-react-native";
+import { Map, ThumbsUp, ThumbsDown } from "lucide-react-native";
 
 type Props = NativeStackScreenProps<RootStackParamList, "TwinbinQcReview">;
 
 export default function TwinbinQcReviewScreen({ route, navigation }: Props) {
   const { bin } = route.params;
-  const [assignIds, setAssignIds] = useState<Set<string>>(new Set());
-  const [employees, setEmployees] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState("");
@@ -26,17 +23,14 @@ export default function TwinbinQcReviewScreen({ route, navigation }: Props) {
     setLoading(true);
     setError("");
     try {
-      const [empRes, zonesRes, wardsRes] = await Promise.all([
-        listEmployees("LITTERBINS").catch(() => ({ employees: [] })),
+      const [zonesRes, wardsRes] = await Promise.all([
         listGeo("ZONE").catch(() => ({ nodes: [] })),
         listGeo("WARD").catch(() => ({ nodes: [] }))
       ]);
-      const onlyEmployees = (empRes.employees || []).filter((e) => e.role === "EMPLOYEE");
-      setEmployees(onlyEmployees);
       setZoneMap(Object.fromEntries((zonesRes.nodes || []).map((n: any) => [n.id, n.name])));
       setWardMap(Object.fromEntries((wardsRes.nodes || []).map((n: any) => [n.id, n.name])));
     } catch (err: any) {
-      setError(err instanceof ApiError ? err.message : "Failed to load employees");
+      setError(err instanceof ApiError ? err.message : "Failed to load location data");
     } finally {
       setLoading(false);
     }
@@ -46,14 +40,6 @@ export default function TwinbinQcReviewScreen({ route, navigation }: Props) {
     load();
   }, []);
 
-  const toggleAssign = (id: string) => {
-    setAssignIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
 
   const openMap = () => {
     if (bin.latitude && bin.longitude) {
@@ -62,15 +48,11 @@ export default function TwinbinQcReviewScreen({ route, navigation }: Props) {
   };
 
   const approve = async () => {
-    if (assignIds.size === 0) {
-      setError("Select at least one employee before approving.");
-      return;
-    }
     setActionLoading(true);
     setError("");
     try {
-      await approveTwinbinBin(bin.id, { assignedEmployeeIds: Array.from(assignIds) });
-      Alert.alert("Approved", "Bin approved and employees assigned", [{ text: "OK", onPress: () => navigation.goBack() }]);
+      await approveTwinbinBin(bin.id, {});
+      Alert.alert("Approved", "Bin approved successfully. You can now assign it to an employee from the Approved Bins list.", [{ text: "OK", onPress: () => navigation.goBack() }]);
     } catch (err: any) {
       setError(err instanceof ApiError ? err.message : "Failed to approve");
     } finally {
@@ -131,27 +113,6 @@ export default function TwinbinQcReviewScreen({ route, navigation }: Props) {
         ) : null}
       </View>
 
-      <Text style={[Typography.h3, { marginTop: Spacing.l, marginBottom: Spacing.s }]}>Assign Employees</Text>
-      <View style={Layout.card}>
-        {employees.length === 0 ? (
-          <Text style={Typography.muted}>No employees available.</Text>
-        ) : (
-          employees.map((emp) => (
-            <TouchableOpacity key={emp.id} style={styles.assignRow} onPress={() => toggleAssign(emp.id)}>
-              {assignIds.has(emp.id) ? (
-                <CheckSquare size={20} color={Colors.primary} />
-              ) : (
-                <Square size={20} color={Colors.textMuted} />
-              )}
-              <View>
-                <Text style={Typography.body}>{emp.name}</Text>
-                <Text style={Typography.caption}>{emp.email}</Text>
-              </View>
-            </TouchableOpacity>
-          ))
-        )}
-      </View>
-
       {error ? <Text style={[Typography.body, { color: Colors.danger, marginTop: Spacing.m }]}>{error}</Text> : null}
 
       <View style={styles.actions}>
@@ -169,10 +130,10 @@ export default function TwinbinQcReviewScreen({ route, navigation }: Props) {
         <TouchableOpacity
           style={[
             UI.button,
-            { backgroundColor: assignIds.size === 0 ? Colors.border : Colors.success, flex: 1, marginLeft: Spacing.s }
+            { backgroundColor: Colors.success, flex: 1, marginLeft: Spacing.s }
           ]}
           onPress={approve}
-          disabled={actionLoading || assignIds.size === 0}
+          disabled={actionLoading}
         >
           <View style={{ flexDirection: "row", gap: 8 }}>
             <ThumbsUp size={18} color={Colors.white} />
@@ -195,13 +156,5 @@ function LabelValue({ label, value }: { label: string; value: string }) {
 
 const styles = StyleSheet.create({
   labelRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 8 },
-  assignRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 10,
-    borderBottomColor: Colors.border,
-    borderBottomWidth: 1,
-    gap: Spacing.m
-  },
   actions: { flexDirection: "row", justifyContent: "space-between", marginTop: Spacing.l }
 });

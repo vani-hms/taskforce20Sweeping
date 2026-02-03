@@ -47,7 +47,7 @@ router.get(
 );
 
 // Apply city-level access guard to remaining routes
-router.use(requireCityAccess());
+
 
 router.get("/geo", async (req, res, next) => {
   try {
@@ -58,9 +58,16 @@ router.get("/geo", async (req, res, next) => {
       if (!geoLevels.includes(level)) throw new HttpError(400, "Invalid level");
       where.level = level;
     }
-    const nodes = await prisma.geoNode.findMany({
+    const allNodes = await prisma.geoNode.findMany({
       where,
       orderBy: { createdAt: "asc" }
+    });
+    // Filter out obvious junk/test data or misused field values
+    const nodes = allNodes.filter(n => {
+      const name = n.name.toUpperCase();
+      if (name === 'CT' || name === 'PT') return false;
+      if (name.includes('WARD-UUID')) return false;
+      return true;
     });
     res.json({ nodes });
   } catch (err) {
@@ -95,6 +102,23 @@ async function validateParent(cityId: string, parentId: string | undefined, leve
   }
   return parent;
 }
+
+router.get("/info", async (req, res, next) => {
+  try {
+    const cityId = req.auth!.cityId!;
+    const city = await prisma.city.findUnique({
+      where: { id: cityId },
+      select: { id: true, name: true, code: true, ulbCode: true, enabled: true }
+    });
+    if (!city) throw new HttpError(404, "City not found");
+    res.json({ city });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Apply city-level access guard to remaining routes
+router.use(requireCityAccess());
 
 router.post("/geo", validateBody(geoSchema), async (req, res, next) => {
   try {
@@ -162,7 +186,7 @@ router.patch("/geo/:id", validateBody(geoUpdateSchema), async (req, res, next) =
   try {
     const cityId = req.auth!.cityId!;
     const { name, areaType } = req.body as z.infer<typeof geoUpdateSchema>;
-    const node = await prisma.geoNode.findUnique({ where: { id: req.params.id } });
+    const node = await prisma.geoNode.findUnique({ where: { id: req.params.id as string } });
     if (!node || node.cityId !== cityId) throw new HttpError(404, "Geo node not found");
     if (areaType && node.level !== "AREA") throw new HttpError(400, "areaType can only be set for AREA level");
     if (node.level === "AREA" && name) {
@@ -187,7 +211,7 @@ router.patch("/geo/:id", validateBody(geoUpdateSchema), async (req, res, next) =
 router.delete("/geo/:id", async (req, res, next) => {
   try {
     const cityId = req.auth!.cityId!;
-    const node = await prisma.geoNode.findUnique({ where: { id: req.params.id } });
+    const node = await prisma.geoNode.findUnique({ where: { id: req.params.id as string } });
     if (!node || node.cityId !== cityId) throw new HttpError(404, "Geo node not found");
     const childCount = await prisma.geoNode.count({ where: { parentId: node.id } });
     if (childCount > 0) throw new HttpError(400, "Cannot delete node with existing children");
@@ -418,6 +442,15 @@ router.get("/employees", async (req, res, next) => {
       qcScopes = new Map(entries);
     }
 
+    console.log("[employees][debug]", {
+      qcId: req.auth!.sub,
+      qcCityId: cityId,
+      moduleKey,
+      qcModuleIds: Array.from(qcModuleIds),
+      qcScopes: Array.from(qcScopes.entries()),
+      totalEmployeesInCity: records.length
+    });
+
     const filtered = isCityAdmin
       ? records
       : records.filter((uc) => {
@@ -463,20 +496,8 @@ router.get("/employees", async (req, res, next) => {
         createdAt: uc.createdAt
       }))
     });
-  } catch (err) {
-    next(err);
-  }
-});
 
-router.get("/info", async (req, res, next) => {
-  try {
-    const cityId = req.auth!.cityId!;
-    const city = await prisma.city.findUnique({
-      where: { id: cityId },
-      select: { id: true, name: true, code: true, ulbCode: true, enabled: true }
-    });
-    if (!city) throw new HttpError(404, "City not found");
-    res.json({ city });
+    console.log("[employees][debug] filtered", { scopedEmployees: filtered.length });
   } catch (err) {
     next(err);
   }
@@ -499,7 +520,7 @@ router.patch("/users/:userId", validateBody(userUpdateSchema), async (req, res, 
   try {
     const cityId = req.auth!.cityId!;
     const { name, role, modules, zoneIds, wardIds } = req.body as z.infer<typeof userUpdateSchema>;
-    const userId = req.params.userId;
+    const userId = req.params.userId as string;
 
     const uc = await prisma.userCity.findFirst({ where: { userId, cityId } });
     if (!uc) throw new HttpError(404, "User not found in this city");
@@ -609,7 +630,7 @@ router.patch("/users/:userId", validateBody(userUpdateSchema), async (req, res, 
     const refreshed = await prisma.userCity.findFirst({
       where: { userId, cityId },
       include: { user: { include: { modules: { where: { cityId }, include: { module: true } } } } }
-    });
+    }) as any;
     if (!refreshed) throw new HttpError(404, "User not found after update");
     if (newRole === Role.QC || refreshed.role === Role.QC) {
       if (!(refreshed.zoneIds || []).length || !(refreshed.wardIds || []).length) {
@@ -624,9 +645,9 @@ router.patch("/users/:userId", validateBody(userUpdateSchema), async (req, res, 
         role: refreshed.role,
         zoneIds: refreshed.zoneIds || [],
         wardIds: refreshed.wardIds || [],
-        modules: refreshed.user.modules
-          .filter((m) => isCanonicalModuleKey(m.module.name))
-          .map((m) => ({
+        modules: (refreshed.user.modules as any[])
+          .filter((m: any) => isCanonicalModuleKey(m.module.name))
+          .map((m: any) => ({
             id: m.moduleId,
             key: normalizeModuleKey(m.module.name),
             name: getModuleLabel(m.module.name),
@@ -644,7 +665,7 @@ router.patch("/users/:userId", validateBody(userUpdateSchema), async (req, res, 
 router.delete("/users/:userId", async (req, res, next) => {
   try {
     const cityId = req.auth!.cityId!;
-    const userId = req.params.userId;
+    const userId = req.params.userId as string;
 
     const uc = await prisma.userCity.findFirst({ where: { userId, cityId } });
     if (!uc) throw new HttpError(404, "User not found in this city");
@@ -699,7 +720,7 @@ router.post("/registration-requests/:id/approve", validateBody(approvalSchema), 
 
     const { role, moduleKeys } = req.body as z.infer<typeof approvalSchema>;
 
-    const request = await prisma.userRegistrationRequest.findUnique({ where: { id: req.params.id } });
+    const request = await prisma.userRegistrationRequest.findUnique({ where: { id: req.params.id as string } });
     if (!request || request.cityId !== cityId) throw new HttpError(404, "Request not found");
     if (request.status !== "PENDING") throw new HttpError(400, "Request already processed");
 

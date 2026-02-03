@@ -12,8 +12,8 @@ type Props = NativeStackScreenProps<RootStackParamList, "TwinbinHome">;
 
 export default function TwinbinHomeScreen(props: Props) {
   const { auth } = useAuthContext();
-  const isAdmin = auth.status === 'authenticated' &&
-    (auth.user.roles.includes('CITY_ADMIN') || auth.user.roles.includes('ULB_OFFICER'));
+  const roles = auth.status === "authenticated" ? auth.roles || [] : [];
+  const isAdmin = roles.includes("CITY_ADMIN") || roles.includes("ULB_OFFICER");
 
   if (isAdmin) {
     return <TwinbinAdminDashboard />;

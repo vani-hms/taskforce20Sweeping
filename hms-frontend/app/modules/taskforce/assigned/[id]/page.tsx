@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Protected, ModuleGuard } from "@components/Guards";
 import { ApiError, GeoApi, TaskforceApi } from "@lib/apiClient";
@@ -16,6 +16,7 @@ type FeederPoint = {
   zoneId?: string | null;
   wardId?: string | null;
   status: string;
+  assignedAt?: string;
 };
 
 function haversineMeters(lat1: number, lon1: number, lat2: number, lon2: number) {
@@ -43,8 +44,34 @@ export default function TaskforceAssignedDetailPage() {
   const [locError, setLocError] = useState("");
   const watchId = useRef<number | null>(null);
 
-  const [notes, setNotes] = useState("");
-  const [issuesFound, setIssuesFound] = useState<"YES" | "NO" | "">("");
+  const [q, setQ] = useState({
+    wastePresent: "" as "YES" | "NO" | "",
+    segregationNotes: "",
+    insidePhotos: [""],
+    outsideWaste: "" as "YES" | "NO" | "",
+    outsidePhotos: [""],
+    cleanRemark: "",
+    workersPresent: "" as "YES" | "NO" | "",
+    workerCount: "",
+    workerNames: "",
+    workersPhoto: "",
+    vehiclePresent: "" as "YES" | "NO" | "",
+    vehicleNumber: "",
+    vehicleHelper: "",
+    vehiclePhoto: "",
+    surroundingCleanPhotos: ["", "", ""],
+    swdClean: "" as "YES" | "NO" | "",
+    swdPhotos: [""],
+    signboardVisible: "" as "YES" | "NO" | "",
+    signboardPhoto: "",
+    signboardRemark: "",
+    thirdPartyDumping: "" as "YES" | "NO" | "",
+    dumpingPhoto: "",
+    leachateVisible: "" as "YES" | "NO" | "",
+    leachatePhoto: "",
+    strayAnimals: "" as "YES" | "NO" | "",
+    strayAnimalsPhoto: ""
+  });
   const [submitError, setSubmitError] = useState("");
   const [submitStatus, setSubmitStatus] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -102,28 +129,99 @@ export default function TaskforceAssignedDetailPage() {
 
   const withinFence = useMemo(() => (distance !== null ? distance <= 100 : false), [distance]);
 
+  const setField = (field: keyof typeof q, value: any) => setQ((prev) => ({ ...prev, [field]: value }));
+  const setPhoto = (field: keyof typeof q, idx: number, value: string) =>
+    setQ((prev) => {
+      const arr = [...(prev[field] as string[])];
+      arr[idx] = value;
+      return { ...prev, [field]: arr };
+    });
+
+  const requireField = (condition: any, message: string) => {
+    if (!condition) {
+      setSubmitError(message);
+      return false;
+    }
+    return true;
+  };
+
   const handleSubmit = async () => {
     if (!feeder || !myCoords) return;
+    setSubmitError("");
+    setSubmitStatus("");
     if (!withinFence) {
       setSubmitError("Move within 100m to submit.");
       return;
     }
-    if (!issuesFound) {
-      setSubmitError("Please select whether issues were found.");
-      return;
-    }
+
+    if (!requireField(q.wastePresent, "Q1: select waste presence")) return;
+    if (q.wastePresent === "YES" && !q.insidePhotos[0]) return setSubmitError("Q1: add inside waste photo");
+    if (q.wastePresent === "YES" && q.outsideWaste === "YES" && !q.outsidePhotos[0])
+      return setSubmitError("Q1: add outside waste photo");
+    if (q.wastePresent === "NO" && !q.cleanRemark) return setSubmitError("Q1: add clean area remark");
+
+    if (!requireField(q.workersPresent, "Q2: select worker presence")) return;
+    if (q.workersPresent === "YES" && !q.workerCount) return setSubmitError("Q2: worker count required");
+    if (q.workersPresent === "YES" && !q.workerNames) return setSubmitError("Q2: worker names required");
+    if (q.workersPresent === "NO" && !q.workersPhoto) return setSubmitError("Q2: upload absence photo");
+
+    if (!requireField(q.vehiclePresent, "Q3: select vehicle presence")) return;
+    if (q.vehiclePresent === "YES" && !q.vehicleNumber) return setSubmitError("Q3: vehicle number required");
+    if (q.vehiclePresent === "YES" && !q.vehicleHelper) return setSubmitError("Q3: helper details required");
+    if (q.vehiclePresent === "NO" && !q.vehiclePhoto) return setSubmitError("Q3: upload vehicle absence photo");
+
+    if (q.surroundingCleanPhotos.some((p) => !p)) return setSubmitError("Q4: add 3 surrounding area photos");
+
+    if (!requireField(q.swdClean, "Q5: SWD clean status required")) return;
+    if (!q.swdPhotos[0]) return setSubmitError("Q5: SWD photo required");
+
+    if (!requireField(q.signboardVisible, "Q6: signboard visibility required")) return;
+    if (!q.signboardPhoto) return setSubmitError("Q6: signboard photo required");
+
+    if (!requireField(q.thirdPartyDumping, "Q7: dumping observation required")) return;
+    if (q.thirdPartyDumping === "YES" && !q.dumpingPhoto) return setSubmitError("Q7: dumping photo required");
+
+    if (!requireField(q.leachateVisible, "Q8: leachate visibility required")) return;
+    if (!q.leachatePhoto) return setSubmitError("Q8: leachate photo required");
+
+    if (!requireField(q.strayAnimals, "Q9: stray animals required")) return;
+    if (!q.strayAnimalsPhoto) return setSubmitError("Q9: stray animals photo required");
+
     setSubmitting(true);
-    setSubmitError("");
-    setSubmitStatus("");
     try {
       await TaskforceApi.submitReport(feeder.id, {
         latitude: myCoords.lat,
         longitude: myCoords.lng,
-        payload: { notes, issuesFound }
+        payload: {
+          q1: {
+            wastePresent: q.wastePresent === "YES",
+            segregationNotes: q.segregationNotes,
+            insidePhotos: q.insidePhotos,
+            outsideWaste: q.outsideWaste === "YES",
+            outsidePhotos: q.outsidePhotos,
+            cleanRemark: q.cleanRemark
+          },
+          q2: {
+            workersPresent: q.workersPresent === "YES",
+            workerCount: q.workerCount,
+            workerNames: q.workerNames,
+            workersPhoto: q.workersPhoto
+          },
+          q3: {
+            vehiclePresent: q.vehiclePresent === "YES",
+            vehicleNumber: q.vehicleNumber,
+            vehicleHelper: q.vehicleHelper,
+            vehiclePhoto: q.vehiclePhoto
+          },
+          q4: { surroundingCleanPhotos: q.surroundingCleanPhotos },
+          q5: { swdClean: q.swdClean === "YES", swdPhotos: q.swdPhotos },
+          q6: { signboardVisible: q.signboardVisible === "YES", signboardPhoto: q.signboardPhoto, signboardRemark: q.signboardRemark },
+          q7: { thirdPartyDumping: q.thirdPartyDumping === "YES", dumpingPhoto: q.dumpingPhoto },
+          q8: { leachateVisible: q.leachateVisible === "YES", leachatePhoto: q.leachatePhoto },
+          q9: { strayAnimals: q.strayAnimals === "YES", strayAnimalsPhoto: q.strayAnimalsPhoto }
+        }
       });
       setSubmitStatus("Report submitted for QC review.");
-      setNotes("");
-      setIssuesFound("");
     } catch (err) {
       setSubmitError(err instanceof ApiError ? err.message : "Failed to submit report");
     } finally {
@@ -137,7 +235,7 @@ export default function TaskforceAssignedDetailPage() {
         <div className="page">
           <div className="flex gap-2" style={{ alignItems: "center" }}>
             <button className="btn btn-secondary btn-sm" onClick={() => router.back()}>
-              ← Back
+              {"<- Back"}
             </button>
             <h1 style={{ margin: 0 }}>Feeder Point</h1>
           </div>
@@ -157,6 +255,7 @@ export default function TaskforceAssignedDetailPage() {
                 <Field label="Latitude" value={feeder.latitude?.toString() || "-"} />
                 <Field label="Longitude" value={feeder.longitude?.toString() || "-"} />
                 <Field label="Status" value={feeder.status} />
+                <Field label="Assigned On" value={feeder.assignedAt ? new Date(feeder.assignedAt).toLocaleString() : "-"} />
               </div>
 
               <div className="card" style={{ marginTop: 12, background: "#f8fafc" }}>
@@ -177,41 +276,72 @@ export default function TaskforceAssignedDetailPage() {
               </div>
 
               <div className="card" style={{ marginTop: 12 }}>
-                <h3>Submit Daily Report</h3>
-                <label className="muted" style={{ display: "block", marginBottom: 4 }}>
-                  Issues found?
-                </label>
-                <div className="flex gap-3" style={{ marginBottom: 12 }}>
-                  <label className="checkbox">
-                    <input
-                      type="radio"
-                      checked={issuesFound === "YES"}
-                      onChange={() => setIssuesFound("YES")}
-                      name="issuesFound"
-                    />{" "}
-                    Yes
-                  </label>
-                  <label className="checkbox">
-                    <input
-                      type="radio"
-                      checked={issuesFound === "NO"}
-                      onChange={() => setIssuesFound("NO")}
-                      name="issuesFound"
-                    />{" "}
-                    No
-                  </label>
-                </div>
+                <h3>Taskforce Questionnaire</h3>
 
-                <label className="muted" style={{ display: "block", marginBottom: 4 }}>
-                  Notes
+                <Question label="Q1. Is there any waste present at the SCP?" value={q.wastePresent} onChange={(v) => setField("wastePresent", v)} />
+                {q.wastePresent === "YES" && (
+                  <>
+                    <Input label="Segregation / notes" value={q.segregationNotes} onChange={(e) => setField("segregationNotes", e.target.value)} />
+                    <Input label="Inside waste photo URL" value={q.insidePhotos[0]} onChange={(e) => setPhoto("insidePhotos", 0, e.target.value)} />
+                    <Question label="Outside waste present?" value={q.outsideWaste} onChange={(v) => setField("outsideWaste", v)} />
+                    {q.outsideWaste === "YES" && (
+                      <Input label="Outside waste photo URL" value={q.outsidePhotos[0]} onChange={(e) => setPhoto("outsidePhotos", 0, e.target.value)} />
+                    )}
+                  </>
+                )}
+                {q.wastePresent === "NO" && (
+                  <>
+                    <Input label="Area clean photo URL" value={q.insidePhotos[0]} onChange={(e) => setPhoto("insidePhotos", 0, e.target.value)} />
+                    <Input label="Remark" value={q.cleanRemark} onChange={(e) => setField("cleanRemark", e.target.value)} />
+                  </>
+                )}
+
+                <Question label="Q2. Are Swachh workers present?" value={q.workersPresent} onChange={(v) => setField("workersPresent", v)} />
+                {q.workersPresent === "YES" && (
+                  <>
+                    <Input label="Worker count" value={q.workerCount} onChange={(e) => setField("workerCount", e.target.value)} />
+                    <Input label="Worker names" value={q.workerNames} onChange={(e) => setField("workerNames", e.target.value)} />
+                  </>
+                )}
+                {q.workersPresent === "NO" && (
+                  <Input label="Photo (no workers present)" value={q.workersPhoto} onChange={(e) => setField("workersPhoto", e.target.value)} />
+                )}
+
+                <Question label="Q3. Is PMC waste vehicle present?" value={q.vehiclePresent} onChange={(v) => setField("vehiclePresent", v)} />
+                {q.vehiclePresent === "YES" && (
+                  <>
+                    <Input label="Vehicle number" value={q.vehicleNumber} onChange={(e) => setField("vehicleNumber", e.target.value)} />
+                    <Input label="Helper details" value={q.vehicleHelper} onChange={(e) => setField("vehicleHelper", e.target.value)} />
+                  </>
+                )}
+                {q.vehiclePresent === "NO" && (
+                  <Input label="Photo (vehicle not present)" value={q.vehiclePhoto} onChange={(e) => setField("vehiclePhoto", e.target.value)} />
+                )}
+
+                <label className="muted" style={{ display: "block", marginTop: 12 }}>
+                  Q4. Surrounding area (30m) clean? Upload 3 photos
                 </label>
-                <textarea
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Enter short notes"
-                  rows={3}
-                  style={{ width: "100%", padding: 8, borderRadius: 6, border: "1px solid #e2e8f0" }}
-                />
+                {q.surroundingCleanPhotos.map((p, idx) => (
+                  <Input key={idx} label={`Photo ${idx + 1}`} value={p} onChange={(e) => setPhoto("surroundingCleanPhotos", idx, e.target.value)} />
+                ))}
+
+                <Question label="Q5. Is SWD clean?" value={q.swdClean} onChange={(v) => setField("swdClean", v)} />
+                <Input label="SWD photo URL" value={q.swdPhotos[0]} onChange={(e) => setPhoto("swdPhotos", 0, e.target.value)} />
+
+                <Question label="Q6. Is SCP signboard/QR visible?" value={q.signboardVisible} onChange={(v) => setField("signboardVisible", v)} />
+                <Input label="Signboard/QR photo URL" value={q.signboardPhoto} onChange={(e) => setField("signboardPhoto", e.target.value)} />
+                <Input label="Remarks" value={q.signboardRemark} onChange={(e) => setField("signboardRemark", e.target.value)} />
+
+                <Question label="Q7. Third-party dumping observed?" value={q.thirdPartyDumping} onChange={(v) => setField("thirdPartyDumping", v)} />
+                {q.thirdPartyDumping === "YES" && (
+                  <Input label="Dumping photo URL" value={q.dumpingPhoto} onChange={(e) => setField("dumpingPhoto", e.target.value)} />
+                )}
+
+                <Question label="Q8. Leachate visible?" value={q.leachateVisible} onChange={(v) => setField("leachateVisible", v)} />
+                <Input label="Leachate photo URL" value={q.leachatePhoto} onChange={(e) => setField("leachatePhoto", e.target.value)} />
+
+                <Question label="Q9. Stray animals present?" value={q.strayAnimals} onChange={(v) => setField("strayAnimals", v)} />
+                <Input label="Stray animals photo URL" value={q.strayAnimalsPhoto} onChange={(e) => setField("strayAnimalsPhoto", e.target.value)} />
 
                 {submitError && <div className="alert error" style={{ marginTop: 8 }}>{submitError}</div>}
                 {submitStatus && <div className="alert success" style={{ marginTop: 8 }}>{submitStatus}</div>}
@@ -222,7 +352,7 @@ export default function TaskforceAssignedDetailPage() {
                   disabled={!withinFence || submitting || !feeder.latitude || !feeder.longitude}
                   onClick={handleSubmit}
                 >
-                  {submitting ? "Submitting..." : withinFence ? "Submit Report" : "Move within 100m to submit"}
+                  {submitting ? "Submitting..." : withinFence ? "Submit for QC" : "Move within 100m to submit"}
                 </button>
               </div>
             </div>
@@ -238,6 +368,56 @@ function Field({ label, value }: { label: string; value: string }) {
     <div>
       <label>{label}</label>
       <div className="muted">{value}</div>
+    </div>
+  );
+}
+
+function Input({
+  label,
+  value,
+  onChange
+}: {
+  label: string;
+  value: string;
+  onChange: (e: ChangeEvent<HTMLInputElement>) => void;
+}) {
+  return (
+    <div style={{ marginTop: 8 }}>
+      <label className="muted" style={{ display: "block", marginBottom: 4 }}>
+        {label}
+      </label>
+      <input
+        value={value}
+        onChange={onChange}
+        className="input input-bordered w-full"
+        placeholder="Enter text or photo URL"
+      />
+    </div>
+  );
+}
+
+function Question({
+  label,
+  value,
+  onChange
+}: {
+  label: string;
+  value: "YES" | "NO" | "";
+  onChange: (v: "YES" | "NO") => void;
+}) {
+  return (
+    <div style={{ marginTop: 12 }}>
+      <label className="muted" style={{ display: "block", marginBottom: 4 }}>
+        {label}
+      </label>
+      <div className="flex gap-3">
+        <label className="checkbox">
+          <input type="radio" checked={value === "YES"} onChange={() => onChange("YES")} /> Yes
+        </label>
+        <label className="checkbox">
+          <input type="radio" checked={value === "NO"} onChange={() => onChange("NO")} /> No
+        </label>
+      </div>
     </div>
   );
 }

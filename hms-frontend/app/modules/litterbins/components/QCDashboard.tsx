@@ -1,67 +1,98 @@
 'use client';
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ModuleRecordsApi, TwinbinApi, ApiError } from "@lib/apiClient";
+import { StatsCard, RecordsTable, StatusBadge, ActionButtons, TableColumn } from "../../qc-shared";
+
+type RecordItem = {
+    id: string;
+    type: string; // normalized: BIN_REQUEST or DAILY_REPORT
+    rawType?: string;
+    status: string;
+    areaName?: string;
+    locationName?: string;
+    zoneName?: string;
+    wardName?: string;
+    createdAt: string;
+    bin?: any;
+};
 
 export default function QCDashboard() {
-    const [records, setRecords] = useState<any[]>([]);
+    const [records, setRecords] = useState<RecordItem[]>([]);
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState<'ALL' | 'PENDING' | 'APPROVED' | 'REJECTED' | 'ACTION_REQUIRED'>('PENDING');
     const [actionLoading, setActionLoading] = useState<string | null>(null);
+    const [filterType, setFilterType] = useState<'ALL' | 'BIN_REQUEST' | 'DAILY_REPORT'>('ALL');
+    const [viewItem, setViewItem] = useState<RecordItem | any | null>(null);
+    const [viewLoading, setViewLoading] = useState(false);
+    const [fromDate, setFromDate] = useState<string>("");
+    const [toDate, setToDate] = useState<string>("");
 
-    async function loadData() {
+    useEffect(() => {
+        loadRecords();
+    }, []);
+
+    async function loadRecords() {
+        setLoading(true);
         try {
-            const res = await ModuleRecordsApi.getRecords("twinbin");
-            setRecords(res.records || []);
+            const res = await ModuleRecordsApi.getRecords("twinbin") as any;
+            const mapped = (res.data || []).map((r: any) => {
+                const isBinRequest = r.type === 'BIN_REGISTRATION' || r.type === 'BIN_REQUEST';
+                const normalizedType = isBinRequest ? 'BIN_REQUEST' : 'DAILY_REPORT';
+                return { ...r, rawType: r.type, type: normalizedType };
+            });
+            setRecords(mapped);
         } catch (err) {
-            console.error("Failed to load records", err);
+            console.error("Failed to load QC records", err);
         } finally {
             setLoading(false);
         }
     }
 
-    useEffect(() => {
-        loadData();
-    }, []);
-
     const stats = useMemo(() => {
-        return {
-            total: records.length,
-            pending: records.filter(r => r.status === 'PENDING_QC' || r.status === 'PENDING').length,
-            approved: records.filter(r => r.status === 'APPROVED').length,
-            rejected: records.filter(r => r.status === 'REJECTED').length,
-            actionRequired: records.filter(r => r.status === 'ACTION_REQUIRED').length,
-        };
+        const counts = records.reduce(
+            (acc, r) => {
+                if (r.status === 'PENDING_QC' || r.status === 'PENDING' || r.status === 'SUBMITTED') acc.pending++;
+                else if (r.status === 'APPROVED') acc.approved++;
+                else if (r.status === 'REJECTED') acc.rejected++;
+                else acc.actionRequired++;
+                return acc;
+            },
+            { pending: 0, approved: 0, rejected: 0, actionRequired: 0 }
+        );
+        return { ...counts, total: records.length };
     }, [records]);
 
     const filteredRecords = useMemo(() => {
-        if (activeTab === 'ALL') return records;
-        if (activeTab === 'PENDING') return records.filter(r => r.status === 'PENDING_QC' || r.status === 'PENDING');
-        return records.filter(r => r.status === activeTab);
-    }, [records, activeTab]);
+        if (filterType === 'ALL') return records;
+        const byType = records.filter(r => r.type === filterType);
+        if (filterType === 'DAILY_REPORT' && (fromDate || toDate)) {
+            const from = fromDate ? new Date(fromDate).getTime() : -Infinity;
+            const to = toDate ? new Date(toDate).setHours(23, 59, 59, 999) : Infinity;
+            return byType.filter(r => {
+                const ts = new Date(r.createdAt).getTime();
+                return ts >= from && ts <= to;
+            });
+        }
+        return byType;
+    }, [records, filterType, fromDate, toDate]);
 
-    const uniqueZones = useMemo(() => {
-        const zones = new Set<string>();
-        records.forEach(r => { if (r.zoneName) zones.add(r.zoneName) });
-        return Array.from(zones).sort();
-    }, [records]);
-
-    async function handleAction(record: any, action: 'APPROVE' | 'REJECT') {
+    async function handleAction(record: RecordItem, action: 'APPROVE' | 'REJECT' | 'ACTION_REQUIRED') {
         if (!confirm(`Are you sure you want to ${action.toLowerCase()} this item?`)) return;
-
         setActionLoading(record.id);
         try {
-            if (record.type === 'BIN_REGISTRATION') {
+            if (record.type === 'BIN_REQUEST') {
                 if (action === 'APPROVE') await TwinbinApi.approve(record.id, {});
-                else await TwinbinApi.reject(record.id);
+                else if (action === 'REJECT') await TwinbinApi.reject(record.id);
             } else if (record.type === 'VISIT_REPORT') {
                 if (action === 'APPROVE') await TwinbinApi.approveVisit(record.id);
-                else await TwinbinApi.rejectVisit(record.id);
-            } else if (record.type === 'CITIZEN_REPORT') {
+                else if (action === 'REJECT') await TwinbinApi.rejectVisit(record.id);
+            } else {
+                // Treat everything else as daily report
                 if (action === 'APPROVE') await TwinbinApi.approveReport(record.id);
-                else await TwinbinApi.rejectReport(record.id);
+                else if (action === 'REJECT') await TwinbinApi.rejectReport(record.id);
+                else await TwinbinApi.actionRequiredReport(record.id);
             }
-            await loadData();
+            await loadRecords();
         } catch (err) {
             alert("Action failed: " + (err instanceof ApiError ? err.message : "Unknown error"));
         } finally {
@@ -69,139 +100,275 @@ export default function QCDashboard() {
         }
     }
 
-    if (loading) return <div className="p-8 text-center muted">Loading your assigned records...</div>;
+    async function openView(record: RecordItem) {
+        if (record.type === 'BIN_REQUEST') {
+            setViewItem(record);
+            return;
+        }
+        setViewLoading(true);
+        try {
+            let res: { data?: any[] } | null = null;
+            const status = record.status;
+            if (status === 'APPROVED') res = await TwinbinApi.approvedReports();
+            else if (status === 'REJECTED') res = await TwinbinApi.rejectedReports();
+            else if (status === 'ACTION_REQUIRED') res = await TwinbinApi.actionRequiredReports();
+            else res = await TwinbinApi.pendingReports();
+            const found = res?.data?.find((r: any) => r.id === record.id);
+            setViewItem(found || record);
+        } catch (err) {
+            setViewItem(record);
+        } finally {
+            setViewLoading(false);
+        }
+    }
+
+    const columns: TableColumn<RecordItem>[] = [
+        {
+            key: 'type',
+            label: 'Type',
+            render: (r) => <span className="font-semibold text-xs">{readableType(r.type)}</span>
+        },
+        {
+            key: 'location',
+            label: 'Location',
+            render: (r) => (
+                <div>
+                    <div className="font-semibold text-sm">{r.areaName || '-'}</div>
+                    <div className="muted text-xs">{r.locationName || '-'}</div>
+                </div>
+            )
+        },
+        {
+            key: 'zone',
+            label: 'Zone / Ward',
+            render: (r) => (
+                <div className="text-xs">
+                    <div>{r.zoneName || '-'}</div>
+                    <div className="muted">{r.wardName || '-'}</div>
+                </div>
+            )
+        },
+        {
+            key: 'status',
+            label: 'Status',
+            render: (r) => <StatusBadge status={r.status} />
+        },
+        {
+            key: 'date',
+            label: 'Date',
+            render: (r) => (
+                <div className="text-xs muted">
+                    {new Date(r.createdAt).toLocaleDateString()} at {new Date(r.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </div>
+            )
+        }
+    ];
+
+    const actionsRenderer = (r: RecordItem) => (
+        <ActionButtons
+            status={r.status}
+            onView={() => openView(r)}
+            onApprove={r.type === 'DAILY_REPORT' ? () => handleAction(r, 'APPROVE') : undefined}
+            onReject={r.type === 'DAILY_REPORT' ? () => handleAction(r, 'REJECT') : undefined}
+            onActionRequired={r.type === 'DAILY_REPORT' ? () => handleAction(r, 'ACTION_REQUIRED') : undefined}
+            loading={actionLoading === r.id}
+        />
+    );
 
     return (
         <div className="content">
-            <header className="flex justify-between items-center mb-8">
-                <div>
-                    <p className="eyebrow">Module · Litter Bins</p>
-                    <h1>QC Dashboard</h1>
-                    <p className="muted">
-                        Review pending items in your assigned zones:
-                        <span className="text-primary font-medium ml-2">
-                            {uniqueZones.length > 0 ? uniqueZones.join(", ") : "Loading..."}
-                        </span>
-                    </p>
+            <section className="card mb-6">
+                <div className="flex justify-between items-center">
+                    <div>
+                        <p className="eyebrow">Module - Litter Bins</p>
+                        <h1 className="text-2xl font-bold mb-1">QC Dashboard</h1>
+                        <p className="muted text-sm mb-0">Unified queue: bin requests and daily reports.</p>
+                    </div>
+                    <div className="badge badge-warning">QC Access</div>
                 </div>
-                <div className="badge badge-warning">QC Access</div>
-            </header>
+            </section>
 
-            {/* KPI Cards */}
-            <div className="grid grid-5 gap-4 mb-8">
-                <KpiCard label="Total In Scope" value={stats.total} />
-                <KpiCard label="Pending Review" value={stats.pending} color="text-warning" highlight />
-                <KpiCard label="Approved" value={stats.approved} color="text-success" />
-                <KpiCard label="Rejected" value={stats.rejected} color="text-error" />
-                <KpiCard label="Action Req" value={stats.actionRequired} />
-            </div>
+            <section className="grid grid-5 gap-4 mb-6">
+                <StatsCard label="Pending Review" value={stats.pending} sub="In your scope" color="#d97706" />
+                <StatsCard label="Approved" value={stats.approved} sub="Cleared" color="#16a34a" />
+                <StatsCard label="Rejected" value={stats.rejected} sub="Sent back" color="#ef4444" />
+                <StatsCard label="Action Required" value={stats.actionRequired} sub="Needs follow-up" color="#0284c7" />
+                <StatsCard label="Total In Scope" value={stats.total} sub="All items" color="#0f172a" />
+            </section>
 
-            <div className="card">
-                <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-lg">Records Review</h2>
+            <section className="card mb-4">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h2 className="text-lg">Filter by Type</h2>
+                        <p className="muted text-sm mb-0">Show all, only bin requests, or only daily reports.</p>
+                    </div>
                     <div className="flex gap-2">
-                        <TabButton active={activeTab === 'PENDING'} onClick={() => setActiveTab('PENDING')}>Pending Review</TabButton>
-                        <TabButton active={activeTab === 'ACTION_REQUIRED'} onClick={() => setActiveTab('ACTION_REQUIRED')}>Action Required</TabButton>
-                        <TabButton active={activeTab === 'APPROVED'} onClick={() => setActiveTab('APPROVED')}>Approved</TabButton>
-                        <TabButton active={activeTab === 'REJECTED'} onClick={() => setActiveTab('REJECTED')}>Rejected</TabButton>
-                        <TabButton active={activeTab === 'ALL'} onClick={() => setActiveTab('ALL')}>All History</TabButton>
+                        <button className={`btn btn-sm ${filterType === 'ALL' ? 'btn-primary' : 'btn-ghost'}`} onClick={() => setFilterType('ALL')}>All</button>
+                        <button className={`btn btn-sm ${filterType === 'BIN_REQUEST' ? 'btn-primary' : 'btn-ghost'}`} onClick={() => setFilterType('BIN_REQUEST')}>Bin Requests</button>
+                        <button className={`btn btn-sm ${filterType === 'DAILY_REPORT' ? 'btn-primary' : 'btn-ghost'}`} onClick={() => setFilterType('DAILY_REPORT')}>Daily Reports</button>
+                    </div>
+                </div>
+                {filterType === 'DAILY_REPORT' && (
+                    <div className="flex flex-wrap gap-3 mt-3">
+                        <label className="flex items-center gap-2 text-sm">
+                            From
+                            <input type="date" className="input input-sm input-bordered" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
+                        </label>
+                        <label className="flex items-center gap-2 text-sm">
+                            To
+                            <input type="date" className="input input-sm input-bordered" value={toDate} onChange={(e) => setToDate(e.target.value)} />
+                        </label>
+                        {(fromDate || toDate) && (
+                            <button className="btn btn-sm" onClick={() => { setFromDate(""); setToDate(""); }}>Clear</button>
+                        )}
+                    </div>
+                )}
+            </section>
+
+            <section className="card">
+                <div className="flex items-center justify-between mb-4">
+                    <div>
+                        <h2 className="text-lg">Pending Requests</h2>
+                        <p className="muted text-sm mb-0">Mixed queue with type labels.</p>
                     </div>
                 </div>
 
-                <div className="overflow-x-auto">
-                    <table className="w-full text-sm table-auto">
-                        <thead className="bg-base-200">
-                            <tr className="text-left">
-                                <th className="p-3">Type</th>
-                                <th className="p-3">Location</th>
-                                <th className="p-3">Zone / Ward</th>
-                                <th className="p-3">Status</th>
-                                <th className="p-3">Date</th>
-                                <th className="p-3 text-right">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {filteredRecords.map((r) => (
-                                <tr key={r.id} className="border-b border-base-100 hover:bg-base-50">
-                                    <td className="p-3 font-medium text-xs">{r.type?.replace(/_/g, " ")}</td>
-                                    <td className="p-3">
-                                        <div className="font-medium">{r.areaName}</div>
-                                        <div className="text-xs muted">{r.locationName || "—"}</div>
-                                    </td>
-                                    <td className="p-3">
-                                        <div className="text-xs">{r.zoneName || "—"}</div>
-                                        <div className="text-xs muted">{r.wardName || "—"}</div>
-                                    </td>
-                                    <td className="p-3">
-                                        <StatusBadge status={r.status} />
-                                    </td>
-                                    <td className="p-3 text-xs muted">
-                                        {new Date(r.createdAt).toLocaleDateString()}
-                                    </td>
-                                    <td className="p-3 text-right">
-                                        {(r.status === 'PENDING_QC' || r.status === 'PENDING') && (
-                                            <div className="flex justify-end gap-2">
-                                                <button
-                                                    className="btn btn-xs btn-success"
-                                                    disabled={!!actionLoading}
-                                                    onClick={() => handleAction(r, 'APPROVE')}
-                                                >
-                                                    {actionLoading === r.id ? '...' : 'Approve'}
-                                                </button>
-                                                <button
-                                                    className="btn btn-xs btn-error"
-                                                    disabled={!!actionLoading}
-                                                    onClick={() => handleAction(r, 'REJECT')}
-                                                >
-                                                    {actionLoading === r.id ? '...' : 'Reject'}
-                                                </button>
-                                            </div>
-                                        )}
-                                    </td>
-                                </tr>
-                            ))}
-                            {filteredRecords.length === 0 && (
-                                <tr><td colSpan={6} className="p-8 text-center muted">No records found</td></tr>
-                            )}
-                        </tbody>
-                    </table>
+                <RecordsTable<RecordItem>
+                    rows={filteredRecords}
+                    columns={columns}
+                    loading={loading}
+                    emptyMessage="No records found"
+                    renderActions={actionsRenderer}
+                />
+            </section>
+
+            {viewItem && (
+                <section className="card mt-6" style={{ borderLeft: '4px solid #1d4ed8' }}>
+                    {viewItem.type === 'BIN_REQUEST' ? (
+                        <BinRequestView item={viewItem} onClose={() => setViewItem(null)} />
+                    ) : (
+                        <DailyReportView item={viewItem} loading={viewLoading} onClose={() => setViewItem(null)} />
+                    )}
+                </section>
+            )}
+        </div>
+    );
+}
+
+function readableType(type: string) {
+    if (type === 'BIN_REQUEST' || type === 'BIN_REGISTRATION') return 'Bin Request';
+    if (type === 'DAILY_REPORT' || type === 'VISIT_REPORT' || type === 'CITIZEN_REPORT') return 'Daily Report';
+    return (type || '').replace(/_/g, " ");
+}
+
+function InfoItem({ label, value }: { label: string; value: React.ReactNode }) {
+    return (
+        <div className="flex flex-col gap-1">
+            <span className="muted text-xs uppercase tracking-wide">{label}</span>
+            <span className="font-semibold text-sm">{value}</span>
+        </div>
+    );
+}
+
+function BinRequestView({ item, onClose }: { item: any; onClose: () => void }) {
+    return (
+        <>
+            <div className="flex justify-between items-start mb-3">
+                <div>
+                    <p className="muted text-xs">Bin Request</p>
+                    <h3 className="text-lg font-semibold mb-1">{item.areaName || item.locationName || '-'}</h3>
+                    <p className="muted text-sm mb-0">
+                        Submitted {new Date(item.createdAt).toLocaleString()}
+                    </p>
+                </div>
+                <button className="btn btn-sm" onClick={onClose}>x</button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 mb-4">
+                <InfoItem label="Zone" value={item.zoneName || item.bin?.zoneName || item.zoneId || '-'} />
+                <InfoItem label="Ward" value={item.wardName || item.bin?.wardName || item.wardId || '-'} />
+                <InfoItem label="Status" value={<StatusBadge status={item.status} />} />
+                <InfoItem label="Type" value={readableType(item.type)} />
+                {item.requestedBy && (
+                    <InfoItem label="Requested By" value={item.requestedBy.name || item.requestedBy.email || '-'} />
+                )}
+                {item.locationName && <InfoItem label="Location" value={item.locationName} />}
+            </div>
+
+            <div className="mb-2">
+                <h4 className="text-md font-semibold mb-2">Description</h4>
+                <p className="muted text-sm">{item.description || "No description provided."}</p>
+            </div>
+
+            {Array.isArray(item.photos) && item.photos.length > 0 && (
+                <div className="mb-2">
+                    <h4 className="text-md font-semibold mb-2">Images</h4>
+                    <div className="flex flex-wrap gap-2">
+                        {item.photos.map((p: string, idx: number) => (
+                            <a key={idx} href={p} target="_blank" rel="noreferrer">
+                                <img src={p} alt={`Photo ${idx + 1}`} className="h-16 w-16 object-cover rounded border" />
+                            </a>
+                        ))}
+                    </div>
+                </div>
+            )}
+        </>
+    );
+}
+
+function DailyReportView({ item, loading, onClose }: { item: any; loading: boolean; onClose: () => void }) {
+    return (
+        <>
+            <div className="flex justify-between items-start mb-3">
+                <div>
+                    <p className="muted text-xs">Daily Report</p>
+                    <h3 className="text-lg font-semibold mb-1">{item.areaName || item.bin?.areaName || '-'}</h3>
+                    <p className="muted text-sm mb-0">
+                        Submitted {new Date(item.createdAt).toLocaleString()}
+                    </p>
+                </div>
+                <button className="btn btn-sm" onClick={onClose}>x</button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 mb-4">
+                <InfoItem label="Zone" value={item.zoneName || item.bin?.zoneName || item.zoneId || '-'} />
+                <InfoItem label="Ward" value={item.wardName || item.bin?.wardName || item.wardId || '-'} />
+                <InfoItem label="Status" value={<StatusBadge status={item.status} />} />
+                <InfoItem label="Type" value={readableType(item.type)} />
+                {item.submittedBy && (
+                    <InfoItem label="Submitted By" value={item.submittedBy.name || item.submittedBy.email || '-'} />
+                )}
+                {item.locationName && <InfoItem label="Location" value={item.locationName} />}
+            </div>
+
+            <div className="mb-4">
+                <h4 className="text-md font-semibold mb-2">Questionnaire</h4>
+                <div className="grid gap-2">
+                    {item.questionnaire
+                        ? Object.entries(item.questionnaire).map(([key, val]: [string, any]) => {
+                            const answer = typeof val === "object" && val !== null && "answer" in val ? (val as any).answer : val;
+                            const photos = typeof val === "object" && (val as any).photos ? (val as any).photos : [];
+                            return (
+                                <div key={key} className="p-3 rounded border border-base-200 bg-base-50">
+                                    <div className="text-sm font-semibold">{key}</div>
+                                    <div className="muted text-sm">{String(answer ?? "-")}</div>
+                                    {Array.isArray(photos) && photos.length > 0 && (
+                                        <div className="flex flex-wrap gap-2 mt-2">
+                                            {photos.map((p: string, idx: number) => (
+                                                <a key={idx} href={p} target="_blank" rel="noreferrer" className="block">
+                                                    <img src={p} alt={`Photo ${idx + 1}`} className="h-16 w-16 object-cover rounded border" />
+                                                </a>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })
+                        : <div className="muted text-sm">No questionnaire answers.</div>}
                 </div>
             </div>
-        </div>
-    );
-}
 
-function KpiCard({ label, value, color, highlight }: { label: string; value: number; color?: string; highlight?: boolean }) {
-    return (
-        <div className={`card ${highlight ? 'border-primary border' : ''}`}>
-            <div className="muted text-xs uppercase tracking-wider mb-1">{label}</div>
-            <div className={`text-2xl font-bold ${color || ''}`}>{value}</div>
-        </div>
-    );
-}
-
-function TabButton({ children, active, onClick }: { children: React.ReactNode; active: boolean; onClick: () => void }) {
-    return (
-        <button
-            onClick={onClick}
-            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${active ? 'bg-primary text-white' : 'bg-base-200 hover:bg-base-300'
-                }`}
-        >
-            {children}
-        </button>
-    );
-}
-
-function StatusBadge({ status }: { status: string }) {
-    let style = "bg-base-200 text-base-content";
-    if (status === "APPROVED") style = "bg-success/10 text-success";
-    if (status === "PENDING_QC" || status === "PENDING") style = "bg-warning/10 text-warning";
-    if (status === "REJECTED") style = "bg-error/10 text-error";
-    if (status === "ACTION_REQUIRED") style = "bg-info/10 text-info";
-
-    return (
-        <span className={`px-2 py-0.5 rounded text-[10px] font-bold tracking-wide uppercase ${style}`}>
-            {status?.replace(/_/g, " ")}
-        </span>
+            {loading && <div className="muted text-sm">Loading details...</div>}
+        </>
     );
 }

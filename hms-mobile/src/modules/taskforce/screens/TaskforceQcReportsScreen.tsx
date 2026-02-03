@@ -4,6 +4,8 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../../../navigation";
 import { listTaskforceReportsPending, ApiError } from "../../../api/auth";
 
+import TaskforceLayout from "../components/TaskforceLayout";
+
 type Nav = NativeStackNavigationProp<RootStackParamList, "TaskforceQcReports">;
 
 export default function TaskforceQcReportsScreen({ navigation }: { navigation: Nav }) {
@@ -28,45 +30,46 @@ export default function TaskforceQcReportsScreen({ navigation }: { navigation: N
     load();
   }, []);
 
-  if (loading) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#1d4ed8" />
-      </View>
-    );
-  }
-
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Pending Feeder Reports</Text>
-      {error ? <Text style={styles.error}>{error}</Text> : null}
-      {!reports.length ? (
-        <Text style={styles.muted}>No pending reports.</Text>
-      ) : (
-        <FlatList
-          data={reports}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={styles.card}
-              onPress={() => navigation.navigate("TaskforceQcReportReview", { report: item })}
-            >
-              <Text style={styles.cardTitle}>{item.feederPoint?.feederPointName}</Text>
-              <Text style={styles.muted}>{item.feederPoint?.areaName}</Text>
-              <Text style={styles.muted}>{item.submittedBy?.name || "-"}</Text>
-              <Text style={styles.meta}>{new Date(item.createdAt).toLocaleString()}</Text>
-            </TouchableOpacity>
-          )}
-        />
-      )}
-    </View>
+    <TaskforceLayout
+      title="QC Reports"
+      subtitle="Pending Quality Control"
+      navigation={navigation}
+    >
+      <View style={styles.container}>
+        {loading ? (
+          <ActivityIndicator size="large" color="#1d4ed8" />
+        ) : (
+          <>
+            {error ? <Text style={styles.error}>{error}</Text> : null}
+            {!reports.length ? (
+              <Text style={styles.muted}>No pending reports.</Text>
+            ) : (
+              <FlatList
+                data={reports}
+                keyExtractor={(item) => item.id}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    style={styles.card}
+                    onPress={() => navigation.navigate("TaskforceQcReportReview", { report: item })}
+                  >
+                    <Text style={styles.cardTitle}>{item.feederPoint?.feederPointName}</Text>
+                    <Text style={styles.muted}>{item.feederPoint?.areaName}</Text>
+                    <Text style={styles.muted}>{item.submittedBy?.name || "-"}</Text>
+                    <Text style={styles.meta}>{new Date(item.createdAt).toLocaleString()}</Text>
+                  </TouchableOpacity>
+                )}
+              />
+            )}
+          </>
+        )}
+      </View>
+    </TaskforceLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f5f7fb", padding: 16 },
-  center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: "#f5f7fb" },
-  title: { fontSize: 22, fontWeight: "700", marginBottom: 12 },
+  container: { flex: 1, backgroundColor: "#f8fafc", padding: 16 },
   card: {
     backgroundColor: "#fff",
     borderRadius: 10,

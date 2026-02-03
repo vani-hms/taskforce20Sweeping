@@ -68,9 +68,9 @@ router.get("/cities", async (_req, res, next) => {
         enabled: c.enabled,
         cityAdmin: c.users.find((u) => u.role === Role.CITY_ADMIN)
           ? {
-              name: c.users.find((u) => u.role === Role.CITY_ADMIN)?.user.name || "",
-              email: c.users.find((u) => u.role === Role.CITY_ADMIN)?.user.email || ""
-            }
+            name: c.users.find((u) => u.role === Role.CITY_ADMIN)?.user.name || "",
+            email: c.users.find((u) => u.role === Role.CITY_ADMIN)?.user.email || ""
+          }
           : null,
         modules: c.modules
           .filter((m) => isCanonicalModuleKey((m as any).module.name))
@@ -130,8 +130,8 @@ router.patch("/cities/:cityId", async (req, res, next) => {
 
 router.patch("/cities/:cityId/modules/:moduleId", async (req, res, next) => {
   try {
-    const cityId = req.params.cityId;
-    const moduleId = req.params.moduleId;
+    const cityId = req.params.cityId as string;
+    const moduleId = req.params.moduleId as string;
     const moduleExists = await prisma.module.findUnique({ where: { id: moduleId } });
     if (!moduleExists) throw new HttpError(404, "Module not found");
     const enabled = req.body?.enabled ?? true;
@@ -155,7 +155,7 @@ const adminSchema = z.object({
 router.post("/cities/:cityId/admins", validateBody(adminSchema), async (req, res, next) => {
   try {
     const { email, password, name } = req.body as z.infer<typeof adminSchema>;
-    const cityId = req.params.cityId;
+    const cityId = req.params.cityId as string;
     const city = await prisma.city.findUnique({ where: { id: cityId } });
     if (!city) throw new HttpError(404, "City not found");
     const hashed = await hashPassword(password);

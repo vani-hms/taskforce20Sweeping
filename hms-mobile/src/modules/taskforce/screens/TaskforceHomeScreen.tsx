@@ -1,15 +1,17 @@
 import React, { useEffect, useState, useMemo, useCallback } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, Dimensions, NativeModules, Platform } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, Dimensions, NativeModules, Platform, ScrollView } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import * as Location from "expo-location";
 import MapView, { Marker, Polyline, PROVIDER_DEFAULT } from "react-native-maps";
-import { Navigation } from "lucide-react-native";
+import { Navigation, Play, Share2, Ban, Info } from "lucide-react-native";
 import { RootStackParamList } from "../../../navigation";
 import TaskforceLayout from "../components/TaskforceLayout";
 import { listTaskforceAssigned, listTaskforceFeederRequests, listTaskforceReportsPending } from "../../../api/auth";
 import { dijkstra, haversineDistance, Node, Edge } from "../utils/dijkstra";
 import { LinearGradient } from "expo-linear-gradient";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Linking } from "react-native";
 
 type Nav = NativeStackNavigationProp<RootStackParamList, "TaskforceHome">;
 
@@ -30,6 +32,8 @@ export default function TaskforceHomeScreen({ navigation }: { navigation: Nav })
   const [assignedCount, setAssignedCount] = useState<number>(0);
   const [pendingCount, setPendingCount] = useState<number>(0);
   const [myRequestsCount, setMyRequestsCount] = useState<number>(0);
+  const [eliminatedIds, setEliminatedIds] = useState<string[]>([]);
+  const [upcomingFeeder, setUpcomingFeeder] = useState<Feeder | null>(null);
 
   const isMapAvailable = useMemo(() => {
     if (Platform.OS === 'web') return false;
@@ -62,6 +66,10 @@ export default function TaskforceHomeScreen({ navigation }: { navigation: Nav })
       setFeeders(assigned.filter((f: any) => f.latitude && f.longitude));
       setMyRequestsCount(requests.length);
       setPendingCount(reports.length);
+
+      // Load eliminated IDs
+      const saved = await AsyncStorage.getItem("eliminated_feeders");
+      if (saved) setEliminatedIds(JSON.parse(saved));
 
       console.log("[Dashboard] Sync completed. Stats:", {
         assigned: assigned.length,
@@ -99,11 +107,11 @@ export default function TaskforceHomeScreen({ navigation }: { navigation: Nav })
 
     const nodes: Node[] = [
       userNode,
-      ...feeders.map(f => ({ id: f.id, latitude: f.latitude, longitude: f.longitude }))
+      ...feeders.filter(f => !eliminatedIds.includes(f.id)).map(f => ({ id: f.id, latitude: f.latitude, longitude: f.longitude }))
     ];
 
     // Build fully connected graph from user to all feeders
-    const edges: Edge[] = feeders.map(f => ({
+    const edges: Edge[] = feeders.filter(f => !eliminatedIds.includes(f.id)).map(f => ({
       from: startNodeId,
       to: f.id,
       weight: haversineDistance(userNode, f)
@@ -116,7 +124,7 @@ export default function TaskforceHomeScreen({ navigation }: { navigation: Nav })
     let minDistance = Infinity;
     let targetId = "";
 
-    feeders.forEach(f => {
+    feeders.filter(f => !eliminatedIds.includes(f.id)).forEach(f => {
       if (distances[f.id] < minDistance) {
         minDistance = distances[f.id];
         targetId = f.id;
@@ -130,7 +138,30 @@ export default function TaskforceHomeScreen({ navigation }: { navigation: Nav })
         { latitude: userNode.latitude, longitude: userNode.longitude },
         { latitude: targetFeeder.latitude, longitude: targetFeeder.longitude }
       ]);
+
+      // Set upcoming (second nearest that is not eliminated)
+      const otherFeeders = feeders
+        .filter(f => f.id !== targetId && !eliminatedIds.includes(f.id))
+        .sort((a, b) => distances[a.id] - distances[b.id]);
+
+      if (otherFeeders.length > 0) {
+        setUpcomingFeeder(otherFeeders[0]);
+      } else {
+        setUpcomingFeeder(null);
+      }
     }
+  };
+
+  const shareProgress = async () => {
+    const text = `I've mapped ${assignedCount} feeder points today in Taskforce! 🚀 Check out my progress.`;
+    const url = `whatsapp://send?text=${encodeURIComponent(text)}`;
+    Linking.canOpenURL(url).then(supported => {
+      if (supported) {
+        Linking.openURL(url);
+      } else {
+        Alert.alert("WhatsApp not found", "Please install WhatsApp to share your progress.");
+      }
+    });
   };
 
   const initialRegion = useMemo(() => {
@@ -156,86 +187,137 @@ export default function TaskforceHomeScreen({ navigation }: { navigation: Nav })
       subtitle="Management Dashboard"
       navigation={navigation}
     >
-      <View style={styles.container}>
-        <View style={styles.kpiRow}>
-          <Kpi
-            label="Assigned"
-            value={loading ? "—" : assignedCount.toString()}
-            colors={["#6366f1", "#8b5cf6"]}
-            onPress={() => navigation.navigate("TaskforceAssigned")}
-          />
-          <Kpi
-            label="Pending QC"
-            value={loading ? "—" : pendingCount.toString()}
-            colors={["#f59e0b", "#d97706"]}
-            onPress={() => navigation.navigate("TaskforceQcReports")}
-          />
-          <Kpi
-            label="My Requests"
-            value={loading ? "—" : myRequestsCount.toString()}
-            colors={["#10b981", "#059669"]}
-            onPress={() => navigation.navigate("TaskforceMyRequests")}
-          />
-        </View>
+      <View style={{ flex: 1 }}>
+        <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 100 }}>
+          <View style={styles.kpiRow}>
+            <Kpi
+              label="Assigned"
+              value={loading ? "—" : assignedCount.toString()}
+              colors={["#6366f1", "#8b5cf6"]}
+              onPress={() => navigation.navigate("TaskforceAssigned")}
+            />
+            <Kpi
+              label="Pending QC"
+              value={loading ? "—" : pendingCount.toString()}
+              colors={["#f59e0b", "#d97706"]}
+              onPress={() => navigation.navigate("TaskforceQcReports")}
+            />
+            <Kpi
+              label="My Requests"
+              value={loading ? "—" : myRequestsCount.toString()}
+              colors={["#10b981", "#059669"]}
+              onPress={() => navigation.navigate("TaskforceMyRequests")}
+            />
+          </View>
 
-        <View style={styles.statsCard}>
-          <Text style={styles.sectionTitle}>Observation Summary</Text>
-          <Text style={styles.muted}>
-            Visualize assigned feeder points and find the most efficient survey sequence.
-          </Text>
+          <View style={styles.statsCard}>
+            <Text style={styles.sectionTitle}>Observation Summary</Text>
+            <Text style={styles.muted}>
+              Visualize assigned feeder points and find the most efficient survey sequence.
+            </Text>
 
-          <View style={styles.mapContainer}>
-            {loading ? (
-              <ActivityIndicator size="large" color="#0f172a" />
-            ) : isMapAvailable ? (
-              <MapView
-                provider={PROVIDER_DEFAULT}
-                style={styles.map}
-                initialRegion={initialRegion}
-                showsUserLocation
-              >
-                {feeders.map((f: any) => (
-                  <Marker
-                    key={f.id}
-                    coordinate={{ latitude: f.latitude, longitude: f.longitude }}
-                    title={f.feederPointName}
-                    description={`Status: ${f.status}`}
-                    pinColor={nearestFeeder?.id === f.id ? "#10b981" : "#3b82f6"}
-                  />
-                ))}
-                {path.length > 0 && (
-                  <Polyline
-                    coordinates={path}
-                    strokeWidth={4}
-                    strokeColor="#0f172a"
-                    lineDashPattern={[5, 5]}
-                  />
-                )}
-              </MapView>
-            ) : (
-              <View style={styles.mapFallback}>
-                <Navigation size={40} color="#94a3b8" />
-                <Text style={styles.fallbackText}>Coordinate Radar Active</Text>
-                <Text style={styles.fallbackSub}>Native Map module not linked. Calculations are still accurate.</Text>
+            <View style={styles.mapContainer}>
+              {loading ? (
+                <ActivityIndicator size="large" color="#0f172a" />
+              ) : isMapAvailable ? (
+                <MapView
+                  provider={PROVIDER_DEFAULT}
+                  style={styles.map}
+                  initialRegion={initialRegion}
+                  showsUserLocation
+                >
+                  {feeders.filter(f => !eliminatedIds.includes(f.id)).map((f: any) => (
+                    <Marker
+                      key={f.id}
+                      coordinate={{ latitude: f.latitude, longitude: f.longitude }}
+                      title={f.feederPointName}
+                      description={`Status: ${f.status}`}
+                      pinColor={nearestFeeder?.id === f.id ? "#10b981" : "#3b82f6"}
+                    />
+                  ))}
+                  {path.length > 0 && (
+                    <Polyline
+                      coordinates={path}
+                      strokeWidth={4}
+                      strokeColor="#0f172a"
+                      lineDashPattern={[5, 5]}
+                    />
+                  )}
+                </MapView>
+              ) : (
+                <View style={styles.mapFallback}>
+                  <Navigation size={40} color="#94a3b8" />
+                  <Text style={styles.fallbackText}>Coordinate Radar Active</Text>
+                  <Text style={styles.fallbackSub}>Native Map module not linked. Calculations are still accurate.</Text>
+                </View>
+              )}
+            </View>
+
+            {nearestFeeder && (
+              <View style={styles.suggestionBox}>
+                <View style={styles.iconCircle}>
+                  <Navigation size={20} color="#10b981" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.suggestionTitle}>Recommended Starting Point</Text>
+                  <Text style={styles.suggestionText}>
+                    Proceed to <Text style={{ fontWeight: "700" }}>{nearestFeeder.feederPointName}</Text> first. It's the nearest point to your current location.
+                  </Text>
+                  <TouchableOpacity
+                    style={styles.suggestionButton}
+                    onPress={() => navigation.navigate("TaskforceFeederDetail", { feeder: nearestFeeder })}
+                  >
+                    <Text style={styles.suggestionButtonText}>Start Now</Text>
+                    <Play size={14} color="#fff" fill="#fff" />
+                  </TouchableOpacity>
+                </View>
               </View>
             )}
           </View>
 
-          {nearestFeeder && (
-            <View style={styles.suggestionBox}>
-              <View style={styles.iconCircle}>
-                <Navigation size={20} color="#10b981" />
+          {upcomingFeeder && (
+            <View style={styles.upcomingContainer}>
+              <View style={styles.upcomingHeader}>
+                <Text style={styles.upcomingLabel}>Upcoming Survey</Text>
+                <TouchableOpacity onPress={shareProgress} style={styles.shareBtn}>
+                  <Share2 size={16} color="#6366f1" />
+                  <Text style={styles.shareText}>Share Progress</Text>
+                </TouchableOpacity>
               </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.suggestionTitle}>Recommended Starting Point</Text>
-                <Text style={styles.suggestionText}>
-                  Proceed to <Text style={{ fontWeight: "700" }}>{nearestFeeder.feederPointName}</Text> first. It's the nearest point to your current location.
+
+              <TouchableOpacity
+                style={styles.upcomingCard}
+                onPress={() => navigation.navigate("TaskforceFeederDetail", { feeder: upcomingFeeder })}
+              >
+                <View style={styles.upcomingInfo}>
+                  <Text style={styles.upcomingTitle}>{upcomingFeeder.feederPointName}</Text>
+                  <Text style={styles.upcomingSub}>Next estimated stop • Fast track enabled</Text>
+                </View>
+                <Play size={20} color="#6366f1" />
+              </TouchableOpacity>
+
+              <View style={styles.popupMessage}>
+                <Info size={16} color="#0f172a" />
+                <Text style={styles.popupText}>
+                  Please complete the survey and earn a strike.
                 </Text>
               </View>
             </View>
           )}
-        </View>
 
+          {feeders.filter(f => eliminatedIds.includes(f.id)).length > 0 && (
+            <View style={styles.eliminatedSection}>
+              <Text style={styles.sectionTitle}>Eliminated Feeder Points</Text>
+              {feeders.filter(f => eliminatedIds.includes(f.id)).map(f => (
+                <View key={f.id} style={styles.eliminatedItem}>
+                  <Ban size={16} color="#94a3b8" />
+                  <Text style={styles.eliminatedText}>{f.feederPointName}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+
+        </ScrollView>
         <TouchableOpacity
           style={styles.fab}
           onPress={() => navigation.navigate("TaskforceAssigned")}
@@ -243,7 +325,7 @@ export default function TaskforceHomeScreen({ navigation }: { navigation: Nav })
           <Text style={styles.fabText}>Start Survey</Text>
         </TouchableOpacity>
       </View>
-    </TaskforceLayout>
+    </TaskforceLayout >
   );
 }
 
@@ -355,6 +437,22 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 2,
   },
+  suggestionButton: {
+    backgroundColor: "#166534",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+    marginTop: 10,
+    alignSelf: "flex-start",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  suggestionButtonText: {
+    color: "#ffffff",
+    fontSize: 13,
+    fontWeight: "700",
+  },
   fab: {
     position: "absolute",
     right: 22,
@@ -371,5 +469,95 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 6
   },
-  fabText: { color: "#ffffff", fontSize: 16, fontWeight: "800" }
+  fabText: { color: "#ffffff", fontSize: 16, fontWeight: "800" },
+  upcomingContainer: {
+    marginTop: 24,
+    marginBottom: 8,
+  },
+  upcomingHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  upcomingLabel: {
+    fontSize: 14,
+    fontWeight: "800",
+    color: "#64748b",
+    textTransform: "uppercase",
+    letterSpacing: 1,
+  },
+  shareBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "#eef2ff",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  shareText: {
+    color: "#6366f1",
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  upcomingCard: {
+    backgroundColor: "#ffffff",
+    borderRadius: 16,
+    padding: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+  },
+  upcomingInfo: {
+    flex: 1,
+  },
+  upcomingTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#0f172a",
+  },
+  upcomingSub: {
+    fontSize: 12,
+    color: "#64748b",
+    marginTop: 2,
+  },
+  popupMessage: {
+    backgroundColor: "#f1f5f9",
+    borderRadius: 12,
+    padding: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginTop: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: "#0f172a",
+  },
+  popupText: {
+    fontSize: 13,
+    color: "#0f172a",
+    fontWeight: "600",
+  },
+  eliminatedSection: {
+    marginTop: 24,
+    paddingBottom: 40,
+  },
+  eliminatedItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    backgroundColor: "#f8fafc",
+    padding: 12,
+    borderRadius: 12,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+  },
+  eliminatedText: {
+    fontSize: 14,
+    color: "#94a3b8",
+    fontWeight: "500",
+    textDecorationLine: "line-through",
+  },
 });

@@ -63,8 +63,8 @@ export default function ToiletMasterScreen({ navigation }: { navigation: Nav }) 
                     refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(true); }} />}
                     ListEmptyComponent={
                         <View style={styles.empty}>
-                            <Text style={styles.emptyTitle}>No Assets Found</Text>
-                            <Text style={styles.emptySub}>Register assets to see them in the master list.</Text>
+                            <Text style={styles.emptyTitle}>No Toilets Found</Text>
+                            <Text style={styles.emptySub}>Register toilets to see them in the master list.</Text>
                         </View>
                     }
                 />

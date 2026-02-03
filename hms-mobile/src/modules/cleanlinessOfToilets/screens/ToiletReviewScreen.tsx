@@ -91,16 +91,30 @@ export default function ToiletReviewScreen({ route, navigation }: Props) {
                     </View>
                 </View>
 
+                {/* QC Comment for Action Officer */}
+                {inspection.qcComment && (
+                    <View style={styles.qcCommentCard}>
+                        <View style={styles.qcHeader}>
+                            <Text style={styles.qcTitle}>QC INSTRUCTIONS</Text>
+                            <Text style={styles.qcBadge}>ACTION REQUIRED</Text>
+                        </View>
+                        <Text style={styles.qcText}>{inspection.qcComment}</Text>
+                    </View>
+                )}
+
                 {/* Accuracy Alert */}
                 <View style={[styles.mismatchCard, (reportedDist && reportedDist > 100) ? { backgroundColor: '#fff7ed', borderColor: '#fdba74' } : {}]}>
-                    <Text style={styles.mismatchText}>
-                        {reportedDist !== null
-                            ? `GPS Accuracy: ${reportedDist.toFixed(0)}m from target`
-                            : "GPS Data Missing"
-                        }
-                    </Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                        <Text style={{ fontSize: 16 }}>📍</Text>
+                        <Text style={styles.mismatchText}>
+                            {reportedDist !== null
+                                ? `Accuracy: ${reportedDist.toFixed(0)}m from toilet`
+                                : "GPS Data Missing"
+                            }
+                        </Text>
+                    </View>
                     {reportedDist && reportedDist > 100 && (
-                        <Text style={{ fontSize: 9, fontWeight: '700', color: '#ea580c', marginTop: 4 }}>⚠️ HIGH MISMATCH - VERIFY SITE CAREFULLY</Text>
+                        <Text style={{ fontSize: 10, fontWeight: '800', color: '#ea580c', marginTop: 8 }}>⚠️ HIGH MISMATCH - PLEASE VERIFY CAREFULLY</Text>
                     )}
                 </View>
 
@@ -159,9 +173,25 @@ const styles = StyleSheet.create({
     subtitle: { fontSize: 10, color: '#1d4ed8', fontWeight: '900', letterSpacing: 1.5 },
     geoBox: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12, backgroundColor: '#f8fafc', padding: 16, borderRadius: 12 },
     label: { fontSize: 9, color: '#94a3b8', fontWeight: '800', letterSpacing: 1 },
-    val: { fontSize: 14, fontWeight: '800', color: '#1e293b', marginTop: 2 },
-    mismatchCard: { padding: 12, borderRadius: 12, borderWidth: 1, borderColor: '#e2e8f0', marginBottom: 24 },
-    mismatchText: { fontSize: 12, fontWeight: '800', color: '#475569' },
+    val: { fontSize: 14, fontWeight: '800', color: '#0f172a', marginTop: 2 },
+    qcCommentCard: {
+        backgroundColor: '#fff7ed',
+        borderRadius: 20,
+        padding: 20,
+        marginBottom: 20,
+        borderWidth: 1,
+        borderColor: '#ffedd5',
+        elevation: 2,
+        shadowColor: '#f97316',
+        shadowOpacity: 0.1,
+        shadowRadius: 10
+    },
+    qcHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+    qcTitle: { fontSize: 10, fontWeight: '900', color: '#9a3412', letterSpacing: 1 },
+    qcBadge: { fontSize: 9, fontWeight: '900', color: '#fff', backgroundColor: '#f97316', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4 },
+    qcText: { fontSize: 14, color: '#451a03', fontWeight: '600', lineHeight: 20 },
+    mismatchCard: { padding: 16, borderRadius: 20, backgroundColor: '#f8fafc', borderWidth: 1, borderColor: '#e2e8f0', marginBottom: 24 },
+    mismatchText: { fontSize: 13, fontWeight: '800', color: '#334155' },
     sectionTitle: { fontSize: 11, fontWeight: '900', color: '#94a3b8', marginBottom: 16, letterSpacing: 2 },
     ansCard: { marginBottom: 24, borderBottomWidth: 1, borderBottomColor: '#f8fafc', paddingBottom: 16 },
     ansRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 },

@@ -188,7 +188,13 @@ export const TaskforceApi = {
 
 export const ToiletApi = {
   // Stats & Dashboard
-  getDashboardStats: () => apiFetch<{ pendingReview: number; inspectionsDone: number }>("/modules/toilet/stats"),
+  getDashboardStats: (params?: { startDate?: string; endDate?: string }) => {
+    const sp = new URLSearchParams();
+    if (params?.startDate) sp.append('startDate', params.startDate);
+    if (params?.endDate) sp.append('endDate', params.endDate);
+    const query = sp.toString() ? `?${sp.toString()}` : "";
+    return apiFetch<any>(`/modules/toilet/stats${query}`);
+  },
 
   // Master & Search
   listToilets: () => apiFetch<{ toilets: any[] }>("/modules/toilet/assigned"),
@@ -210,12 +216,14 @@ export const ToiletApi = {
     }),
 
   // Operational
-  listInspections: (params?: { status?: string; employeeId?: string }) => {
+  listInspections: (params?: { status?: string; employeeId?: string; page?: number; pageSize?: number }) => {
     const sp = new URLSearchParams();
     if (params?.status) sp.append('status', params.status);
     if (params?.employeeId) sp.append('employeeId', params.employeeId);
+    if (params?.page) sp.append('page', params.page.toString());
+    if (params?.pageSize) sp.append('pageSize', params.pageSize.toString());
     const query = sp.toString() ? `?${sp.toString()}` : "";
-    return apiFetch<{ inspections: any[] }>(`/modules/toilet/inspections${query}`);
+    return apiFetch<{ inspections: any[]; total: number; page: number; pageSize: number }>(`/modules/toilet/inspections${query}`);
   },
   getInspectionDetails: (id: string) => apiFetch<{ inspection: any }>(`/modules/toilet/inspections/${id}`),
   submitInspection: (body: any) =>
@@ -233,6 +241,11 @@ export const ToiletApi = {
     apiFetch("/modules/toilet/assignments/bulk", {
       method: "POST",
       body: JSON.stringify({ employeeId, toiletIds, category })
+    }),
+  unassignToilet: (employeeId: string, toiletId: string) =>
+    apiFetch("/modules/toilet/assignments/remove", {
+      method: "POST",
+      body: JSON.stringify({ employeeId, toiletId })
     })
 };
 
@@ -273,6 +286,7 @@ export const EmployeesApi = {
         id: string;
         name: string;
         email: string;
+        phone?: string;
         role: string;
         modules: { id: string; key: string; name: string; canWrite: boolean }[];
         zones: string[];

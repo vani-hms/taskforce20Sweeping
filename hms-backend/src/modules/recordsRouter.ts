@@ -26,15 +26,21 @@ router.get("/:moduleKey/records", async (req, res, next) => {
     if (moduleKey === "LITTERBINS") {
       const isCityAdmin = req.auth?.roles?.includes(Role.CITY_ADMIN);
       const isQc = req.auth?.roles?.includes(Role.QC);
+      const isAo = req.auth?.roles?.includes(Role.ACTION_OFFICER);
 
       let where: any = { cityId };
       let visitWhere: any = { cityId };
       let reportWhere: any = { cityId };
 
-      if (isQc && !isCityAdmin) {
+      if ((isQc || isAo) && !isCityAdmin) {
         const moduleId = await getModuleIdByName(moduleKey);
         const moduleRoles = await prisma.userModuleRole.findMany({
-          where: { userId: req.auth!.sub!, cityId, moduleId, role: Role.QC },
+          where: {
+            userId: req.auth!.sub!,
+            cityId,
+            moduleId,
+            role: { in: [Role.QC, Role.ACTION_OFFICER] }
+          },
           select: { zoneIds: true, wardIds: true }
         });
         const scope = {

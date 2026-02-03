@@ -12,7 +12,7 @@ export default function TwinbinPage() {
   const { user } = useAuth();
   const roles = user?.roles || [];
   const isAdmin = roles.includes("CITY_ADMIN") || roles.includes("ULB_OFFICER");
-  const isQC = roles.includes("QC");
+  const isQC = roles.includes("QC") || roles.includes("ACTION_OFFICER");
 
   return (
     <Protected>

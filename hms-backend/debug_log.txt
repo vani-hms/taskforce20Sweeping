@@ -1,0 +1,81 @@
+[ERROR] 2026-02-03T06:36:44.696Z 401 Invalid or expired token
+[ERROR] 2026-02-03T06:36:53.870Z 400 Invalid module key
+[2026-02-03T06:37:19.742Z] [TOILET_REG] Incoming request: {"name":"Qwertyy","type":"URINALS","gender":"DIFFERENTLY_ABLED","wardId":"6b072bb6-a4e5-4777-842f-35161eba5ca0","latitude":22.7665426,"longitude":75.906944,"address":"","code":"","numberOfSeats":8}
+[ERROR] 2026-02-03T06:37:19.798Z 500 
+Invalid `prisma.toilet.create()` invocation in
+C:\Users\hmsmi\Downloads\taskforce20\taskforce20\hms-backend\src\modules\toilet\router.ts:55:40
+
+  52 
+  53 const payload = req.body as z.infer<typeof registerSchema>;
+  54 
+→ 55 const toilet = await prisma.toilet.create({
+       data: {
+         cityId: "d158e519-5df0-4d1a-8416-afae1a589d6f",
+         requestedById: "cd42413a-851d-4ac0-a5fd-8eb696658b2c",
+         wardId: "6b072bb6-a4e5-4777-842f-35161eba5ca0",
+         name: "Qwertyy",
+         type: "URINALS",
+               ~~~~~~~~~
+         gender: "DIFFERENTLY_ABLED",
+         code: undefined,
+         operatorName: undefined,
+         numberOfSeats: 8,
+         latitude: 22.7665426,
+         longitude: 75.906944,
+         address: "",
+         status: "PENDING"
+       }
+     })
+
+Invalid value for argument `type`. Expected ToiletType.
+PrismaClientValidationError: 
+Invalid `prisma.toilet.create()` invocation in
+C:\Users\hmsmi\Downloads\taskforce20\taskforce20\hms-backend\src\modules\toilet\router.ts:55:40
+
+  52 
+  53 const payload = req.body as z.infer<typeof registerSchema>;
+  54 
+→ 55 const toilet = await prisma.toilet.create({
+       data: {
+         cityId: "d158e519-5df0-4d1a-8416-afae1a589d6f",
+         requestedById: "cd42413a-851d-4ac0-a5fd-8eb696658b2c",
+         wardId: "6b072bb6-a4e5-4777-842f-35161eba5ca0",
+         name: "Qwertyy",
+         type: "URINALS",
+               ~~~~~~~~~
+         gender: "DIFFERENTLY_ABLED",
+         code: undefined,
+         operatorName: undefined,
+         numberOfSeats: 8,
+         latitude: 22.7665426,
+         longitude: 75.906944,
+         address: "",
+         status: "PENDING"
+       }
+     })
+
+Invalid value for argument `type`. Expected ToiletType.
+    at xg (C:\Users\hmsmi\Downloads\taskforce20\taskforce20\hms-backend\generated\prisma\runtime\binary.js:175:7528)
+    at vg.handleRequestError (C:\Users\hmsmi\Downloads\taskforce20\taskforce20\hms-backend\generated\prisma\runtime\binary.js:182:7394)
+    at vg.handleAndLogRequestError (C:\Users\hmsmi\Downloads\taskforce20\taskforce20\hms-backend\generated\prisma\runtime\binary.js:182:7058)
+    at vg.request (C:\Users\hmsmi\Downloads\taskforce20\taskforce20\hms-backend\generated\prisma\runtime\binary.js:182:6742)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async a (C:\Users\hmsmi\Downloads\taskforce20\taskforce20\hms-backend\generated\prisma\runtime\binary.js:191:9363)
+    at async C:\Users\hmsmi\Downloads\taskforce20\taskforce20\hms-backend\src\modules\toilet\router.ts:55:20
+[2026-02-03T06:47:03.354Z] [TOILET_REG] Incoming request: {"name":"Qwertyy","type":"URINALS","gender":"DIFFERENTLY_ABLED","wardId":"6b072bb6-a4e5-4777-842f-35161eba5ca0","latitude":22.7665426,"longitude":75.906944,"address":"","code":"","numberOfSeats":8}
+[2026-02-03T06:47:37.585Z] [TOILET_REG] Incoming request: {"name":"Complex 1","type":"URINALS","gender":"DIFFERENTLY_ABLED","wardId":"40c65192-92ac-4a18-88f0-973533b9a9ba","latitude":22.7665215,"longitude":75.9069465,"address":"Fhjj\n","code":"","numberOfSeats":88}
+[ERROR] 2026-02-03T06:50:56.448Z 400 Invalid module key
+[ERROR] 2026-02-03T06:51:59.682Z 400 Invalid module key
+[ERROR] 2026-02-03T06:55:32.129Z 400 Invalid module key
+[ERROR] 2026-02-03T06:59:24.525Z 403 Forbidden
+[ERROR] 2026-02-03T06:59:24.543Z 403 Forbidden
+[ERROR] 2026-02-03T06:59:29.982Z 403 Forbidden
+[ERROR] 2026-02-03T06:59:29.992Z 403 Forbidden
+[ERROR] 2026-02-03T07:03:48.492Z 400 Invalid module key
+[ERROR] 2026-02-03T07:06:49.933Z 400 Invalid module key
+[ERROR] 2026-02-03T07:07:59.367Z 400 Invalid module key
+[ERROR] 2026-02-03T07:14:48.584Z 400 Invalid module key
+[ERROR] 2026-02-03T07:15:41.561Z 400 Invalid module key
+[ERROR] 2026-02-03T07:27:53.085Z 400 Invalid module key
+[ERROR] 2026-02-03T07:33:29.981Z 400 Invalid module key
+[ERROR] 2026-02-03T07:37:43.224Z 400 Invalid module key

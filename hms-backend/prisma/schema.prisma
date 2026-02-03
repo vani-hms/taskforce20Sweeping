@@ -80,6 +80,7 @@ model User {
   id                              String                  @id @default(uuid()) @db.Uuid
   email                           String                  @unique
   name                            String
+  phone                           String?
   password                        String
   createdAt                       DateTime                @default(now())
   updatedAt                       DateTime                @updatedAt
@@ -99,6 +100,8 @@ model User {
   twinbinReportsReviewed          LitterBinReport[]       @relation("TwinbinReportReviewedBy")
   toiletsRequested                Toilet[]                @relation("ToiletRequestedBy")
   toiletInspections               ToiletInspection[]      @relation("ToiletInspectionBy")
+  toiletInspectionsReviewed       ToiletInspection[]      @relation("ToiletInspectionReviewedBy")
+  toiletInspectionsActionTaken    ToiletInspection[]      @relation("ToiletInspectionActionTakenBy")
   toiletAssignments               ToiletAssignment[]      @relation("ToiletAssignmentTo")
   cities                          UserCity[]
   modules                         UserModuleRole[]
@@ -473,12 +476,16 @@ model ToiletInspection {
   answers        Json?
   qcComment      String?
   actionNote     String?
+  reviewedByQcId String?          @db.Uuid
+  actionTakenById String?         @db.Uuid
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
 
-  toilet   Toilet @relation(fields: [toiletId], references: [id], onDelete: Cascade)
-  employee User   @relation("ToiletInspectionBy", fields: [employeeId], references: [id], onDelete: Cascade)
-  city     City   @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  toilet        Toilet @relation(fields: [toiletId], references: [id], onDelete: Cascade)
+  employee      User   @relation("ToiletInspectionBy", fields: [employeeId], references: [id], onDelete: Cascade)
+  city          City   @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  reviewedByQc  User?  @relation("ToiletInspectionReviewedBy", fields: [reviewedByQcId], references: [id])
+  actionTakenBy User?  @relation("ToiletInspectionActionTakenBy", fields: [actionTakenById], references: [id])
 
   @@index([cityId])
   @@index([toiletId])
@@ -591,6 +598,7 @@ enum TwinbinBinStatus {
 enum ToiletType {
   CT
   PT
+  URINALS
 }
 
 enum ToiletGender {
@@ -598,6 +606,7 @@ enum ToiletGender {
   FEMALE
   UNISEX
   DISABLED
+  DIFFERENTLY_ABLED
 }
 
 enum ToiletStatus {

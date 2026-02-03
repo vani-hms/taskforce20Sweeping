@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ToiletApi } from '@lib/apiClient';
 import { useRouter } from 'next/navigation';
 
@@ -13,6 +13,7 @@ export default function BulkImportPage() {
     const [uploading, setUploading] = useState(false);
     const [result, setResult] = useState<any>(null);
     const [error, setError] = useState('');
+    const [wards, setWards] = useState<any[]>([]);
 
     // Manual form state
     const [formData, setFormData] = useState({
@@ -29,6 +30,23 @@ export default function BulkImportPage() {
     });
     const [submitting, setSubmitting] = useState(false);
 
+    useEffect(() => {
+        const loadGeo = async () => {
+            try {
+                const zonesRes = await ToiletApi.getZones();
+                const allWards: any[] = [];
+                for (const zone of zonesRes.nodes) {
+                    const wardsRes = await ToiletApi.getWardsByZone(zone.id);
+                    allWards.push(...wardsRes.nodes.map((w: any) => ({ ...w, zoneName: zone.name })));
+                }
+                setWards(allWards);
+            } catch (err) {
+                console.error("Failed to load geo nodes", err);
+            }
+        };
+        loadGeo();
+    }, []);
+
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             setFile(e.target.files[0]);
@@ -39,20 +57,18 @@ export default function BulkImportPage() {
 
     const handleUpload = async () => {
         if (!file) {
-            setError('Please select a file first');
+            setError('Please selection a CSV file context');
             return;
         }
-
         setUploading(true);
         setError('');
-
         try {
             const text = await file.text();
             const response = await ToiletApi.bulkImport(text);
             setResult(response);
             setTimeout(() => router.push('/modules/toilet'), 3000);
         } catch (err: any) {
-            setError(err.message || 'Failed to upload file');
+            setError(err.message || 'Failed to process infrastructure data');
         } finally {
             setUploading(false);
         }
@@ -60,23 +76,18 @@ export default function BulkImportPage() {
 
     const handleManualSubmit = async () => {
         if (!formData.name || !formData.wardId || !formData.latitude || !formData.longitude) {
-            setError('Please fill all required fields (Name, Ward ID, Latitude, Longitude)');
+            setError('Mandatory fields: Asset Name, Ward, and Coordinates.');
             return;
         }
-
         setSubmitting(true);
         setError('');
-
         try {
             const csvData = `Name,Ward ID,Type,Gender,Code,Operator Name,Number of Seats,Latitude,Longitude,Address\n${formData.name},${formData.wardId},${formData.type},${formData.gender},${formData.code},${formData.operatorName},${formData.numberOfSeats},${formData.latitude},${formData.longitude},${formData.address}`;
             const response = await ToiletApi.bulkImport(csvData);
             setResult(response);
-            setFormData({
-                name: '', wardId: '', type: 'CT', gender: 'MALE', code: '', operatorName: '', numberOfSeats: '', latitude: '', longitude: '', address: ''
-            });
             setTimeout(() => router.push('/modules/toilet'), 3000);
         } catch (err: any) {
-            setError(err.message || 'Failed to save toilet');
+            setError(err.message || 'Registry sync failed');
         } finally {
             setSubmitting(false);
         }
@@ -84,177 +95,231 @@ export default function BulkImportPage() {
 
     const downloadTemplate = () => {
         const template = 'Name,Zone Name,Ward Name,Type,Gender,Code,Operator Name,Number of Seats,Latitude,Longitude,Address\n' +
-            'CT-Ward-5-Main,Zone 1,Ward 5,CT,MALE,CT-001,ULB,5,28.6139,77.2090,Near Main Market\n' +
-            'PT-Station-Road,Zone 2,Ward 10,PT,UNISEX,PT-002,Private,3,28.6140,77.2091,Station Road';
+            'CT-Ward-5-Main,Central Zone,Ward 5,CT,MALE,CT-001,ULB,5,28.6139,77.2090,Near Main Market\n' +
+            'PT-Station-Road,West Zone,Ward 10,PT,UNISEX,PT-002,Private,3,28.6140,77.2091,Station Road';
         const blob = new Blob([template], { type: 'text/csv' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'toilet-import-template.csv';
+        a.download = 'infrastructure-import-template.csv';
         a.click();
     };
 
     return (
-        <div className="content page-centered">
-            <div className="card" style={{ maxWidth: 1000, width: '100%' }}>
-                <div className="card-header">
-                    <div>
-                        <h2 className="card-title">📥 Toilet Import</h2>
-                        <p className="muted text-sm">Add toilets manually or import multiple from CSV</p>
-                    </div>
-                    <div className="tab-bar">
-                        <button
-                            onClick={() => setActiveTab('MANUAL')}
-                            className={`tab ${activeTab === 'MANUAL' ? 'active' : ''}`}
-                        >
-                            ✏️ Manual Entry
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('CSV')}
-                            className={`tab ${activeTab === 'CSV' ? 'active' : ''}`}
-                        >
-                            📊 CSV Bulk Upload
-                        </button>
-                    </div>
+        <div style={{ padding: '0 0 40px 0', animation: 'fadeIn 0.5s ease-out' }}>
+            <style jsx>{`
+                @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+                .glass-card {
+                    background: rgba(255, 255, 255, 0.95);
+                    backdrop-filter: blur(10px);
+                    border: 1px solid #edf2f7;
+                    border-radius: 32px;
+                    box-shadow: 0 20px 40px -15px rgba(0,0,0,0.05);
+                    overflow: hidden;
+                }
+                .input-field {
+                    background: #f8fafc;
+                    border: 1px solid #e2e8f0;
+                    border-radius: 12px;
+                    padding: 12px 16px;
+                    font-size: 14px;
+                    font-weight: 500;
+                    color: #1e293b;
+                    transition: all 0.2s;
+                    width: 100%;
+                    outline: none;
+                }
+                .input-field:focus {
+                    border-color: #1e293b;
+                    background: #fff;
+                    box-shadow: 0 0 0 4px rgba(30, 41, 59, 0.05);
+                }
+                .label {
+                    font-size: 11px;
+                    font-weight: 900;
+                    color: #94a3b8;
+                    letter-spacing: 0.1em;
+                    text-transform: uppercase;
+                    margin-bottom: 8px;
+                    display: block;
+                }
+                .tab-btn {
+                    padding: 12px 24px;
+                    font-size: 13px;
+                    font-weight: 800;
+                    border-radius: 12px;
+                    transition: all 0.2s;
+                    cursor: pointer;
+                    border: none;
+                }
+            `}</style>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 32 }}>
+                <div>
+                    <h1 style={{ fontSize: 28, fontWeight: 900, color: '#0f172a', margin: 0 }}>Asset Onboarding</h1>
+                    <p style={{ color: '#64748b', fontSize: 15, marginTop: 4, fontWeight: 500 }}>Expand infrastructure registry via manual entry or cryptographic CSV datasets.</p>
                 </div>
+                <div style={{ display: 'flex', backgroundColor: '#f1f5f9', padding: 4, borderRadius: 16 }}>
+                    <button
+                        className="tab-btn"
+                        onClick={() => setActiveTab('MANUAL')}
+                        style={{ backgroundColor: activeTab === 'MANUAL' ? '#ffffff' : 'transparent', color: activeTab === 'MANUAL' ? '#0f172a' : '#64748b', boxShadow: activeTab === 'MANUAL' ? '0 4px 6px rgba(0,0,0,0.05)' : 'none' }}
+                    >Manual</button>
+                    <button
+                        className="tab-btn"
+                        onClick={() => setActiveTab('CSV')}
+                        style={{ backgroundColor: activeTab === 'CSV' ? '#ffffff' : 'transparent', color: activeTab === 'CSV' ? '#0f172a' : '#64748b', boxShadow: activeTab === 'CSV' ? '0 4px 6px rgba(0,0,0,0.05)' : 'none' }}
+                    >Bulk (CSV)</button>
+                </div>
+            </div>
 
-                <div className="card-divider"></div>
-
-                {activeTab === 'MANUAL' && (
-                    <div className="form">
-                        <div className="alert info mb-3">
-                            <strong>Manual Entry:</strong> Fill in the form below. Imported toilets are auto-approved.
+            <div className="glass-card">
+                {activeTab === 'MANUAL' ? (
+                    <div style={{ padding: 40 }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 24 }}>
+                            <div>
+                                <label className="label">Asset Identifier</label>
+                                <input className="input-field" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="e.g. South Park Toilet Complex" />
+                            </div>
+                            <div>
+                                <label className="label">Operational Ward</label>
+                                <select className="input-field" value={formData.wardId} onChange={e => setFormData({ ...formData, wardId: e.target.value })}>
+                                    <option value="">Select Ward</option>
+                                    {wards.map(w => (
+                                        <option key={w.id} value={w.id}>{w.zoneName} / {w.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="label">Infrastructure Type</label>
+                                <select className="input-field" value={formData.type} onChange={e => setFormData({ ...formData, type: e.target.value })}>
+                                    <option value="CT">Community Toilet (CT)</option>
+                                    <option value="PT">Public Toilet (PT)</option>
+                                    <option value="ODF">ODF Plus Facility</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="label">Access Scope</label>
+                                <select className="input-field" value={formData.gender} onChange={e => setFormData({ ...formData, gender: e.target.value })}>
+                                    <option value="MALE">Male Only</option>
+                                    <option value="FEMALE">Female Only</option>
+                                    <option value="ALL">Unisex / All Genders</option>
+                                    <option value="DISABLED">Divyang Accessible</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="label">Registry Code</label>
+                                <input className="input-field" value={formData.code} onChange={e => setFormData({ ...formData, code: e.target.value })} placeholder="UNIQUE-TAG-001" />
+                            </div>
+                            <div>
+                                <label className="label">Operator Entity</label>
+                                <input className="input-field" value={formData.operatorName} onChange={e => setFormData({ ...formData, operatorName: e.target.value })} placeholder="e.g. ULB or Private Org" />
+                            </div>
+                            <div>
+                                <label className="label">Latitude</label>
+                                <input className="input-field" value={formData.latitude} onChange={e => setFormData({ ...formData, latitude: e.target.value })} placeholder="Coordinates Decimal" />
+                            </div>
+                            <div>
+                                <label className="label">Longitude</label>
+                                <input className="input-field" value={formData.longitude} onChange={e => setFormData({ ...formData, longitude: e.target.value })} placeholder="Coordinates Decimal" />
+                            </div>
+                            <div>
+                                <label className="label">Capacity (Seats)</label>
+                                <input className="input-field" type="number" value={formData.numberOfSeats} onChange={e => setFormData({ ...formData, numberOfSeats: e.target.value })} placeholder="Number of stalls" />
+                            </div>
                         </div>
 
-                        <div className="grid grid-2">
-                            <InputField label="Toilet Name" required value={formData.name} onChange={(v: string) => setFormData({ ...formData, name: v })} placeholder="e.g., CT-Ward-5-Main" />
-                            <InputField label="Ward ID" required value={formData.wardId} onChange={(v: string) => setFormData({ ...formData, wardId: v })} placeholder="UUID from Wards list" />
-
-                            <SelectField label="Type" required value={formData.type} onChange={(v: string) => setFormData({ ...formData, type: v })}>
-                                <option value="CT">CT (Community Toilet)</option>
-                                <option value="PT">PT (Public Toilet)</option>
-                            </SelectField>
-
-                            <SelectField label="Gender" required value={formData.gender} onChange={(v: string) => setFormData({ ...formData, gender: v })}>
-                                <option value="MALE">MALE</option>
-                                <option value="FEMALE">FEMALE</option>
-                                <option value="ALL">ALL (UNISEX)</option>
-                                <option value="DISABLED">DISABLED</option>
-                            </SelectField>
-
-                            <InputField label="Code" value={formData.code} onChange={(v: string) => setFormData({ ...formData, code: v })} placeholder="e.g., CT-001" />
-                            <InputField label="Operator Name" value={formData.operatorName} onChange={(v: string) => setFormData({ ...formData, operatorName: v })} placeholder="e.g., ULB, Private" />
-
-                            <InputField label="Latitude" required value={formData.latitude} onChange={(v: string) => setFormData({ ...formData, latitude: v })} placeholder="e.g., 28.6139" />
-                            <InputField label="Longitude" required value={formData.longitude} onChange={(v: string) => setFormData({ ...formData, longitude: v })} placeholder="e.g., 77.2090" />
-
-                            <InputField label="Number of Seats" type="number" value={formData.numberOfSeats} onChange={(v: string) => setFormData({ ...formData, numberOfSeats: v })} placeholder="e.g., 5" />
-                        </div>
-
-                        <div className="form-field mt-2">
-                            <label>Address</label>
+                        <div style={{ marginTop: 24 }}>
+                            <label className="label">Site Address</label>
                             <textarea
-                                className="textarea"
-                                rows={2}
+                                className="input-field"
+                                style={{ minHeight: 100, resize: 'none' }}
                                 value={formData.address}
-                                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                                placeholder="Full address"
+                                onChange={e => setFormData({ ...formData, address: e.target.value })}
+                                placeholder="Detailed positioning details..."
                             />
                         </div>
 
-                        <div className="flex gap-2 mt-4">
-                            <button onClick={handleManualSubmit} disabled={submitting} className="btn btn-primary flex-1">
-                                {submitting ? '⏳ Saving...' : '💾 Save Toilet'}
+                        <div style={{ marginTop: 40, display: 'flex', gap: 16 }}>
+                            <button
+                                onClick={handleManualSubmit}
+                                disabled={submitting}
+                                style={{ flex: 1, backgroundColor: '#0f172a', color: 'white', border: 'none', borderRadius: 16, padding: '16px', fontWeight: 900, fontSize: 15, cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 10px 20px -5px rgba(15,23,42,0.3)' }}
+                                onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
+                                onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
+                            >
+                                {submitting ? 'Syncing...' : 'Complete Registry Entry'}
                             </button>
-                            <button onClick={() => router.back()} className="btn btn-outline">
-                                Cancel
-                            </button>
+                            <button
+                                onClick={() => router.back()}
+                                style={{ padding: '16px 32px', border: '1px solid #e2e8f0', borderRadius: 16, background: 'transparent', color: '#64748b', fontWeight: 800, fontSize: 14, cursor: 'pointer' }}
+                            >Cancel</button>
                         </div>
                     </div>
-                )}
+                ) : (
+                    <div style={{ padding: 40, display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 48, alignItems: 'start' }}>
+                        <div>
+                            <div style={{ backgroundColor: '#f8fafc', borderRadius: 24, padding: 32, border: '2px dashed #e2e8f0', textAlign: 'center', transition: 'all 0.3s' }} onDragOver={e => e.preventDefault()} onMouseEnter={e => e.currentTarget.style.borderColor = '#1e293b'}>
+                                <div style={{ fontSize: 48, marginBottom: 16 }}>📊</div>
+                                <h3 style={{ margin: 0, fontSize: 18, fontWeight: 900, color: '#1e293b' }}>Global Asset Protocol</h3>
+                                <p style={{ color: '#64748b', fontSize: 13, marginTop: 8, fontWeight: 500 }}>Drop your CSV infrastructure dataset here to sync with the central database.</p>
 
-                {activeTab === 'CSV' && (
-                    <div className="grid grid-2" style={{ alignItems: 'start' }}>
-                        <div className="flex col gap-4">
-                            <div className="alert info">
-                                <h4 className="font-bold mb-2">📋 Instructions</h4>
-                                <ol className="list text-sm pl-4" style={{ listStyle: 'decimal' }}>
-                                    <li>Download the template.</li>
-                                    <li>Fill in toilet data (Zone/Ward names are auto-created).</li>
-                                    <li>Upload the CSV below.</li>
-                                </ol>
+                                <label style={{ display: 'inline-block', marginTop: 24, backgroundColor: '#1e293b', color: 'white', padding: '12px 24px', borderRadius: 12, fontSize: 13, fontWeight: 800, cursor: 'pointer' }}>
+                                    Select CSV File
+                                    <input type="file" accept=".csv" onChange={handleFileChange} style={{ display: 'none' }} />
+                                </label>
+
+                                {file && (
+                                    <div style={{ marginTop: 20, padding: '12px', backgroundColor: '#ecfdf5', borderRadius: 12, display: 'flex', alignItems: 'center', gap: 10, justifyContent: 'center' }}>
+                                        <span style={{ color: '#059669', fontWeight: 900 }}>📦</span>
+                                        <span style={{ fontSize: 13, fontWeight: 700, color: '#065f46' }}>{file.name} (Ready)</span>
+                                    </div>
+                                )}
                             </div>
 
-                            <div className="card" style={{ border: '1px dashed var(--border-strong)', background: '#f8fafc' }}>
-                                <div className="form-field">
-                                    <label>Select CSV File</label>
-                                    <input type="file" accept=".csv" onChange={handleFileChange} className="input" />
-                                    {file && <p className="text-green-700 text-sm mt-2 font-bold">✓ {file.name}</p>}
-                                </div>
-                                <button onClick={handleUpload} disabled={!file || uploading} className="btn btn-primary w-full mt-4">
-                                    {uploading ? '⏳ Uploading...' : '📤 Upload & Import'}
-                                </button>
-                                <button onClick={downloadTemplate} className="btn btn-secondary w-full mt-2">
-                                    📥 Download Template
-                                </button>
+                            <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
+                                <button
+                                    onClick={handleUpload}
+                                    disabled={!file || uploading}
+                                    style={{ flex: 1, backgroundColor: file ? '#0f172a' : '#94a3b8', color: 'white', border: 'none', borderRadius: 16, padding: '16px', fontWeight: 900, cursor: 'pointer', transition: 'all 0.2s' }}
+                                >{uploading ? 'Processing Data...' : 'Initiate Import'}</button>
+                                <button
+                                    onClick={downloadTemplate}
+                                    style={{ padding: '16px 24px', border: '1px solid #e2e8f0', borderRadius: 16, background: '#fff', color: '#1e293b', fontWeight: 800, fontSize: 13, cursor: 'pointer' }}
+                                >Template</button>
                             </div>
                         </div>
 
                         <div>
-                            <h3 className="font-bold mb-3">📝 Field Guide</h3>
-                            <div className="table-grid">
-                                <div className="table-head" style={{ gridTemplateColumns: '1fr 2fr' }}>
-                                    <span>Field</span>
-                                    <span>Description</span>
-                                </div>
-                                <FieldRow label="Name *" desc="e.g. CT-Ward-5" />
-                                <FieldRow label="Zone & Ward *" desc="Names (e.g. 'Zone 1', 'Ward 10')" />
-                                <FieldRow label="Type *" desc="CT or PT" />
-                                <FieldRow label="Gender *" desc="MALE, FEMALE, ALL" />
-                                <FieldRow label="Lat/Lon *" desc="Decimal coordinates" />
-                                <FieldRow label="Code" desc="Optional unique code" />
+                            <h3 style={{ margin: '0 0 20px 0', fontSize: 16, fontWeight: 900, color: '#1e293b' }}>Protocol Guard</h3>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                                {[
+                                    { f: 'Asset Name', d: 'Unique identifier for the site' },
+                                    { f: 'Zone/Ward Names', d: 'Natural language names for auto-mapping' },
+                                    { f: 'Infr. Type', d: 'CT, PT, or ODF+ Facility' },
+                                    { f: 'Coordinates', d: 'Latitude & Longitude in decimal' },
+                                    { f: 'Capacity', d: 'Total operational stall count' }
+                                ].map((item, i) => (
+                                    <div key={i} style={{ padding: '16px', backgroundColor: '#fcfdfe', borderRadius: 16, border: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between' }}>
+                                        <span style={{ fontWeight: 800, fontSize: 13, color: '#1e293b' }}>{item.f}</span>
+                                        <span style={{ fontSize: 12, color: '#64748b', fontWeight: 500 }}>{item.d}</span>
+                                    </div>
+                                ))}
                             </div>
                         </div>
                     </div>
                 )}
-
-                {error && <div className="alert error mt-4"><strong>Error:</strong> {error}</div>}
-                {result && (
-                    <div className="alert success mt-4">
-                        <h4 className="font-bold">✓ Success!</h4>
-                        <p>{result.count} toilets imported. Redirecting...</p>
-                    </div>
-                )}
             </div>
-        </div>
-    );
-}
 
-function InputField({ label, value, onChange, placeholder, required, type = 'text' }: any) {
-    return (
-        <div className="form-field">
-            <label>{label} {required && <span className="text-red-600">*</span>}</label>
-            <input type={type} className="input" value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} />
-        </div>
-    );
-}
+            {error && <div style={{ marginTop: 24, padding: '16px 24px', backgroundColor: '#fef2f2', border: '1px solid #fee2e2', borderRadius: 20, color: '#991b1b', fontSize: 14, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 12 }}>
+                <span style={{ fontSize: 18 }}>⚠️</span> {error}
+            </div>}
 
-function SelectField({ label, value, onChange, children, required }: any) {
-    return (
-        <div className="form-field">
-            <label>{label} {required && <span className="text-red-600">*</span>}</label>
-            <select className="select" value={value} onChange={e => onChange(e.target.value)}>
-                {children}
-            </select>
-        </div>
-    );
-}
-
-function FieldRow({ label, desc }: { label: string, desc: string }) {
-    return (
-        <div className="table-row" style={{ gridTemplateColumns: '1fr 2fr' }}>
-            <span className="font-bold text-sm">{label}</span>
-            <span className="text-slate-600 text-sm">{desc}</span>
+            {result && <div style={{ marginTop: 24, padding: '24px', backgroundColor: '#ecfdf5', border: '1px solid #d1fae5', borderRadius: 24, color: '#065f46', textAlign: 'center', animation: 'fadeIn 0.5s ease-out' }}>
+                <div style={{ fontSize: 40, marginBottom: 12 }}>🚀</div>
+                <h3 style={{ margin: 0, fontWeight: 900 }}>Synchronized Successfully</h3>
+                <p style={{ margin: '8px 0 0 0', fontWeight: 500 }}>{result.count} new infrastructure nodes added to registry. Redirecting to workspace...</p>
+            </div>}
         </div>
     );
 }

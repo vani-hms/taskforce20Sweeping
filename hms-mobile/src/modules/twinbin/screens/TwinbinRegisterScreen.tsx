@@ -4,6 +4,7 @@ import * as Location from "expo-location";
 import { fetchCityInfo, fetchPublicZones, fetchPublicWards, requestTwinbinBin, ApiError, getMe } from "../../../api/auth";
 import { Colors, Spacing, Typography, Layout, UI } from "../../../theme";
 import { MapPin, CheckSquare, Square, Navigation, CheckCircle } from "lucide-react-native";
+import TwinbinLayout from "../components/TwinbinLayout";
 
 type GeoNode = { id: string; name: string };
 
@@ -153,97 +154,100 @@ export default function TwinbinRegisterScreen({ navigation }: any) {
   };
 
   return (
-    <ScrollView style={Layout.screenContainer} contentContainerStyle={{ paddingBottom: Spacing.xxl }}>
-      <Text style={[Typography.h2, { color: Colors.primary }]}>New Bin Registration</Text>
-      <Text style={[Typography.body, { marginBottom: Spacing.l, color: Colors.textMuted }]}>
-        Fill in details to register a new litter bin.
-      </Text>
+    <TwinbinLayout
+      title="Register Bin"
+      subtitle="Fill in details to register a new litter bin"
+      navigation={navigation}
+      showBack={true}
+    >
+      <ScrollView style={Layout.screenContainer} contentContainerStyle={{ paddingBottom: Spacing.xxl }}>
 
-      <View style={[Layout.card, { marginBottom: Spacing.m }]}>
-        <InputLabel label="Area Name" />
-        <TextInput style={styles.input} value={form.areaName} onChangeText={(v) => update("areaName", v)} placeholder="e.g. Central Park Gate 1" />
+        <View style={[Layout.card, { marginBottom: Spacing.m }]}>
+          <InputLabel label="Area Name" />
+          <TextInput style={styles.input} value={form.areaName} onChangeText={(v) => update("areaName", v)} placeholder="e.g. Central Park Gate 1" />
 
-        <InputLabel label="Location Name" />
-        <TextInput style={styles.input} value={form.locationName} onChangeText={(v) => update("locationName", v)} placeholder="e.g. Near Bus Stop" />
+          <InputLabel label="Location Name" />
+          <TextInput style={styles.input} value={form.locationName} onChangeText={(v) => update("locationName", v)} placeholder="e.g. Near Bus Stop" />
 
-        <InputLabel label="Road Type" />
-        <TextInput style={styles.input} value={form.roadType} onChangeText={(v) => update("roadType", v)} placeholder="e.g. Arterial Road" />
+          <InputLabel label="Road Type" />
+          <TextInput style={styles.input} value={form.roadType} onChangeText={(v) => update("roadType", v)} placeholder="e.g. Arterial Road" />
 
-        <InputLabel label="Area Type" />
-        <View style={styles.selectRow}>
-          {["RESIDENTIAL", "COMMERCIAL", "SLUM"].map((val) => (
-            <SelectOption key={val} label={val} selected={form.areaType === val} onSelect={() => update("areaType", val)} />
-          ))}
-        </View>
-      </View>
-
-      <View style={[Layout.card, { marginBottom: Spacing.m }]}>
-        <Text style={Typography.h3}>Geography</Text>
-
-        <InputLabel label="Zone (Required)" />
-        <View style={styles.selectRow}>
-          {zones.map((z) => (
-            <SelectOption key={z.id} label={z.name} selected={form.zoneId === z.id} onSelect={() => handleZoneSelect(z.id)} />
-          ))}
+          <InputLabel label="Area Type" />
+          <View style={styles.selectRow}>
+            {["RESIDENTIAL", "COMMERCIAL", "SLUM"].map((val) => (
+              <SelectOption key={val} label={val} selected={form.areaType === val} onSelect={() => update("areaType", val)} />
+            ))}
+          </View>
         </View>
 
-        <InputLabel label="Ward (Required)" />
-        {!form.zoneId && <Text style={{ color: Colors.textMuted, fontSize: 12 }}>Select a zone first</Text>}
-        <View style={styles.selectRow}>
-          {wards.map((w) => (
-            <SelectOption key={w.id} label={w.name} selected={form.wardId === w.id} onSelect={() => update("wardId", w.id)} />
-          ))}
-        </View>
-      </View>
+        <View style={[Layout.card, { marginBottom: Spacing.m }]}>
+          <Text style={Typography.h3}>Geography</Text>
 
-      <View style={[Layout.card, { marginBottom: Spacing.m }]}>
-        <Text style={Typography.h3}>Status & Condition</Text>
+          <InputLabel label="Zone (Required)" />
+          <View style={styles.selectRow}>
+            {zones.map((z) => (
+              <SelectOption key={z.id} label={z.name} selected={form.zoneId === z.id} onSelect={() => handleZoneSelect(z.id)} />
+            ))}
+          </View>
 
-        <View style={{ marginTop: Spacing.m, gap: Spacing.m }}>
-          <Checkbox label="Is bin fixed properly?" checked={form.isFixedProperly} onChange={() => update("isFixedProperly", !form.isFixedProperly)} />
-          <Checkbox label="Has lid?" checked={form.hasLid} onChange={() => update("hasLid", !form.hasLid)} />
-        </View>
-
-        <InputLabel label="Condition" />
-        <View style={styles.selectRow}>
-          {["GOOD", "DAMAGED"].map((val) => (
-            <SelectOption key={val} label={val} selected={form.condition === val} onSelect={() => update("condition", val)} />
-          ))}
-        </View>
-      </View>
-
-      <View style={[Layout.card, { marginBottom: Spacing.l }]}>
-        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-          <Text style={Typography.h3}>Location</Text>
-          {form.latitude ? <CheckCircle size={16} color={Colors.success} /> : null}
+          <InputLabel label="Ward (Required)" />
+          {!form.zoneId && <Text style={{ color: Colors.textMuted, fontSize: 12 }}>Select a zone first</Text>}
+          <View style={styles.selectRow}>
+            {wards.map((w) => (
+              <SelectOption key={w.id} label={w.name} selected={form.wardId === w.id} onSelect={() => update("wardId", w.id)} />
+            ))}
+          </View>
         </View>
 
-        <View style={{ flexDirection: "row", gap: Spacing.m, marginTop: Spacing.s }}>
-          <TextInput style={[styles.input, { flex: 1, backgroundColor: Colors.background }]} value={form.latitude} editable={false} placeholder="Lat" />
-          <TextInput style={[styles.input, { flex: 1, backgroundColor: Colors.background }]} value={form.longitude} editable={false} placeholder="Lng" />
+        <View style={[Layout.card, { marginBottom: Spacing.m }]}>
+          <Text style={Typography.h3}>Status & Condition</Text>
+
+          <View style={{ marginTop: Spacing.m, gap: Spacing.m }}>
+            <Checkbox label="Is bin fixed properly?" checked={form.isFixedProperly} onChange={() => update("isFixedProperly", !form.isFixedProperly)} />
+            <Checkbox label="Has lid?" checked={form.hasLid} onChange={() => update("hasLid", !form.hasLid)} />
+          </View>
+
+          <InputLabel label="Condition" />
+          <View style={styles.selectRow}>
+            {["GOOD", "DAMAGED"].map((val) => (
+              <SelectOption key={val} label={val} selected={form.condition === val} onSelect={() => update("condition", val)} />
+            ))}
+          </View>
         </View>
 
-        <TouchableOpacity style={[UI.button, UI.buttonSecondary, { marginTop: Spacing.s }]} onPress={fetchLocation} disabled={locLoading}>
-          {locLoading ? <ActivityIndicator size="small" color={Colors.primary} /> : (
-            <View style={{ flexDirection: "row", gap: 8 }}>
-              <Navigation size={18} color={Colors.primary} />
-              <Text style={UI.buttonTextSecondary}>Fetch GPS</Text>
-            </View>
-          )}
+        <View style={[Layout.card, { marginBottom: Spacing.l }]}>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+            <Text style={Typography.h3}>Location</Text>
+            {form.latitude ? <CheckCircle size={16} color={Colors.success} /> : null}
+          </View>
+
+          <View style={{ flexDirection: "row", gap: Spacing.m, marginTop: Spacing.s }}>
+            <TextInput style={[styles.input, { flex: 1, backgroundColor: Colors.background }]} value={form.latitude} editable={false} placeholder="Lat" />
+            <TextInput style={[styles.input, { flex: 1, backgroundColor: Colors.background }]} value={form.longitude} editable={false} placeholder="Lng" />
+          </View>
+
+          <TouchableOpacity style={[UI.button, UI.buttonSecondary, { marginTop: Spacing.s }]} onPress={fetchLocation} disabled={locLoading}>
+            {locLoading ? <ActivityIndicator size="small" color={Colors.primary} /> : (
+              <View style={{ flexDirection: "row", gap: 8 }}>
+                <Navigation size={18} color={Colors.primary} />
+                <Text style={UI.buttonTextSecondary}>Fetch GPS</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        </View>
+
+        {error ? <Text style={{ color: Colors.danger, marginBottom: Spacing.m, textAlign: "center" }}>{error}</Text> : null}
+
+        <TouchableOpacity
+          style={[UI.button, canSubmit ? UI.buttonPrimary : { backgroundColor: Colors.textMuted }]}
+          onPress={submit}
+          disabled={!canSubmit}
+        >
+          {loading ? <ActivityIndicator color={Colors.white} /> : <Text style={UI.buttonTextPrimary}>Submit Registration</Text>}
         </TouchableOpacity>
-      </View>
 
-      {error ? <Text style={{ color: Colors.danger, marginBottom: Spacing.m, textAlign: "center" }}>{error}</Text> : null}
-
-      <TouchableOpacity
-        style={[UI.button, canSubmit ? UI.buttonPrimary : { backgroundColor: Colors.textMuted }]}
-        onPress={submit}
-        disabled={!canSubmit}
-      >
-        {loading ? <ActivityIndicator color={Colors.white} /> : <Text style={UI.buttonTextPrimary}>Submit Registration</Text>}
-      </TouchableOpacity>
-
-    </ScrollView>
+      </ScrollView>
+    </TwinbinLayout>
   );
 }
 

@@ -107,12 +107,12 @@ export function RootNavigator() {
       />
 
       {/* Twinbin */}
-      <Stack.Screen name="TwinbinHome" component={TwinbinHomeScreen} options={{ title: "Litter Bins" }} />
-      <Stack.Screen name="TwinbinRegister" component={TwinbinRegisterScreen} options={{ title: "Register Bin" }} />
+      <Stack.Screen name="TwinbinHome" component={TwinbinHomeScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="TwinbinRegister" component={TwinbinRegisterScreen} options={{ headerShown: false }} />
       <Stack.Screen
         name="TwinbinMyRequests"
         component={TwinbinMyRequestsScreen}
-        options={{ title: "My Requests" }}
+        options={{ headerShown: false }}
       />
       <Stack.Screen name="TwinbinQcHome" component={TwinbinQcHomeScreen} options={{ title: "Litter Bins QC" }} />
 
@@ -129,7 +129,7 @@ export function RootNavigator() {
       <Stack.Screen
         name="TwinbinAssigned"
         component={TwinbinAssignedScreen}
-        options={{ title: "Assigned Bins" }}
+        options={{ headerShown: false }}
       />
       <Stack.Screen
         name="TwinbinBinDetail"

@@ -3,12 +3,11 @@ import {
   View,
   Text,
   FlatList,
-  TouchableOpacity,
-  ActivityIndicator
+  ActivityIndicator,
+  TouchableOpacity
 } from "react-native";
-import { listSweepingQcInspections } from "../../../api/auth";
-import { useNavigation } from "@react-navigation/native";
 import { Layout, Typography } from "../../../theme";
+import { listEmployeeInspections } from "../../../api/auth";
 
 const STATUS_COLORS: any = {
   SUBMITTED: "#fde68a",
@@ -18,11 +17,9 @@ const STATUS_COLORS: any = {
   ACTION_SUBMITTED: "#dbeafe"
 };
 
-export default function QcSweepingList() {
+export default function EmployeeInspectionHistory({ navigation }: any) {
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const navigation = useNavigation<any>();
 
   useEffect(() => {
     load();
@@ -30,17 +27,13 @@ export default function QcSweepingList() {
 
   const load = async () => {
     try {
-      const res = await listSweepingQcInspections();
-      setItems(res.inspections || []);
+      const r = await listEmployeeInspections();
+      setItems(r.inspections || []);
+    } catch {
+      alert("Failed to load history");
     } finally {
       setLoading(false);
     }
-  };
-
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await load();
-    setRefreshing(false);
   };
 
   if (loading)
@@ -52,36 +45,30 @@ export default function QcSweepingList() {
 
   return (
     <View style={Layout.screenContainer}>
-      <Text style={Typography.h2}>Sweeping Inspections</Text>
+      <Text style={Typography.h2}>Inspection History</Text>
 
       {items.length === 0 && (
         <Text style={{ marginTop: 20, color: "#6b7280" }}>
-          No inspections available.
+          No inspections yet.
         </Text>
       )}
 
       <FlatList
         data={items}
         keyExtractor={i => i.id}
-        refreshing={refreshing}
-        onRefresh={onRefresh}
         contentContainerStyle={{ paddingBottom: 40 }}
         renderItem={({ item }) => (
           <TouchableOpacity
             style={[Layout.card, { marginVertical: 8 }]}
             onPress={() =>
-              navigation.navigate("QcSweepingDetail", { inspection: item })
+              navigation.navigate("EmployeeInspectionDetail", { inspection: item })
             }
           >
-            <Text style={{ fontWeight: "600", fontSize: 16 }}>
+            <Text style={{ fontWeight: "600" }}>
               {item.sweepingBeat?.geoNodeBeat?.name || "Beat"}
             </Text>
 
-            <Text style={{ color: "#6b7280", marginTop: 4 }}>
-              Employee: {item.employee?.name || "-"}
-            </Text>
-
-            <Text style={{ color: "#6b7280", fontSize: 12, marginTop: 2 }}>
+            <Text style={{ color: "#6b7280", fontSize: 12, marginTop: 4 }}>
               {new Date(item.createdAt).toLocaleString()}
             </Text>
 
@@ -95,21 +82,7 @@ export default function QcSweepingList() {
                 borderRadius: 10
               }}
             >
-              <Text style={{ fontSize: 12 }}>
-                {item.status.replace("_", " ")}
-              </Text>
-            </View>
-
-            <View
-              style={{
-                marginTop: 10,
-                backgroundColor: "#2563eb",
-                padding: 8,
-                borderRadius: 8,
-                alignItems: "center"
-              }}
-            >
-              <Text style={{ color: "#fff" }}>View Details</Text>
+              <Text style={{ fontSize: 12 }}>{item.status.replace("_", " ")}</Text>
             </View>
           </TouchableOpacity>
         )}

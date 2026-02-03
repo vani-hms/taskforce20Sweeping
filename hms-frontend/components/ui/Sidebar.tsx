@@ -31,10 +31,18 @@ export default function Sidebar() {
       if (m.key === "LITTERBINS" && isQc) {
         href = "/modules/litterbins/qc";
       }
-
-      if (m.key === "SWEEPING" && isQc) {
-        href = "/modules/sweeping/qc";
+      if (m.key === "SWEEPING") {
+        if (user?.roles?.includes("CITY_ADMIN")) {
+          href = "/modules/sweeping/dashboard";
+        } else if (user?.roles?.includes("QC")) {
+          href = "/modules/sweeping/qc";
+        } else if (user?.roles?.includes("ACTION_OFFICER")) {
+          href = "/modules/sweeping/action";
+        } else {
+          href = "/modules/sweeping/my"; // employee
+        }
       }
+
 
       return {
         label: moduleLabel(m.key, m.name || m.key),

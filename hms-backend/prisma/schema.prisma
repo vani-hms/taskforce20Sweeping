@@ -454,6 +454,7 @@ model SweepingBeat {
   latitude           Float
   longitude          Float
   radiusMeters       Float
+  polygonGeoJson Json?
 
   city             City    @relation(fields: [cityId], references: [id], onDelete: Cascade)
   geoNodeBeat      GeoNode @relation(fields: [geoNodeBeatId], references: [id], onDelete: Cascade)

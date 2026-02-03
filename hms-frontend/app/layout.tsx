@@ -3,6 +3,8 @@ import { Providers } from "@components/Providers";
 import Sidebar from "@components/ui/Sidebar";
 import { Topbar } from "@components/ui/Topbar";
 import "./globals.css";
+import "leaflet/dist/leaflet.css";
+
 
 export const metadata: Metadata = {
   title: "HMS Multicity",

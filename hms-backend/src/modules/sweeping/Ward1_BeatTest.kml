@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <kml xmlns="http://www.opengis.net/kml/2.2">
 <Document>
-<name>Ward 1 - Exact Beat</name>
 
 <Placemark>
-<name>Ward1 Beat Test</name>
+<name>Ward1 1KM Test Beat</name>
 
 <Style>
 <LineStyle>
@@ -12,7 +11,7 @@
 <width>2</width>
 </LineStyle>
 <PolyStyle>
-<color>5500ff00</color>
+<color>3300ff00</color>
 </PolyStyle>
 </Style>
 
@@ -20,11 +19,11 @@
 <outerBoundaryIs>
 <LinearRing>
 <coordinates>
-75.906694,22.766753,0
-75.907194,22.766753,0
-75.907194,22.766303,0
-75.906694,22.766303,0
-75.906694,22.766753,0
+75.8979406,22.775552,0
+75.9159406,22.775552,0
+75.9159406,22.757552,0
+75.8979406,22.757552,0
+75.8979406,22.775552,0
 </coordinates>
 </LinearRing>
 </outerBoundaryIs>

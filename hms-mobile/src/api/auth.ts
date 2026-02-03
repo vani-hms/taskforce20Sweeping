@@ -101,6 +101,11 @@ export async function assignSweepingBeat(body: {
     body: JSON.stringify(body)
   });
 }
+export const listEmployeeInspections = async () => {
+  return request<{ inspections: any[] }>("/qc/inspections");
+};
+
+
 
 export async function fetchCityInfo() {
   return request<{ city: { id: string; name: string } }>("/city/info");

@@ -21,6 +21,7 @@
   "dependencies": {
     "@prisma/client": "5.18.0",
     "@tmcw/togeojson": "^7.1.2",
+    "@turf/turf": "^7.3.3",
     "@xmldom/xmldom": "^0.8.11",
     "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.3",

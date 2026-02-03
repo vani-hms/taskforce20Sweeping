@@ -36,6 +36,7 @@ import QcSweepingDetail from "../modules/sweeping/screens/QcSweepingDetail";
 import QcSweepingHome from "../modules/sweeping/screens/QcSweepingHome";
 import ActionOfficerSweepingScreen from "../modules/sweeping/screens/ActionOfficerSweepingScreen";
 import QcBeatAssignmentScreen from "../modules/sweeping/screens/QcBeatAssignmentScreen";
+import EmployeeInspectionHistory from "../modules/sweeping/screens/EmployeeInspectionHistory";
 
 
 
@@ -115,6 +116,7 @@ export function RootNavigator() {
       <Stack.Screen name="QcSweepingDetail" component={QcSweepingDetail} />
       <Stack.Screen name="ActionOfficerSweeping" component={ActionOfficerSweepingScreen}/>
       <Stack.Screen name="QcBeatAssignment" component={QcBeatAssignmentScreen} />
+      <Stack.Screen name="EmployeeInspectionHistory" component={EmployeeInspectionHistory} />
       
 
 

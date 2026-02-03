@@ -322,11 +322,13 @@ export const TwinbinApi = {
   rejectReport: (id: string) => apiFetch<{ report: any }>(`/modules/twinbin/reports/${id}/reject`, { method: "POST" }),
   actionRequiredReport: (id: string) =>
     apiFetch<{ report: any }>(`/modules/twinbin/reports/${id}/action-required`, { method: "POST" })
-}; export const SweepingApi = {
+};
+
+
+export const SweepingApi = {
   /* =====================================================
      EMPLOYEE
   ===================================================== */
-
   listMyBeats: () =>
     apiFetch<{ beats: any[] }>("/modules/sweeping/employee/beats"),
 
@@ -340,16 +342,14 @@ export const TwinbinApi = {
       photos: string[];
     }[];
   }) =>
-    apiFetch<{ inspection: any }>("/modules/sweeping/inspections/submit"
-, {
-      method: "POST",
-      body: JSON.stringify(body)
-    }),
+    apiFetch<{ inspection: any }>(
+      "/modules/sweeping/inspections/submit",
+      { method: "POST", body: JSON.stringify(body) }
+    ),
 
   /* =====================================================
      QC
   ===================================================== */
-
   qcInspections: () =>
     apiFetch<{ inspections: any[] }>("/modules/sweeping/qc/inspections"),
 
@@ -368,16 +368,21 @@ export const TwinbinApi = {
   qcBeats: () =>
     apiFetch<{ beats: any[] }>("/modules/sweeping/qc/beats"),
 
+  adminDashboard: () =>
+    apiFetch("/modules/sweeping/admin/dashboard"),
+
   assignBeat: (body: { sweepingBeatId: string; employeeId: string }) =>
     apiFetch<{ beat: any }>("/modules/sweeping/admin/assign-beat", {
       method: "POST",
       body: JSON.stringify(body)
     }),
 
+  qcInspection: (id: string) =>
+    apiFetch<{ inspection: any }>(`/modules/sweeping/qc/inspections/${id}`),
+
   /* =====================================================
      ACTION OFFICER
   ===================================================== */
-
   actionRequired: () =>
     apiFetch<{ inspections: any[] }>("/modules/sweeping/action/required"),
 
@@ -397,11 +402,45 @@ export const TwinbinApi = {
      ADMIN
   ===================================================== */
 
+  getMyStats: (period: string) =>
+    apiFetch(`/modules/sweeping/my/stats?period=${period}`),
+
+  listMyInspections: () =>
+    apiFetch("/modules/sweeping/my/inspections"),
+
+  approvalInbox: () =>
+    apiFetch("/modules/sweeping/approvals"),
+
+  reviewInspection: (id: string, payload: any) =>
+    apiFetch(`/modules/sweeping/inspection/${id}/review`, {
+      method: "POST",
+      body: JSON.stringify(payload)
+    }),
+
+  listBeats: () =>
+    apiFetch("/modules/sweeping/beats"),
+
+  assignBeats: (employeeId: string, beatIds: string[]) =>
+    apiFetch("/modules/sweeping/assign", {
+      method: "POST",
+      body: JSON.stringify({ employeeId, beatIds })
+    }),
+
+  getWardGeo: () =>
+    apiFetch("/modules/sweeping/wards/geo"),
+  getBeatGeo: () =>
+    apiFetch("/modules/sweeping/beats/geo"),
+
+  listEmployees: () =>
+    apiFetch("/modules/sweeping/employees"),
+
+  listStaff: () =>
+    apiFetch("/modules/sweeping/staff"),
+
   uploadKml: (wardId: string, file: FormData) =>
     apiFetch(`/modules/sweeping/admin/beats/upload/${wardId}`, {
       method: "POST",
       body: file,
-      headers: {}
+      headers: {} // let browser set multipart/form-data
     })
-
-}
+};

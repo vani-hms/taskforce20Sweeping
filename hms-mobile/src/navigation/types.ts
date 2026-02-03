@@ -34,6 +34,7 @@ export type RootStackParamList = {
   ActionOfficerSweeping: undefined;
   QcBeatAssignment: undefined;
   QcSweepingHome: undefined;
+  EmployeeInspectionHistory: undefined;
 
 
 

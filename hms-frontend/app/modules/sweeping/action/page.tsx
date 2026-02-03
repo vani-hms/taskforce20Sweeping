@@ -7,93 +7,139 @@ import { Card } from "@components/ui/Card";
 import { Button } from "@components/ui/Button";
 
 export default function ActionOfficerSweepingPage() {
-    const [list, setList] = useState<any[]>([]);
-    const [selected, setSelected] = useState<any>(null);
-    const [remarks, setRemarks] = useState("");
-    const [photos, setPhotos] = useState<string[]>([]);
+  const [list, setList] = useState<any[]>([]);
+  const [selected, setSelected] = useState<any>(null);
+  const [remarks, setRemarks] = useState("");
+  const [photos, setPhotos] = useState<string[]>([]);
+  const [photoInput, setPhotoInput] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-    useEffect(() => {
-        load();
-    }, []);
+  const load = async () => {
+    const res = await SweepingApi.actionRequired();
+    setList(res.inspections || []);
+  };
 
-    const load = async () => {
-        const res = await SweepingApi.actionRequired();
-        setList(res.inspections);
-    };
+  useEffect(() => {
+    load();
+  }, []);
 
-    const submit = async () => {
-        if (!remarks) return alert("Remarks required");
+  const addPhoto = () => {
+    if (!photoInput) return;
+    setPhotos([...photos, photoInput]);
+    setPhotoInput("");
+  };
 
-        await SweepingApi.submitAction(selected.id, {
-            remarks,
-            photos
-        });
+  const submit = async () => {
+    if (!remarks) return alert("Remarks required");
 
-        alert("Submitted");
+    if (!confirm("Submit action response?")) return;
 
-        setSelected(null);
-        setRemarks("");
-        setPhotos([]);
-        load();
-    };
+    try {
+      setSubmitting(true);
 
-    return (
-        <Protected>
-            <ModuleGuard module="SWEEPING" roles={["ACTION_OFFICER"]}>
-                <div style={{ padding: 24 }}>
-                    <h2>Action Officer – Sweeping</h2>
+      await SweepingApi.submitAction(selected.id, {
+        remarks,
+        photos
+      });
 
-                    {!selected && (
-                        <>
-                            {list.map(i => (
-                                < div style={{ marginBottom: 12 }}>
-                                    <Card key={i.id}>
-                                        <b>{i.employee?.name}</b>
-                                        <div>Beat: {i.sweepingBeat?.geoNodeBeat?.name}</div>
+      alert("Action submitted");
 
-                                        <Button style={{ marginTop: 8 }} onClick={() => setSelected(i)}>
-                                            Take Action
-                                        </Button>
-                                    </Card>
-                                </div>
-                            ))}
+      setSelected(null);
+      setRemarks("");
+      setPhotos([]);
+      load();
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
-                            {list.length === 0 && <div>No pending actions.</div>}
-                        </>
-                    )}
+  return (
+    <Protected>
+      <ModuleGuard module="SWEEPING" roles={["ACTION_OFFICER"]}>
+        <div style={{ padding: 24 }}>
 
-                    {selected && (
-                        <Card>
-                            <Button onClick={() => setSelected(null)}>← Back</Button>
+          <h2>Action Officer – Sweeping</h2>
+          <p style={{ color: "#6b7280" }}>
+            Resolve action required inspections
+          </p>
 
-                            <h3>Inspection</h3>
+          {!selected && (
+            <>
+              {list.map(i => (
+                <div key={i.id} style={{ marginBottom: 12 }}>
+                  <Card>
 
-                            {selected.answers?.map((a: any, idx: number) => (
-                                <div key={idx}>
-                                    {a.questionCode}: {a.answer ? "YES" : "NO"}
-                                </div>
-                            ))}
+                    <b>{i.sweepingBeat?.geoNodeBeat?.name}</b>
 
-                            <textarea
-                                placeholder="Action remarks"
-                                value={remarks}
-                                onChange={e => setRemarks(e.target.value)}
-                                style={{ width: "100%", marginTop: 12 }}
-                            />
+                    <div style={{ color: "#6b7280" }}>
+                      Employee: {i.employee?.name}
+                    </div>
 
-                            <input
-                                placeholder="Photo URL (optional)"
-                                onBlur={e => setPhotos([e.target.value])}
-                                style={{ width: "100%", marginTop: 8 }}
-                            />
+                    <Button style={{ marginTop: 10 }} onClick={() => setSelected(i)}>
+                      Take Action
+                    </Button>
 
-                            <Button onClick={submit} style={{ marginTop: 12 }}>
-                                Submit Action
-                            </Button>
-                        </Card>
-                    )}
+                  </Card>
                 </div>
-            </ModuleGuard>
-        </Protected>
-    );
+              ))}
+
+              {list.length === 0 && (
+                <div>No pending actions.</div>
+              )}
+            </>
+          )}
+
+          {selected && (
+            <Card>
+
+              <Button onClick={() => setSelected(null)}>← Back</Button>
+
+              <h3 style={{ marginTop: 10 }}>Inspection Details</h3>
+
+              {selected.answers?.map((a: any, idx: number) => (
+                <div key={idx}>
+                  {a.questionCode}: {a.answer ? "YES" : "NO"}
+                </div>
+              ))}
+
+              <textarea
+                placeholder="Describe action taken..."
+                value={remarks}
+                onChange={e => setRemarks(e.target.value)}
+                style={{ width: "100%", marginTop: 12, minHeight: 80 }}
+              />
+
+              <div style={{ marginTop: 8 }}>
+                <input
+                  placeholder="Photo URL"
+                  value={photoInput}
+                  onChange={e => setPhotoInput(e.target.value)}
+                  style={{ width: "80%" }}
+                />
+                <Button onClick={addPhoto} style={{ marginLeft: 6 }}>
+                  Add
+                </Button>
+              </div>
+
+              {photos.map((p, i) => (
+                <div key={i} style={{ fontSize: 12, color: "#6b7280" }}>
+                  {p}
+                </div>
+              ))}
+
+              <Button
+                onClick={submit}
+                style={{ marginTop: 12 }}
+                disabled={submitting}
+              >
+                {submitting ? "Submitting..." : "Submit Action"}
+              </Button>
+
+            </Card>
+          )}
+
+        </div>
+      </ModuleGuard>
+    </Protected>
+  );
 }

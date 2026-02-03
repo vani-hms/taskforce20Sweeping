@@ -3,7 +3,7 @@ import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../../../navigation";
 import { SweepingResHome, SweepingComHome } from "../../sweeping";
 import { useAuthContext } from "../../../auth/AuthProvider";
-import { View, Text } from "react-native";
+import { View, Text, ActivityIndicator } from "react-native";
 import { normalizeModuleKey } from "../moduleUtils";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Module">;
@@ -11,76 +11,87 @@ type Props = NativeStackScreenProps<RootStackParamList, "Module">;
 export default function ModuleHomeWrapper({ route, navigation }: Props) {
   const { moduleKey } = route.params;
   const key = normalizeModuleKey(moduleKey);
+
   const { auth } = useAuthContext();
+  const hasRouted = useRef(false);
+
   const roles = auth.status === "authenticated" ? auth.roles || [] : [];
   const assignments = auth.status === "authenticated" ? auth.modules || [] : [];
-  const assigned = assignments.find((m) => normalizeModuleKey(m.key) === key);
-  const hasRouted = useRef(false);
+  const assigned = assignments.find(m => normalizeModuleKey(m.key) === key);
 
   useEffect(() => {
     if (hasRouted.current) return;
+    if (auth.status !== "authenticated") return;
     if (!assigned) return;
 
-    // ---------------- EXISTING MODULES (DO NOT TOUCH)
-    if (key === "LITTERBINS") {
-      hasRouted.current = true;
-      navigation.navigate(roles.includes("QC") ? "TwinbinQcHome" : "TwinbinHome");
-      return;
-    }
+    const routeByModuleAndRole = () => {
 
-    if (key === "TASKFORCE") {
-      hasRouted.current = true;
-      navigation.navigate(roles.includes("QC") ? "TaskforceQcReports" : "TaskforceHome");
-      return;
-    }
+      /* ================= EXISTING MODULES ================= */
 
-    if (key === "CTU_GVP_TRANSFORMATION") {
-      hasRouted.current = true;
-      navigation.navigate(roles.includes("QC") ? "TaskforceQcReports" : "TaskforceHome");
-      return;
-    }
-
-    // ---------------- SWEEPING (ADDED)
-    if (key === "SWEEPING") {
-      hasRouted.current = true;
-
-      if (roles.includes("QC")) {
-        navigation.navigate("QcSweepingHome");
-        return;
+      if (key === "LITTERBINS") {
+        return roles.includes("QC") ? "TwinbinQcHome" : "TwinbinHome";
       }
 
-      if (roles.includes("ACTION_OFFICER")) {
-        navigation.navigate("ActionOfficerSweeping");
-        return;
+      if (key === "TASKFORCE" || key === "CTU_GVP_TRANSFORMATION") {
+        return roles.includes("QC") ? "TaskforceQcReports" : "TaskforceHome";
       }
 
-      // EMPLOYEE
-      navigation.navigate("SweepingBeats");
-      return;
+      /* ================= SWEEPING ================= */
+
+      if (key === "SWEEPING") {
+        if (roles.includes("QC")) return "QcSweepingHome";
+        if (roles.includes("ACTION_OFFICER")) return "ActionOfficerSweeping";
+        return "SweepingBeats"; // Employee
+      }
+
+      return null;
+    };
+
+    const screen = routeByModuleAndRole();
+
+    if (screen) {
+      hasRouted.current = true;
+      navigation.navigate(screen as never);
     }
 
-  }, [assigned, key, navigation, roles]);
+  }, [auth.status, assigned, key, navigation, roles]);
 
-  // legacy residential / commercial fallback
+  /* ============== LEGACY FALLBACKS (DO NOT REMOVE) ============== */
+
   if (key === "SWEEP_RES") return <SweepingResHome navigation={navigation} />;
   if (key === "SWEEP_COM") return <SweepingComHome navigation={navigation} />;
 
-  if (hasRouted.current) return null;
+  /* ================= LOADING ================= */
 
   if (auth.status === "loading") {
     return (
-      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: "#f5f7fb" }}>
-        <Text>Loading...</Text>
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#f5f7fb" }}>
+        <ActivityIndicator size="large" color="#2563eb" />
+        <Text style={{ marginTop: 10 }}>Loading module...</Text>
       </View>
     );
   }
 
-  if (!assigned) {
+  /* ================= NOT ASSIGNED ================= */
+
+  if (auth.status === "authenticated" && !assigned) {
     return (
-      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 24, backgroundColor: "#f5f7fb" }}>
-        <Text style={{ fontSize: 16, fontWeight: "600", marginBottom: 8 }}>Module access required</Text>
+      <View
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          padding: 24,
+          backgroundColor: "#f5f7fb"
+        }}
+      >
+        <Text style={{ fontSize: 16, fontWeight: "600", marginBottom: 8 }}>
+          Module access required
+        </Text>
+
         <Text style={{ color: "#4b5563", textAlign: "center" }}>
-          You are not assigned to this module. Please check with your administrator.
+          You are not assigned to this module.
+          {"\n"}Please contact City Admin.
         </Text>
       </View>
     );

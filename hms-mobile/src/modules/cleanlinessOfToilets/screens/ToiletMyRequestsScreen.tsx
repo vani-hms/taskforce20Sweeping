@@ -62,7 +62,7 @@ export default function ToiletMyRequestsScreen({ navigation }: { navigation: Nav
                 <StatusBadge status={item.status} />
             </View>
             <View style={styles.details}>
-                <Text style={styles.detailText}>📍 Location verified: {Math.round(item.distanceMeters)}m from asset</Text>
+                <Text style={styles.detailText}>📍 Location verified: {Math.round(item.distanceMeters)}m from toilet</Text>
                 <Text style={styles.dateText}>Submitted: {new Date(item.createdAt).toLocaleString()}</Text>
                 {item.qcComment && (
                     <View style={styles.qcNote}>
@@ -131,32 +131,32 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 const styles = StyleSheet.create({
-    safe: { flex: 1, backgroundColor: "#f8fafc" },
-    header: { height: 60, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#f1f5f9' },
+    safe: { flex: 1, backgroundColor: "#fcfdfe" },
+    header: { height: 70, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#f1f5f9' },
     backBtn: { fontSize: 24, fontWeight: '700', color: '#1e293b' },
-    title: { fontSize: 18, fontWeight: '900', color: '#0f172a' },
-    addBtn: { backgroundColor: '#1d4ed8', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 12 },
-    addBtnText: { color: '#fff', fontSize: 12, fontWeight: '900' },
-    tabBar: { flexDirection: 'row', backgroundColor: '#fff', padding: 6, margin: 16, borderRadius: 12, marginBottom: 0 },
-    tab: { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 8 },
-    activeTab: { backgroundColor: '#eff6ff' },
-    tabText: { fontSize: 13, fontWeight: '700', color: '#64748b' },
+    title: { fontSize: 20, fontWeight: '900', color: '#0f172a' },
+    addBtn: { backgroundColor: '#1d4ed8', paddingHorizontal: 14, paddingVertical: 10, borderRadius: 14, elevation: 4, shadowColor: '#1d4ed8', shadowOpacity: 0.2, shadowRadius: 8 },
+    addBtnText: { color: '#fff', fontSize: 11, fontWeight: '900', letterSpacing: 0.5 },
+    tabBar: { flexDirection: 'row', backgroundColor: '#f1f5f9', padding: 6, margin: 20, borderRadius: 16, marginBottom: 0 },
+    tab: { flex: 1, paddingVertical: 12, alignItems: 'center', borderRadius: 12 },
+    activeTab: { backgroundColor: '#fff', elevation: 2, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 5 },
+    tabText: { fontSize: 13, fontWeight: '800', color: '#94a3b8' },
     activeTabText: { color: '#1d4ed8' },
     center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-    list: { padding: 16 },
-    card: { backgroundColor: '#fff', borderRadius: 20, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: '#f1f5f9' },
-    cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 },
-    typeLabel: { fontSize: 9, fontWeight: '900', color: '#10b981', letterSpacing: 0.5, marginBottom: 2 },
-    name: { fontSize: 16, fontWeight: '800', color: '#1e293b' },
-    statusBadge: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8 },
-    statusText: { fontSize: 9, fontWeight: '900', color: '#fff' },
-    details: { gap: 6 },
-    detailText: { fontSize: 13, color: '#475569', fontWeight: '600' },
-    dateText: { fontSize: 11, color: '#94a3b8', marginTop: 4, fontWeight: '700', fontStyle: 'italic' },
-    qcNote: { marginTop: 12, padding: 12, backgroundColor: '#fff7ed', borderRadius: 12, borderLeftWidth: 4, borderLeftColor: '#f97316' },
-    qcNoteTitle: { fontSize: 10, fontWeight: '900', color: '#9a3412', marginBottom: 4 },
-    qcNoteText: { fontSize: 12, color: '#7c2d12', fontWeight: '500' },
-    empty: { alignItems: 'center', marginTop: 80 },
-    emptyTitle: { fontSize: 16, fontWeight: '900', color: '#1e293b' },
-    emptySub: { fontSize: 13, color: '#94a3b8', marginTop: 8, paddingHorizontal: 60, textAlign: 'center', lineHeight: 18 }
+    list: { padding: 20, paddingBottom: 100 },
+    card: { backgroundColor: '#fff', borderRadius: 24, padding: 20, marginBottom: 20, borderWidth: 1, borderColor: '#f1f5f9', elevation: 2, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 10 },
+    cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 },
+    typeLabel: { fontSize: 9, fontWeight: '900', color: '#10b981', letterSpacing: 1, marginBottom: 4 },
+    name: { fontSize: 18, fontWeight: '900', color: '#0f172a' },
+    statusBadge: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10 },
+    statusText: { fontSize: 9, fontWeight: '900', color: '#fff', letterSpacing: 0.5 },
+    details: { gap: 8 },
+    detailText: { fontSize: 14, color: '#475569', fontWeight: '700' },
+    dateText: { fontSize: 11, color: '#94a3b8', marginTop: 8, fontWeight: '700' },
+    qcNote: { marginTop: 16, padding: 16, backgroundColor: '#fff7ed', borderRadius: 16, borderLeftWidth: 4, borderLeftColor: '#f97316' },
+    qcNoteTitle: { fontSize: 10, fontWeight: '900', color: '#9a3412', marginBottom: 6, letterSpacing: 0.5 },
+    qcNoteText: { fontSize: 13, color: '#7c2d12', fontWeight: '600', lineHeight: 18 },
+    empty: { alignItems: 'center', marginTop: 100 },
+    emptyTitle: { fontSize: 18, fontWeight: '900', color: '#0f172a' },
+    emptySub: { fontSize: 14, color: '#94a3b8', marginTop: 8, paddingHorizontal: 60, textAlign: 'center', lineHeight: 20, fontWeight: '500' }
 });

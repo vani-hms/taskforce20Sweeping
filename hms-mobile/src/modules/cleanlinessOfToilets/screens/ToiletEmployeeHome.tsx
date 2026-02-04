@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, SafeAreaView, StatusBar, RefreshControl, Image, Platform } from "react-native";
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, SafeAreaView, StatusBar, RefreshControl, Image, Platform, ScrollView } from "react-native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import * as Location from "expo-location";
 import { RootStackParamList } from "../../../navigation/types";
@@ -26,7 +26,7 @@ export default function ToiletEmployeeHome({ navigation }: { navigation: Nav }) 
     const [filteredToilets, setFilteredToilets] = useState<any[]>([]);
     const [history, setHistory] = useState<any[]>([]);
     const [viewMode, setViewMode] = useState<'TODAY' | 'PAST'>('TODAY');
-    const [activeFilter, setActiveFilter] = useState<'ALL' | 'CT' | 'PT'>('ALL');
+    const [activeFilter, setActiveFilter] = useState<'ALL' | 'CT' | 'PT' | 'URINALS'>('ALL');
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [error, setError] = useState("");
@@ -99,9 +99,9 @@ export default function ToiletEmployeeHome({ navigation }: { navigation: Nav }) 
                 activeOpacity={0.8}
             >
                 <View style={styles.cardHeader}>
-                    <View style={[styles.badge, isCT ? styles.badgeCT : styles.badgePT]}>
-                        <Text style={[styles.badgeText, isCT ? styles.textCT : styles.textPT]}>
-                            {isCT ? 'CT • Community' : 'PT • Public'}
+                    <View style={[styles.badge, item.type === 'CT' ? styles.badgeCT : item.type === 'PT' ? styles.badgePT : styles.badgeUrinal]}>
+                        <Text style={[styles.badgeText, item.type === 'CT' ? styles.textCT : item.type === 'PT' ? styles.textPT : styles.textUrinal]}>
+                            {item.type === 'CT' ? 'CT • Community' : item.type === 'PT' ? 'PT • Public' : 'UR • Urinal'}
                         </Text>
                     </View>
                     <View style={styles.distBadge}>
@@ -137,27 +137,42 @@ export default function ToiletEmployeeHome({ navigation }: { navigation: Nav }) 
 
     return (
         <SafeAreaView style={styles.screen}>
-            <View style={styles.header}>
-                <Text style={styles.headerTitle}>Assigned Assets</Text>
+            <View style={styles.content}>
+                <View style={styles.welcomeSection}>
+                    <Text style={styles.welcomeSub}>OPERATIONAL TOILETS</Text>
+                    <Text style={styles.welcomeTitle}>Assigned Tasks</Text>
+                </View>
+
                 <View style={styles.filterRow}>
-                    <TouchableOpacity
-                        style={[styles.filterChip, activeFilter === 'ALL' && styles.filterActive]}
-                        onPress={() => setActiveFilter('ALL')}
-                    >
-                        <Text style={[styles.filterText, activeFilter === 'ALL' && styles.filterTextActive]}>All</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={[styles.filterChip, activeFilter === 'CT' && styles.filterActive]}
-                        onPress={() => setActiveFilter('CT')}
-                    >
-                        <Text style={[styles.filterText, activeFilter === 'CT' && styles.filterTextActive]}>CT Only</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={[styles.filterChip, activeFilter === 'PT' && styles.filterActive]}
-                        onPress={() => setActiveFilter('PT')}
-                    >
-                        <Text style={[styles.filterText, activeFilter === 'PT' && styles.filterTextActive]}>PT Only</Text>
-                    </TouchableOpacity>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 20 }}>
+                        <TouchableOpacity
+                            style={[styles.filterChip, activeFilter === 'ALL' && styles.filterActive]}
+                            onPress={() => setActiveFilter('ALL')}
+                        >
+                            <Text style={[styles.filterText, activeFilter === 'ALL' && styles.filterTextActive]}>All Toilets</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={[styles.filterChip, activeFilter === 'CT' && styles.filterActive]}
+                            onPress={() => setActiveFilter('CT')}
+                        >
+                            <Text style={[styles.filterText, activeFilter === 'CT' && styles.filterTextActive]}>Community (CT)</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={[styles.filterChip, activeFilter === 'PT' && styles.filterActive]}
+                            onPress={() => setActiveFilter('PT')}
+                        >
+                            <Text style={[styles.filterText, activeFilter === 'PT' && styles.filterTextActive]}>Public (PT)</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={[styles.filterChip, activeFilter === 'URINALS' && styles.filterActive]}
+                            onPress={() => {
+                                // @ts-ignore
+                                setActiveFilter('URINALS')
+                            }}
+                        >
+                            <Text style={[styles.filterText, activeFilter === 'URINALS' && styles.filterTextActive]}>Urinals</Text>
+                        </TouchableOpacity>
+                    </ScrollView>
                 </View>
             </View>
 
@@ -172,7 +187,8 @@ export default function ToiletEmployeeHome({ navigation }: { navigation: Nav }) 
                     refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} />}
                     ListEmptyComponent={
                         <View style={styles.emptyContainer}>
-                            <Text style={styles.emptyText}>{error || "No toilets assigned to you yet."}</Text>
+                            <Text style={{ fontSize: 40, marginBottom: 16 }}>🎯</Text>
+                            <Text style={styles.emptyText}>{error || "No tasks assigned for this category."}</Text>
                         </View>
                     }
                 />
@@ -182,75 +198,72 @@ export default function ToiletEmployeeHome({ navigation }: { navigation: Nav }) 
 }
 
 const styles = StyleSheet.create({
-    screen: { flex: 1, backgroundColor: '#f8fafc' },
+    screen: { flex: 1, backgroundColor: '#fcfdfe' },
     center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-    // Consistent Header Style
-    header: {
-        height: Platform.OS === 'android' ? 120 : 90, // Taller to accommodate Filters
-        paddingTop: Platform.OS === 'android' ? 50 : 10,
-        backgroundColor: '#fff',
-        paddingHorizontal: 20,
-        borderBottomWidth: 1,
-        borderBottomColor: '#e2e8f0',
-        elevation: 2,
-        justifyContent: 'center'
-    },
-    headerTitle: { fontSize: 22, fontWeight: '800', color: '#0f172a', marginBottom: 12 },
-    filterRow: { flexDirection: 'row' },
+    content: { paddingHorizontal: 20, paddingTop: 10 },
+    welcomeSection: { marginBottom: 16, marginTop: 10 },
+    welcomeSub: { fontSize: 10, fontWeight: '900', color: '#94a3b8', letterSpacing: 1.5, marginBottom: 4 },
+    welcomeTitle: { fontSize: 26, fontWeight: '900', color: '#0f172a' },
+    filterRow: { flexDirection: 'row', marginBottom: 10 },
     filterChip: {
-        paddingVertical: 6,
+        paddingVertical: 8,
         paddingHorizontal: 16,
-        backgroundColor: '#f1f5f9',
-        borderRadius: 20,
-        marginRight: 8,
+        backgroundColor: '#fff',
+        borderRadius: 14,
+        marginRight: 10,
         borderWidth: 1,
-        borderColor: '#e2e8f0'
+        borderColor: '#f1f5f9',
+        elevation: 1,
+        shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 5
     },
     filterActive: { backgroundColor: '#1d4ed8', borderColor: '#1d4ed8' },
-    filterText: { fontSize: 13, fontWeight: '600', color: '#64748b' },
+    filterText: { fontSize: 13, fontWeight: '700', color: '#64748b' },
     filterTextActive: { color: '#fff' },
 
-    listContent: { padding: 16, paddingBottom: 100 },
+    listContent: { padding: 20, paddingBottom: 100 },
 
     card: {
         backgroundColor: '#fff',
-        borderRadius: 16,
-        padding: 16,
-        marginBottom: 16,
+        borderRadius: 24,
+        padding: 20,
+        marginBottom: 20,
         elevation: 3,
-        shadowColor: '#64748b', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 6,
+        shadowColor: '#64748b', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.1, shadowRadius: 10,
         borderWidth: 1,
         borderColor: '#f1f5f9'
     },
     cardDone: {
         opacity: 0.8,
-        backgroundColor: '#f8fafc'
+        backgroundColor: '#f8fafc',
+        shadowOpacity: 0.05
     },
-    cardHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
-    badge: { paddingVertical: 4, paddingHorizontal: 10, borderRadius: 8 },
-    badgeCT: { backgroundColor: '#fff7ed' }, // Orange-ish light
-    badgePT: { backgroundColor: '#eff6ff' }, // Blue-ish light
-    textCT: { color: '#c2410c', fontSize: 11, fontWeight: '800' },
-    textPT: { color: '#1d4ed8', fontSize: 11, fontWeight: '800' },
-    badgeText: { fontSize: 11, fontWeight: '800' },
+    cardHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16 },
+    badge: { paddingVertical: 6, paddingHorizontal: 12, borderRadius: 10 },
+    badgeCT: { backgroundColor: '#fff7ed' },
+    badgePT: { backgroundColor: '#eff6ff' },
+    badgeUrinal: { backgroundColor: '#f0fdf4' },
+    textCT: { color: '#c2410c', fontSize: 10, fontWeight: '900' },
+    textPT: { color: '#1d4ed8', fontSize: 10, fontWeight: '900' },
+    textUrinal: { color: '#15803d', fontSize: 10, fontWeight: '900' },
+    badgeText: { fontSize: 10, fontWeight: '900' },
 
-    distBadge: { flexDirection: 'row', alignItems: 'center' },
-    distText: { fontSize: 12, fontWeight: '600', color: '#94a3b8' },
+    distBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f8fafc', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 },
+    distText: { fontSize: 11, fontWeight: '800', color: '#1d4ed8' },
 
-    cardTitle: { fontSize: 16, fontWeight: '700', color: '#0f172a', marginBottom: 4 },
-    cardAddress: { fontSize: 13, color: '#64748b', marginBottom: 12, lineHeight: 18 },
+    cardTitle: { fontSize: 18, fontWeight: '900', color: '#0f172a', marginBottom: 6 },
+    cardAddress: { fontSize: 13, color: '#64748b', marginBottom: 20, lineHeight: 18, fontWeight: '500' },
 
-    cardFooter: { flexDirection: 'row', alignItems: 'center', borderTopWidth: 1, borderTopColor: '#f1f5f9', paddingTop: 12 },
+    cardFooter: { flexDirection: 'row', alignItems: 'center', borderTopWidth: 1, borderTopColor: '#f8fafc', paddingTop: 16 },
     infoCol: { flex: 1 },
-    infoLabel: { fontSize: 10, fontWeight: '700', color: '#94a3b8' },
-    infoValue: { fontSize: 13, fontWeight: '600', color: '#334155' },
+    infoLabel: { fontSize: 9, fontWeight: '900', color: '#94a3b8', letterSpacing: 0.5 },
+    infoValue: { fontSize: 14, fontWeight: '800', color: '#334155', marginTop: 2 },
 
     actionCol: {},
-    statusPending: { backgroundColor: '#1d4ed8', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8 },
-    statusTextPending: { color: '#fff', fontSize: 11, fontWeight: '700' },
+    statusPending: { backgroundColor: '#1d4ed8', paddingHorizontal: 20, paddingVertical: 12, borderRadius: 14, elevation: 4, shadowColor: '#1d4ed8', shadowOpacity: 0.3, shadowRadius: 8 },
+    statusTextPending: { color: '#fff', fontSize: 11, fontWeight: '900' },
     statusDone: { flexDirection: 'row', alignItems: 'center' },
-    statusTextDone: { color: '#059669', fontSize: 12, fontWeight: '800' },
+    statusTextDone: { color: '#10b981', fontSize: 12, fontWeight: '900' },
 
-    emptyContainer: { alignItems: 'center', marginTop: 60, padding: 20 },
-    emptyText: { fontSize: 16, color: '#94a3b8', fontWeight: '500', textAlign: 'center' }
+    emptyContainer: { alignItems: 'center', marginTop: 80, padding: 20 },
+    emptyText: { fontSize: 15, color: '#94a3b8', fontWeight: '700', textAlign: 'center' }
 });

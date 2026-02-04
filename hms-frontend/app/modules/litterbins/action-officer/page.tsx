@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { ModuleGuard, Protected } from "@components/Guards";
 import { ApiError, TwinbinApi } from "@lib/apiClient";
+import Link from 'next/link';
 
 type ActionReport = {
   id: string;
@@ -79,117 +80,177 @@ export default function LitterbinsActionOfficerPage() {
   return (
     <Protected>
       <ModuleGuard module="LITTERBINS" roles={["ACTION_OFFICER"]}>
-        <div className="min-h-screen bg-base-200/50 p-6 md:p-10">
-          <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <span className="badge badge-neutral badge-sm font-medium tracking-wide">LITTER BINS</span>
-                <span className="text-xs font-semibold text-base-content/50 uppercase tracking-wider">Module</span>
-              </div>
-              <h1 className="text-3xl md:text-4xl font-extrabold text-base-content tracking-tight">Action Officer Dashboard</h1>
-              <p className="mt-2 text-base text-base-content/60 max-w-2xl">
-                Review assigned bin reports, take necessary actions, and mark them as complete to notify QC.
-              </p>
+        <div style={{ padding: '20px 40px', backgroundColor: '#f8fafc', minHeight: '100vh', animation: 'fadeIn 0.5s ease-out' }}>
+          <style jsx>{`
+                @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+                .stats-compact-grid {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                    gap: 16px;
+                }
+                .section-divider {
+                    height: 1px;
+                    background: #e2e8f0;
+                }
+                .card-header-flex {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-bottom: 20px;
+                }
+                .section-title {
+                    font-size: 16px;
+                    font-weight: 800;
+                    margin: 0;
+                    color: #0f172a;
+                }
+                .compact-card {
+                    padding: 20px;
+                    background: white;
+                    border-radius: 12px;
+                    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+                }
+                .tab-filters {
+                    display: flex;
+                    gap: 8px;
+                }
+                .modern-table {
+                    width: 100%;
+                    border-collapse: collapse;
+                }
+                .modern-table th {
+                    text-align: left;
+                    font-size: 12px;
+                    color: #0f172a;
+                    padding: 12px 8px;
+                    border-bottom: 2px solid #f1f5f9;
+                    font-weight: 700;
+                }
+                .modern-table td {
+                    padding: 12px 8px;
+                    font-size: 14px;
+                    border-bottom: 1px solid #f1f5f9;
+                    color: #334155;
+                }
+                .btn {
+                    padding: 8px 16px;
+                    border-radius: 8px;
+                    font-weight: 600;
+                    font-size: 13px;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                    border: 1px solid transparent;
+                }
+                .btn-primary {
+                    background-color: #3b82f6;
+                    color: white;
+                }
+                .btn-outline {
+                    background-color: transparent;
+                    border-color: #e2e8f0;
+                    color: #475569;
+                }
+                .btn-outline:hover {
+                    border-color: #cbd5e1;
+                    background-color: #f8fafc;
+                }
+                .btn-ghost {
+                    background: transparent;
+                    color: #64748b;
+                }
+                .btn-ghost:hover {
+                    background: #f1f5f9;
+                    color: #0f172a;
+                }
+            `}</style>
+          <header style={{ marginBottom: 32 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+              <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.1em', background: '#e2e8f0', padding: '4px 8px', borderRadius: 4, color: '#475569' }}>LITTER BINS</span>
+              <span style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase' }}>Module</span>
             </div>
-            <div className="flex items-center gap-3">
-              <div className="text-right hidden md:block">
-                <div className="text-sm font-bold">Action Officer</div>
-                <div className="text-xs text-base-content/50">Restricted Access</div>
-              </div>
-              <div className="avatar placeholder">
-                <div className="bg-primary text-primary-content rounded-full w-12 text-xl font-bold italic">AO</div>
-              </div>
-            </div>
+            <h1 style={{ fontSize: 28, fontWeight: 900, color: '#0f172a', margin: 0, letterSpacing: '-0.02em' }}>Action Officer Dashboard</h1>
+            <p style={{ marginTop: 8, color: '#64748b', fontSize: 15, lineHeight: 1.6 }}>
+              Review assigned bin reports, take necessary actions, and mark them as complete to notify QC.
+            </p>
           </header>
 
           {error && (
-            <div className="alert alert-error shadow-sm rounded-xl mb-6 border border-error/20">
-              <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-              <span>{error}</span>
+            <div style={{ padding: 16, borderRadius: 8, backgroundColor: '#fee2e2', color: '#991b1b', marginBottom: 24, fontSize: 14, fontWeight: 600, border: '1px solid #fecaca' }}>
+              {error}
             </div>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-            <StatCard label="Pending Actions" value={pendingCount} type="warning" />
-            <StatCard label="Marked Complete" value={completedCount} type="success" />
-            <StatCard label="Total in Scope" value={totalInScope} type="neutral" />
+          <div className="stats-compact-grid" style={{ marginBottom: 32 }}>
+            <StatCard label="PENDING ACTIONS" value={pendingCount} sub="Needs Attention" color="#f59e0b" />
+            <StatCard label="MARKED COMPLETE" value={completedCount} sub="Sent to QC" color="#10b981" />
+            <StatCard label="TOTAL IN SCOPE" value={totalInScope} sub="Assigned Tasks" color="#6366f1" />
           </div>
 
-          <div className="bg-base-100 rounded-2xl shadow-sm border border-base-200 overflow-hidden">
-            <div className="p-4 border-b border-base-200 bg-base-50/50 flex items-center justify-between flex-wrap gap-4">
-              <h2 className="text-lg font-bold">Tasks Queue</h2>
-              <div className="tabs tabs-boxed bg-base-200/50 p-1 rounded-lg">
-                <a
-                  className={`tab tab-sm h-8 rounded-md transition-all ${activeTab === 'PENDING' ? 'bg-white shadow-sm text-base-content font-bold' : 'text-base-content/60 hover:text-base-content/80'}`}
+          <div className="compact-card">
+            <div className="card-header-flex">
+              <h3 className="section-title">Tasks Queue</h3>
+              <div className="tab-filters">
+                <button
+                  className={`btn ${activeTab === 'PENDING' ? 'btn-primary' : 'btn-outline'}`}
                   onClick={() => setActiveTab('PENDING')}
                 >
-                  Pending <span className="ml-2 opacity-70 text-xs py-0.5 px-1.5 bg-base-300 rounded-full">{reports.length}</span>
-                </a>
-                <a
-                  className={`tab tab-sm h-8 rounded-md transition-all ${activeTab === 'COMPLETED' ? 'bg-white shadow-sm text-base-content font-bold' : 'text-base-content/60 hover:text-base-content/80'}`}
+                  Pending ({pendingCount})
+                </button>
+                <button
+                  className={`btn ${activeTab === 'COMPLETED' ? 'btn-primary' : 'btn-outline'}`}
                   onClick={() => setActiveTab('COMPLETED')}
                 >
-                  Completed <span className="ml-2 opacity-70 text-xs py-0.5 px-1.5 bg-base-300 rounded-full">{history.length}</span>
-                </a>
+                  Completed ({completedCount})
+                </button>
               </div>
             </div>
 
-            <div className="overflow-x-auto min-h-[400px]">
-              <table className="table w-full">
-                <thead className="bg-base-50/50 text-base-content/50 text-xs uppercase font-semibold tracking-wider">
+            <div style={{ overflowX: 'auto' }}>
+              <table className="modern-table">
+                <thead>
                   <tr>
-                    <th className="py-4 pl-6">Bin Details</th>
-                    <th className="py-4">Zone / Ward</th>
-                    <th className="py-4">Status</th>
-                    <th className="py-4">Date</th>
-                    <th className="py-4 pr-6 text-right">Action</th>
+                    <th>Bin Details</th>
+                    <th>Zone / Ward</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                    <th style={{ textAlign: 'right' }}>Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-base-200">
+                <tbody>
                   {loading ? (
-                    Array.from({ length: 5 }).map((_, i) => (
-                      <tr key={i}>
-                        <td className="pl-6 py-4"><div className="h-10 bg-base-200 rounded-lg w-48 animate-pulse"></div></td>
-                        <td className="py-4"><div className="h-4 bg-base-200 rounded w-24 animate-pulse"></div></td>
-                        <td className="py-4"><div className="h-6 bg-base-200 rounded-full w-20 animate-pulse"></div></td>
-                        <td className="py-4"><div className="h-4 bg-base-200 rounded w-24 animate-pulse"></div></td>
-                        <td className="pr-6 py-4"></td>
-                      </tr>
-                    ))
+                    <tr><td colSpan={5} style={{ padding: 40, textAlign: 'center', color: '#94a3b8' }}>Loading queue...</td></tr>
                   ) : rows.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="py-20 text-center text-base-content/40">
-                        <div className="flex flex-col items-center gap-2">
-                          <span className="text-4xl">📭</span>
-                          <span className="font-medium">No items found in {activeTab.toLowerCase()} queue.</span>
-                        </div>
+                      <td colSpan={5} style={{ padding: 40, textAlign: 'center', color: '#94a3b8' }}>
+                        No items found in {activeTab.toLowerCase()} queue.
                       </td>
                     </tr>
                   ) : (
                     rows.map((r) => (
-                      <tr key={r.id} className="group hover:bg-base-50/50 transition-colors">
-                        <td className="pl-6 py-4">
-                          <div className="font-bold text-base-content">{r.bin?.areaName || "Unknown Area"}</div>
-                          <div className="text-xs text-base-content/50 font-medium mt-0.5">{r.bin?.locationName || "No location info"}</div>
+                      <tr key={r.id}>
+                        <td>
+                          <div style={{ fontWeight: 700, color: '#1e293b' }}>{r.bin?.areaName || "Unknown Area"}</div>
+                          <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>{r.bin?.locationName || "No location info"}</div>
                         </td>
-                        <td className="py-4">
-                          <div className="flex flex-col gap-1">
-                            <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-base-200 text-base-content/70 w-fit">
+                        <td>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                            <span style={{ fontSize: 10, fontWeight: 700, background: '#f1f5f9', padding: '2px 6px', borderRadius: 4, width: 'fit-content' }}>
                               ZONE {r.bin?.zoneId || "?"}
                             </span>
-                            <span className="text-xs text-base-content/50 ml-1">Ward {r.bin?.wardId || "?"}</span>
+                            <span style={{ fontSize: 11, color: '#64748b' }}>Ward {r.bin?.wardId || "?"}</span>
                           </div>
                         </td>
-                        <td className="py-4">
+                        <td>
                           <StatusBadge status={activeTab === 'COMPLETED' ? 'ACTION_TAKEN' : r.status} />
                         </td>
-                        <td className="py-4">
-                          <div className="text-sm font-medium text-base-content/80">{new Date(r.createdAt).toLocaleDateString()}</div>
-                          <div className="text-[10px] text-base-content/40">{new Date(r.createdAt).toLocaleTimeString()}</div>
+                        <td>
+                          <div style={{ fontSize: 13, fontWeight: 600 }}>{new Date(r.createdAt).toLocaleDateString()}</div>
+                          <div style={{ fontSize: 11, color: '#94a3b8' }}>{new Date(r.createdAt).toLocaleTimeString()}</div>
                         </td>
-                        <td className="pr-6 py-4 text-right">
+                        <td style={{ textAlign: 'right' }}>
                           <button
-                            className={`btn btn-sm ${activeTab === 'PENDING' ? 'btn-primary shadow-primary/20' : 'btn-ghost border-base-200 hover:bg-base-200'} font-bold shadow-sm`}
+                            className={`btn btn-sm ${activeTab === 'PENDING' ? 'btn-primary' : 'btn-outline'}`}
+                            style={{ fontSize: 11, padding: '4px 10px' }}
                             onClick={() => setActive(r)}
                           >
                             {activeTab === 'PENDING' ? 'Process' : 'View Details'}
@@ -205,21 +266,30 @@ export default function LitterbinsActionOfficerPage() {
         </div>
 
         {active && (
-          <dialog className="modal modal-open bg-base-300/50 backdrop-blur-sm">
-            <div className="modal-box w-11/12 max-w-2xl p-0 overflow-hidden shadow-2xl rounded-2xl">
-              <div className="bg-base-100 p-6 md:p-8">
-                <div className="flex items-center justify-between mb-6">
-                  <div>
-                    <h3 className="text-xl font-bold text-base-content">
-                      {activeTab === 'COMPLETED' ? 'Report Details' : 'Process Report'}
-                    </h3>
-                    <div className="text-sm text-base-content/50 mt-1 font-mono">ID: {active.id.slice(0, 8)}...</div>
-                  </div>
-                  <button className="btn btn-sm btn-circle btn-ghost" onClick={() => { setActive(null); setActionNote(""); }}>✕</button>
+          <div style={{
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
+          }}>
+            <div style={{
+              backgroundColor: 'white', borderRadius: 16,
+              width: '90%', maxWidth: 640,
+              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
+              overflow: 'hidden'
+            }}>
+              <div style={{ padding: '24px 32px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: '#0f172a' }}>
+                    {activeTab === 'COMPLETED' ? 'Report Details' : 'Process Report'}
+                  </h3>
+                  <p style={{ margin: '4px 0 0 0', fontSize: 12, fontFamily: 'monospace', color: '#64748b' }}>ID: {active.id}</p>
                 </div>
+                <button onClick={() => { setActive(null); setActionNote(""); }} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: '#94a3b8' }}>✕</button>
+              </div>
 
-                <div className="bg-base-200/50 rounded-xl p-5 mb-6 border border-base-200">
-                  <div className="grid grid-cols-2 gap-y-4 gap-x-8">
+              <div style={{ padding: 32 }}>
+                <div style={{ backgroundColor: '#f8fafc', padding: 20, borderRadius: 12, marginBottom: 24 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                     <Field label="Bin Area" value={active.bin?.areaName} />
                     <Field label="Specific Location" value={active.bin?.locationName} />
                     <Field label="Zone" value={active.bin?.zoneId} />
@@ -228,29 +298,32 @@ export default function LitterbinsActionOfficerPage() {
                 </div>
 
                 {activeTab === 'COMPLETED' ? (
-                  <div className="space-y-6">
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
                     <div>
-                      <div className="text-xs font-bold text-base-content/40 uppercase tracking-wider mb-2">Action Officer's Note</div>
-                      <div className="p-4 bg-base-100 rounded-xl border border-base-200 text-sm text-base-content/80 leading-relaxed shadow-sm">
-                        {active.actionOfficerRemark || active.actionRemark || <span className="italic text-base-content/40">No remarks provided.</span>}
+                      <div style={{ fontSize: 11, fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', marginBottom: 8 }}>Action Officer's Note</div>
+                      <div style={{ padding: 16, backgroundColor: '#fdfdfd', border: '1px solid #e2e8f0', borderRadius: 8, fontSize: 14, lineHeight: 1.5, color: '#334155' }}>
+                        {active.actionOfficerRemark || active.actionRemark || <span style={{ color: '#cbd5e1', fontStyle: 'italic' }}>No remarks provided.</span>}
                       </div>
                     </div>
                     {active.actionPhotoUrl && (
                       <div>
-                        <div className="text-xs font-bold text-base-content/40 uppercase tracking-wider mb-2">Evidence Photo</div>
-                        <div className="rounded-xl overflow-hidden border border-base-200 shadow-sm">
-                          <img src={active.actionPhotoUrl} alt="Action Evidence" className="w-full max-h-80 object-cover bg-base-200" />
+                        <div style={{ fontSize: 11, fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', marginBottom: 8 }}>Evidence Photo</div>
+                        <div style={{ borderRadius: 8, overflow: 'hidden', border: '1px solid #e2e8f0' }}>
+                          <img src={active.actionPhotoUrl} alt="Action Evidence" style={{ width: '100%', height: 'auto', display: 'block' }} />
                         </div>
                       </div>
                     )}
                   </div>
                 ) : (
-                  <div className="form-control">
-                    <label className="label pl-0">
-                      <span className="text-sm font-bold text-base-content/70">Action Remarks <span className="font-normal text-base-content/40">(Optional)</span></span>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 14, fontWeight: 700, color: '#334155', marginBottom: 8 }}>
+                      Action Remarks <span style={{ opacity: 0.5, fontWeight: 400 }}>(Optional)</span>
                     </label>
                     <textarea
-                      className="textarea textarea-bordered h-32 text-base focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all rounded-xl"
+                      style={{
+                        width: '100%', height: 100, padding: 12, borderRadius: 8,
+                        border: '1px solid #cbd5e1', fontSize: 14, outline: 'none'
+                      }}
                       value={actionNote}
                       onChange={(e) => setActionNote(e.target.value)}
                       placeholder="Describe the action taken to resolve this issue..."
@@ -258,62 +331,87 @@ export default function LitterbinsActionOfficerPage() {
                   </div>
                 )}
 
-                <div className="modal-action mt-8 flex items-center justify-end gap-3">
-                  <button className="btn btn-ghost font-bold" onClick={() => { setActive(null); setActionNote(""); }}>
+                <div style={{ marginTop: 32, display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
+                  <button
+                    className="btn btn-ghost"
+                    onClick={() => { setActive(null); setActionNote(""); }}
+                  >
                     {activeTab === 'COMPLETED' ? 'Close' : 'Cancel'}
                   </button>
                   {activeTab === 'PENDING' && (
                     <button
-                      className="btn btn-primary px-8 font-bold shadow-lg shadow-primary/30"
+                      className="btn btn-primary"
                       disabled={submitLoading}
                       onClick={handleSubmit}
+                      style={{ opacity: submitLoading ? 0.7 : 1 }}
                     >
-                      {submitLoading ? (
-                        <>
-                          <span className="loading loading-spinner loading-xs"></span>
-                          Processing...
-                        </>
-                      ) : "Mark as Complete"}
+                      {submitLoading ? "Processing..." : "Mark as Complete"}
                     </button>
                   )}
                 </div>
               </div>
             </div>
-          </dialog>
+          </div>
         )}
       </ModuleGuard>
     </Protected>
   );
 }
 
-function StatCard({ label, value, type }: { label: string; value: number; type: 'warning' | 'success' | 'neutral' }) {
-  const colors = {
-    warning: "bg-warning/10 text-warning border-warning/20",
-    success: "bg-success/10 text-success border-success/20",
-    neutral: "bg-base-200 text-base-content/70 border-base-200"
-  };
-
+function StatCard({ label, value, sub, color }: any) {
   return (
-    <div className={`p-6 rounded-2xl border ${colors[type] || colors.neutral} flex flex-col justify-between h-32 bg-white shadow-sm hover:shadow-md transition-shadow`}>
-      <div className="text-xs font-bold uppercase tracking-wider opacity-80">{label}</div>
-      <div className="text-4xl font-extrabold tracking-tight mt-2">{value}</div>
+    <div style={{
+      borderLeft: `6px solid ${color}`,
+      position: 'relative',
+      overflow: 'hidden',
+      backgroundColor: 'white',
+      padding: '16px 20px',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 4,
+      borderRadius: 12,
+      boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+      transition: 'transform 0.2s, box-shadow 0.2s',
+      cursor: 'default'
+    }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.transform = 'translateY(-2px)';
+        e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(0,0,0,0.05)';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.transform = 'translateY(0)';
+        e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
+      }}
+    >
+      <div style={{ fontSize: 10, fontWeight: 900, color: '#94a3b8', letterSpacing: '0.1em', textTransform: 'uppercase' }}>{label}</div>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+        <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: '-0.02em', color: '#1e293b' }}>{value}</div>
+      </div>
+      <div style={{ fontSize: 12, color: '#64748b', fontWeight: 500 }}>{sub}</div>
     </div>
   );
 }
 
 function StatusBadge({ status }: { status: string }) {
-  const config: Record<string, string> = {
-    "ACTION_REQUIRED": "bg-warning/15 text-warning-content border-warning/20",
-    "PENDING": "bg-info/10 text-info border-info/20",
-    "ACTION_TAKEN": "bg-success/15 text-success border-success/20",
-    "APPROVED": "bg-success/15 text-success border-success/20",
-    "REJECTED": "bg-error/10 text-error border-error/20"
+  const config: any = {
+    'APPROVED': { bg: '#dcfce7', text: '#166534' },
+    'ACTION_TAKEN': { bg: '#dcfce7', text: '#166534' },
+    'COMPLETED': { bg: '#dcfce7', text: '#166534' },
+    'REJECTED': { bg: '#fee2e2', text: '#991b1b' },
+    'PENDING': { bg: '#fef3c7', text: '#d97706' },
+    'ACTION_REQUIRED': { bg: '#ffedd5', text: '#9a3412' }
   };
-
-  const style = config[status] || "bg-base-200 text-base-content border-base-300";
-
+  const s = config[status] || { bg: '#f1f5f9', text: '#475569' };
   return (
-    <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-extrabold tracking-wider uppercase border ${style}`}>
+    <span style={{
+      padding: '4px 10px',
+      borderRadius: 6,
+      fontSize: 10,
+      fontWeight: 800,
+      backgroundColor: s.bg,
+      color: s.text,
+      textTransform: 'uppercase'
+    }}>
       {status.replace(/_/g, " ")}
     </span>
   );
@@ -322,8 +420,8 @@ function StatusBadge({ status }: { status: string }) {
 function Field({ label, value }: { label: string; value?: string }) {
   return (
     <div>
-      <div className="text-[10px] font-bold text-base-content/40 uppercase tracking-wider mb-1">{label}</div>
-      <div className="text-sm font-semibold text-base-content/90">{value || "-"}</div>
+      <div style={{ fontSize: 10, fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', marginBottom: 4 }}>{label}</div>
+      <div style={{ fontSize: 14, fontWeight: 600, color: '#334155' }}>{value || "-"}</div>
     </div>
   );
 }

@@ -365,6 +365,7 @@ router.get("/users", async (req, res, next) => {
         id: uc.userId,
         name: uc.user.name,
         email: uc.user.email,
+        phone: uc.user.phone,
         role: uc.role,
         createdAt: uc.createdAt,
         zoneIds: uc.zoneIds || [],
@@ -482,6 +483,7 @@ router.get("/employees", async (req, res, next) => {
         id: uc.userId,
         name: uc.user.name,
         email: uc.user.email,
+        phone: uc.user.phone,
         role: uc.role,
         modules: uc.user.modules
           .filter((m) => isCanonicalModuleKey(m.module.name))
@@ -754,6 +756,7 @@ router.post("/registration-requests/:id/approve", validateBody(approvalSchema), 
       data: {
         email: request.email,
         name: request.name,
+        phone: request.phone,
         password: request.passwordHash
       }
     });

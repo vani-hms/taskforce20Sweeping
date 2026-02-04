@@ -25,6 +25,12 @@ const cards: Card[] = [
     icon: "📦"
   },
   {
+    title: "Cleanliness of Toilets",
+    desc: "Access records and tasks for this module.",
+    href: "/modules/toilet",
+    icon: "🚻"
+  },
+  {
     title: "Sweeping",
     desc: "Module records (read-only).",
     href: "/modules/SWEEPING",
@@ -49,12 +55,23 @@ const cards: Card[] = [
   }
 ];
 
+import { useAuth } from "@hooks/useAuth";
+
+// Force update
 export default function LandingPage() {
+  const { user } = useAuth();
   const [expanded, setExpanded] = useState<string | null>(null);
 
   const toggleCard = (title: string) => {
     setExpanded((prev) => (prev === title ? null : title));
   };
+
+  const visibleCards = cards.filter(card => {
+    if (card.title === "HMS Super Admin") {
+      return user?.roles.includes("HMS_SUPER_ADMIN");
+    }
+    return true;
+  });
 
   return (
     <div className="page">
@@ -68,7 +85,7 @@ export default function LandingPage() {
         </div>
       </div>
       <div className="grid grid-3">
-        {cards.map((card) => {
+        {visibleCards.map((card) => {
           const isTaskforce = card.title === "Taskforce";
           const isOpen = expanded === card.title;
 

@@ -601,12 +601,13 @@ label {
 }
 
 .hero {
-  padding: 24px;
-  background: var(--primary);
+  padding: 40px 32px;
+  background: linear-gradient(135deg, #1e3a8a 0%, #172554 100%);
   color: #fff;
   border-radius: var(--radius);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: none;
   box-shadow: var(--shadow);
+  margin-bottom: 24px;
 }
 
 .eyebrow {

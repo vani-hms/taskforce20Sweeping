@@ -178,7 +178,7 @@ export default function ToiletRegisterScreen({ navigation }: { navigation: Nav }
     return (
         <SafeAreaView style={styles.screen}>
             <View style={styles.header}>
-                <Text style={styles.headerTitle}>New Toilet Registration</Text>
+                <Text style={styles.headerTitle}>Toilet Registration</Text>
             </View>
             <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
                 <ScrollView contentContainerStyle={styles.content}>
@@ -214,7 +214,7 @@ export default function ToiletRegisterScreen({ navigation }: { navigation: Nav }
                     </View>
 
                     <View style={styles.sectionCard}>
-                        <Text style={styles.sectionTitle}>Basic Details</Text>
+                        <Text style={styles.sectionTitle}>Technical Details</Text>
                         <Text style={styles.label}>Toilet Name *</Text>
                         <TextInput
                             style={styles.input}
@@ -233,6 +233,7 @@ export default function ToiletRegisterScreen({ navigation }: { navigation: Nav }
                                     >
                                         <Picker.Item label="Community (CT)" value="CT" />
                                         <Picker.Item label="Public (PT)" value="PT" />
+                                        <Picker.Item label="Urinals" value="URINALS" />
                                     </Picker>
                                 </View>
                             </View>
@@ -246,7 +247,7 @@ export default function ToiletRegisterScreen({ navigation }: { navigation: Nav }
                                         <Picker.Item label="Unisex" value="UNISEX" />
                                         <Picker.Item label="Male" value="MALE" />
                                         <Picker.Item label="Female" value="FEMALE" />
-                                        <Picker.Item label="Disabled" value="DISABLED" />
+                                        <Picker.Item label="Differently Abled" value="DIFFERENTLY_ABLED" />
                                     </Picker>
                                 </View>
                             </View>

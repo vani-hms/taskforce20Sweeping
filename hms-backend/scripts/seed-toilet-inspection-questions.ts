@@ -177,6 +177,7 @@ async function main() {
             options: ["Water Efficient", "Solar/Energy Efficient", "Both", "None"],
             requirePhoto: true
         },
+        { text: "33. Any additional remarks, observations or feedback by the assessor?", type: "TEXT", requirePhoto: true },
     ];
 
     console.log("Seeding CT Questions...");
@@ -201,7 +202,40 @@ async function main() {
         });
     }
 
+    await seedUrinals();
     console.log("Seeding completed successfully!");
+}
+
+const urinalQuestions = [
+    { text: "1. Is the urinal open and functional?", type: "YES_NO", requirePhoto: true },
+    { text: "2. Is the urinal visible to passers by with clear signage indicating the direction of urinal?", type: "YES_NO", requirePhoto: true },
+    { text: "3. Is the toilet mapped on Google Map?", type: "YES_NO", requirePhoto: false },
+    { text: "4. Whether the urinal has a caretaker present at all times?", type: "YES_NO", requirePhoto: true },
+    { text: "5. Whether name and contact details of the caretaker is displayed on the walls of urinal?", type: "YES_NO", requirePhoto: true },
+    { text: "6. Name and contact number of the caretaker", type: "TEXT", requirePhoto: false },
+    { text: "7. Are all the urinal clean and usable?", type: "YES_NO", requirePhoto: true },
+    { text: "8. Are all the urinal free from bad odour?", type: "YES_NO", requirePhoto: false },
+    {
+        text: "9. Does all the urinal have functional flushing mechanisms?",
+        type: "OPTIONS",
+        options: ["Flushing mechanism is available and functional", "Flushing mechanism is available but not functional", "No flushing mechanism available"],
+        requirePhoto: true
+    },
+    { text: "10. Is the urinal connected to a closed system such as sewerage, septic tank + soak pit, twin-pit system etc.?", type: "YES_NO", requirePhoto: true },
+    { text: "11. Any additional remarks, observations or feedback by the assessor?", type: "TEXT", requirePhoto: true }
+];
+
+async function seedUrinals() {
+    console.log("Seeding Urinal Questions...");
+    for (let i = 0; i < urinalQuestions.length; i++) {
+        await prisma.toiletInspectionQuestion.create({
+            data: {
+                ...urinalQuestions[i],
+                forType: ToiletType.URINALS,
+                order: i + 1
+            }
+        });
+    }
 }
 
 main()

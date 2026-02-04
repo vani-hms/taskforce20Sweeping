@@ -184,13 +184,23 @@ export default function ToiletInspectionScreen({ route, navigation }: Props) {
             </View>
 
             <ScrollView contentContainerStyle={styles.scroll}>
-                <Text style={styles.sectionHeader}>TOILET INSPECTION QUESTIONS</Text>
+                <Text style={styles.sectionHeader}>COMPLETE THIS INSPECTION</Text>
 
                 {questions.map((q, idx) => (
                     <View key={q.id} style={styles.qCard}>
-                        <Text style={styles.qText}>{q.text}</Text>
+                        {/* Question Badge */}
+                        <View style={styles.badgeRow}>
+                            <View style={styles.qBadge}><Text style={styles.qBadgeText}>{idx + 1}</Text></View>
+                            {q.requirePhoto && (
+                                <View style={styles.reqBadge}>
+                                    <Text style={styles.reqText}>PHOTO REQUIRED</Text>
+                                </View>
+                            )}
+                        </View>
 
-                        {/* Input Type Handling */}
+                        <Text style={styles.qText}>{q.text.replace(/^\d+\.\s*/, '')}</Text>
+
+                        {/* Input Area */}
                         <View style={styles.inputArea}>
                             {q.type === 'YES_NO' ? (
                                 <View style={styles.toggleRow}>
@@ -198,13 +208,13 @@ export default function ToiletInspectionScreen({ route, navigation }: Props) {
                                         style={[styles.miniBtn, answers[q.id].value === "YES" && styles.btnYes]}
                                         onPress={() => setAnswers({ ...answers, [q.id]: { ...answers[q.id], value: "YES" } })}
                                     >
-                                        <Text style={[styles.btnText, answers[q.id].value === "YES" && { color: '#fff' }]}>YES</Text>
+                                        <Text style={[styles.btnText, answers[q.id].value === "YES" && styles.btnTextWhite]}>Yes</Text>
                                     </TouchableOpacity>
                                     <TouchableOpacity
                                         style={[styles.miniBtn, answers[q.id].value === "NO" && styles.btnNo]}
                                         onPress={() => setAnswers({ ...answers, [q.id]: { ...answers[q.id], value: "NO" } })}
                                     >
-                                        <Text style={[styles.btnText, answers[q.id].value === "NO" && { color: '#fff' }]}>NO</Text>
+                                        <Text style={[styles.btnText, answers[q.id].value === "NO" && styles.btnTextWhite]}>No</Text>
                                     </TouchableOpacity>
                                 </View>
                             ) : q.type === 'OPTIONS' ? (
@@ -222,33 +232,38 @@ export default function ToiletInspectionScreen({ route, navigation }: Props) {
                             ) : (
                                 <TextInput
                                     style={styles.textInput}
-                                    placeholder="Enter details here..."
+                                    placeholder="Type your observations here..."
+                                    placeholderTextColor="#94a3b8"
                                     value={answers[q.id].value}
                                     onChangeText={(val) => setAnswers({ ...answers, [q.id]: { ...answers[q.id], value: val } })}
+                                    multiline
                                 />
                             )}
                         </View>
 
-                        {/* Photo Evidence Section */}
+                        {/* Evidence Section */}
                         <View style={styles.photoSection}>
-                            <View style={styles.photoRow}>
+                            <Text style={styles.evidenceLabel}>Evidence ({answers[q.id].photos.length}/5)</Text>
+                            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.photoRow}>
                                 {answers[q.id].photos.map((uri, i) => (
                                     <View key={i} style={styles.picWrap}>
                                         <Image source={{ uri }} style={styles.pic} />
                                         <TouchableOpacity style={styles.picRemove} onPress={() => removePhoto(q.id, i)}>
-                                            <Text style={{ color: '#fff', fontSize: 10 }}>✕</Text>
+                                            <Text style={styles.xIcon}>✕</Text>
                                         </TouchableOpacity>
                                     </View>
                                 ))}
                                 {answers[q.id].photos.length < 5 && (
                                     <TouchableOpacity style={styles.picAdd} onPress={() => pickPhoto(q.id)}>
-                                        <Text style={{ fontSize: 24, color: '#1d4ed8' }}>📸</Text>
-                                        <Text style={styles.addPicText}>ADD PHOTO</Text>
+                                        <Text style={styles.addPicText}>Add Photo</Text>
                                     </TouchableOpacity>
                                 )}
-                            </View>
+                            </ScrollView>
                             {photoAddedMsg === q.id && (
-                                <Text style={styles.successText}>✓ Photo added successfully</Text>
+                                <View style={styles.successToast}>
+                                    <Text style={{ color: '#10b981', fontSize: 12 }}>✓</Text>
+                                    <Text style={styles.successText}>Attached</Text>
+                                </View>
                             )}
                         </View>
                     </View>
@@ -284,30 +299,43 @@ const styles = StyleSheet.create({
     subtitle: { fontSize: 10, color: '#1d4ed8', fontWeight: '900', letterSpacing: 1, marginTop: 2 },
     scroll: { padding: 16 },
     sectionHeader: { fontSize: 11, fontWeight: '900', color: '#94a3b8', marginBottom: 24, letterSpacing: 1.5, textAlign: 'center' },
-    qCard: { backgroundColor: '#fff', borderRadius: 20, padding: 16, marginBottom: 20, elevation: 2, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 10 },
-    qText: { fontSize: 15, fontWeight: '800', color: '#1e293b', marginBottom: 15, lineHeight: 22 },
-    inputArea: { marginBottom: 15 },
-    toggleRow: { flexDirection: 'row', gap: 10 },
-    miniBtn: { flex: 1, paddingVertical: 12, borderRadius: 10, borderWidth: 1, borderColor: '#e2e8f0', alignItems: 'center' },
+    qCard: { backgroundColor: '#fff', borderRadius: 12, padding: 20, marginBottom: 16, borderWidth: 1, borderColor: '#e2e8f0', elevation: 0 },
+    qText: { fontSize: 14, fontWeight: '600', color: '#334155', marginBottom: 16, lineHeight: 22 },
+    inputArea: { marginBottom: 16 },
+    toggleRow: { flexDirection: 'row', gap: 12 },
+    miniBtn: { flex: 1, paddingVertical: 10, borderRadius: 8, borderWidth: 1, borderColor: '#cbd5e1', alignItems: 'center', backgroundColor: '#f8fafc' },
     btnYes: { backgroundColor: '#10b981', borderColor: '#10b981' },
     btnNo: { backgroundColor: '#ef4444', borderColor: '#ef4444' },
-    btnText: { fontSize: 13, fontWeight: '900', color: '#64748b' },
+    btnText: { fontSize: 13, fontWeight: '600', color: '#64748b' },
     optionsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-    optBtn: { paddingHorizontal: 15, paddingVertical: 10, borderRadius: 10, borderWidth: 1, borderColor: '#e2e8f0', backgroundColor: '#fdfdfe' },
-    optBtnActive: { backgroundColor: '#1d4ed8', borderColor: '#1d4ed8' },
-    optText: { fontSize: 13, fontWeight: '700', color: '#64748b' },
+    optBtn: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8, borderWidth: 1, borderColor: '#cbd5e1', backgroundColor: '#fff' },
+    optBtnActive: { backgroundColor: '#3b82f6', borderColor: '#3b82f6' },
+    optText: { fontSize: 13, fontWeight: '500', color: '#64748b' },
     optTextActive: { color: '#fff' },
-    textInput: { backgroundColor: '#f8fafc', padding: 15, borderRadius: 12, borderWidth: 1, borderColor: '#e2e8f0', fontSize: 15, color: '#1e293b' },
-    photoSection: { marginTop: 10, paddingTop: 15, borderTopWidth: 1, borderTopColor: '#f1f5f9' },
-    photoRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-    picWrap: { width: 70, height: 70, borderRadius: 12, overflow: 'hidden', backgroundColor: '#eee' },
+    textInput: { backgroundColor: '#f8fafc', padding: 12, borderRadius: 8, borderWidth: 1, borderColor: '#cbd5e1', fontSize: 14, color: '#334155', minHeight: 80, textAlignVertical: 'top' },
+    photoSection: { marginTop: 4, paddingTop: 16, borderTopWidth: 1, borderTopColor: '#f1f5f9' },
+    photoRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+    picWrap: { width: 60, height: 60, borderRadius: 8, overflow: 'hidden', backgroundColor: '#f1f5f9', borderWidth: 1, borderColor: '#e2e8f0' },
     pic: { width: '100%', height: '100%' },
-    picRemove: { position: 'absolute', top: 4, right: 4, backgroundColor: 'rgba(0,0,0,0.7)', width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
-    picAdd: { width: 70, height: 70, borderRadius: 12, borderStyle: 'dashed', borderWidth: 2, borderColor: '#cbd5e1', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc' },
-    addPicText: { fontSize: 8, fontWeight: '900', color: '#1d4ed8', marginTop: 4 },
+    picRemove: { position: 'absolute', top: 2, right: 2, backgroundColor: 'rgba(0,0,0,0.6)', width: 18, height: 18, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
+    picAdd: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 8, borderWidth: 1, borderColor: '#cbd5e1', borderStyle: 'dashed', flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#f8fafc' },
+    addPicText: { fontSize: 13, fontWeight: '600', color: '#64748b' },
+
     warnText: { fontSize: 10, color: '#ef4444', fontWeight: '900', marginTop: 10 },
-    successText: { fontSize: 11, color: '#10b981', fontWeight: '900', marginTop: 8 },
+    successText: { fontSize: 12, color: '#10b981', fontWeight: '600' },
     footer: { padding: 20, backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#e2e8f0' },
-    submitBtn: { backgroundColor: '#1d4ed8', padding: 20, borderRadius: 18, alignItems: 'center', elevation: 4 },
-    submitText: { color: '#fff', fontWeight: '900', fontSize: 16 }
+    submitBtn: { backgroundColor: '#0f172a', padding: 16, borderRadius: 12, alignItems: 'center' },
+    submitText: { color: '#fff', fontWeight: '700', fontSize: 15 },
+
+    // Updated New Styles
+    badgeRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 },
+    qBadge: { backgroundColor: '#f1f5f9', width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+    qBadgeText: { fontSize: 12, fontWeight: '700', color: '#64748b' },
+    reqBadge: { paddingHorizontal: 0 }, // Removed visible badge
+    reqText: { fontSize: 11, fontWeight: '600', color: '#ef4444', letterSpacing: 0.5 },
+    btnTextWhite: { color: '#fff' },
+    evidenceLabel: { fontSize: 12, fontWeight: '700', color: '#94a3b8', marginBottom: 12 },
+    xIcon: { color: '#fff', fontSize: 10, fontWeight: 'bold' },
+    // camIconCircle removed as per request
+    successToast: { marginTop: 8, flexDirection: 'row', alignItems: 'center', gap: 6 }
 });

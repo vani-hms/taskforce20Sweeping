@@ -4,11 +4,27 @@ import Link from "next/link";
 import { Protected } from "@components/Guards";
 import { useAuth } from "@hooks/useAuth";
 import { moduleLabel } from "@lib/labels";
-import { canonicalizeModules, moduleEntryPath } from "@utils/modules";
+import { canonicalizeModules, moduleEntryPath, CANONICAL_MODULE_KEYS } from "@utils/modules";
 
 export default function ModulesLanding() {
   const { user } = useAuth();
-  const deduped = canonicalizeModules(user?.modules || []);
+
+  let modules = canonicalizeModules(user?.modules || []);
+  if (user?.roles?.includes("HMS_SUPER_ADMIN")) {
+    // Ensure Super Admin sees all modules
+    const existingKeys = new Set(modules.map(m => m.key));
+    CANONICAL_MODULE_KEYS.forEach(key => {
+      if (!existingKeys.has(key)) {
+        modules.push({ key, name: key } as any);
+      }
+    });
+  }
+
+  const deduped = modules.sort((a, b) => {
+    if (a.key === "TOILET") return -1;
+    if (b.key === "TOILET") return 1;
+    return 0;
+  });
   const hasQc = user?.roles?.includes("QC");
 
   return (

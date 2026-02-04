@@ -40,6 +40,7 @@ export function routeForModule(key: CanonicalModuleKey) {
 export function moduleEmployeePath(key: CanonicalModuleKey) {
   const base = routeForModule(key);
   if (key === "TASKFORCE") return `/modules/${base}/tasks`;
+  if (key === "TOILET") return `/modules/${base}`;
   return `/modules/${base}/employee`;
 }
 
@@ -57,6 +58,7 @@ export function moduleQcPath(key: CanonicalModuleKey) {
 
 export function moduleAdminPath(key: CanonicalModuleKey) {
   const base = routeForModule(key);
+  if (key === "TOILET") return `/modules/${base}`;
   return `/modules/${base}/admin`;
 }
 
@@ -94,6 +96,10 @@ export function getPostLoginRedirect(user: AuthUser | null) {
   if (!modules.length) return "/modules";
 
   if (user.roles.includes("QC" as Role)) {
+    // Prioritize Cleanliness of Toilets for QC
+    if (modules.some(m => m.key === 'TOILET' && (m.roles || []).includes('QC'))) {
+      return moduleQcPath('TOILET');
+    }
     const qcModule = modules.find((m) => (m.roles || []).includes("QC")) || modules[0];
     return moduleQcPath(qcModule.key);
   }

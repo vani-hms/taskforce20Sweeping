@@ -193,8 +193,16 @@ export default function ApprovalsTab() {
                                     </div>
                                 </div>
                                 <div style={{ display: 'flex', gap: 12, marginTop: 12 }}>
-                                    <button className="btn btn-primary" style={{ flex: 1 }} onClick={() => handleAction(selectedRequest.id, 'APPROVED')}>Approve</button>
-                                    <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => handleAction(selectedRequest.id, 'REJECTED')}>Reject</button>
+                                    {(user?.roles.includes('CITY_ADMIN') || user?.roles.includes('HMS_SUPER_ADMIN')) ? (
+                                        <>
+                                            <button className="btn btn-primary" style={{ flex: 1 }} onClick={() => handleAction(selectedRequest.id, 'APPROVED')}>Approve</button>
+                                            <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => handleAction(selectedRequest.id, 'REJECTED')}>Reject</button>
+                                        </>
+                                    ) : (
+                                        <div style={{ width: '100%', padding: 12, backgroundColor: '#f1f5f9', borderRadius: 8, textAlign: 'center', fontSize: 13, color: '#64748b' }}>
+                                            ℹ️ Registration approval is restricted to City Admin.
+                                        </div>
+                                    )}
                                 </div>
                             </>
                         )}

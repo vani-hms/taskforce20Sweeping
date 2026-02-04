@@ -23,10 +23,17 @@ export default function Sidebar() {
   const moduleLinks = useMemo(() => {
     const canonical = canonicalizeModules(user?.modules || []);
     if (!canonical.length) return [];
-    return canonical.map((m) => ({
+    const mLinks = canonical.map((m) => ({
       label: moduleLabel(m.key, m.name || m.key),
-      href: moduleEntryPath(user || null, m.key)
+      href: moduleEntryPath(user || null, m.key),
+      key: m.key
     }));
+    // Sort: TOILET first
+    return mLinks.sort((a, b) => {
+      if (a.key === "TOILET") return -1;
+      if (b.key === "TOILET") return 1;
+      return 0;
+    });
   }, [user?.modules, user?.roles]);
 
   let links: { label: string; href: string }[] = [];
@@ -37,7 +44,15 @@ export default function Sidebar() {
     ];
   } else {
     // Strictly render modules from auth token; no role-based injection
-    links = [...moduleLinks];
+    links = [{ label: "Home", href: "/" }];
+
+    if (user.roles.includes("HMS_SUPER_ADMIN" as Role)) {
+      links.push({ label: "HMS Super Admin", href: "/hms" });
+    }
+    if (user.roles.includes("CITY_ADMIN" as Role) || user.roles.includes("COMMISSIONER" as Role)) {
+      links.push({ label: "City Dashboard", href: "/city" });
+    }
+    links.push(...moduleLinks);
   }
 
   const handleLogout = async () => {

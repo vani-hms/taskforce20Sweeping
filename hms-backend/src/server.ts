@@ -10,11 +10,13 @@ import twinbinRouter from "./modules/twinbin/router";
 import recordsRouter from "./modules/recordsRouter";
 import publicRouter from "./public/router";
 import storageRouter from "./storage/router";
+import sweepingRouter from "./modules/sweeping/router";
 import { errorHandler } from "./middleware/errorHandler";
 import { prisma } from "./prisma";
 import { syncAllCityModules } from "./utils/cityModuleSync";
 import path from "path";
 import fs from "fs";
+
 
 dotenv.config();
 
@@ -41,8 +43,16 @@ app.use((req, res, next) => {
   next();
 });
 // Increase body size limit to accept base64 photos in twinbin reports
-app.use(express.json({ limit: "20mb" }));
+const jsonParser = express.json({ limit: "20mb" });
+
+app.use((req, res, next) => {
+  if (req.path === "/modules/sweeping/admin/upload-kml") return next();
+  jsonParser(req, res, next);
+});
+
+
 app.use(express.urlencoded({ limit: "20mb", extended: true }));
+
 
 // Serve static uploads
 const uploadDir = path.join(process.cwd(), "uploads");
@@ -62,6 +72,7 @@ app.use("/modules", recordsRouter);
 app.use("/modules/taskforce", taskforceRouter);
 app.use("/modules/toilet", toiletRouter);
 app.use("/modules/twinbin", twinbinRouter);
+app.use("/modules/sweeping", sweepingRouter);
 
 app.use(errorHandler);
 

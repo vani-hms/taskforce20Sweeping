@@ -53,6 +53,18 @@ import {
   ToiletHelpScreen,
 } from "../modules/cleanlinessOfToilets";
 
+import {
+  SweepingBeatsScreen,
+  SweepingInspectionScreen,
+  QcSweepingHome,
+  ActionOfficerSweepingScreen,
+  ActionOfficerSweepingDetailScreen,
+  QcBeatAssignmentScreen
+} from "../modules/sweeping";
+
+
+
+
 import { useAuthContext } from "../auth/AuthProvider";
 import { RootStackParamList } from "./types";
 import { Colors, Typography } from "../theme";
@@ -227,6 +239,14 @@ export function RootNavigator() {
       />
       <Stack.Screen name="ToiletMaster" component={ToiletMasterScreen} options={{ title: "All Toilets" }} />
       <Stack.Screen name="ToiletHelp" component={ToiletHelpScreen} options={{ title: "Help" }} />
+      <Stack.Screen name="QcBeatAssignment" component={QcBeatAssignmentScreen} />
+
+      <Stack.Screen name="SweepingBeats" component={SweepingBeatsScreen} />
+      <Stack.Screen name="SweepingInspection" component={SweepingInspectionScreen} />
+      <Stack.Screen name="ActionOfficerSweepingDetail" component={ActionOfficerSweepingDetailScreen} />
+      <Stack.Screen name="QcSweepingHome" component={QcSweepingHome} />
+      <Stack.Screen name="ActionOfficerSweeping" component={ActionOfficerSweepingScreen} />
+
     </Stack.Navigator>
   );
 }

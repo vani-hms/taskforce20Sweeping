@@ -39,4 +39,14 @@ export type RootStackParamList = {
   ToiletPendingRegistration: undefined;
   ToiletMaster: undefined;
   ToiletHelp: undefined;
+  SweepingBeats: undefined;
+  SweepingEmployee: undefined;
+  SweepingInspection: { beat: any };
+  QcSweepingList: undefined;
+  QcSweepingDetail: { inspection: any };
+  ActionOfficerSweeping: undefined;
+  QcBeatAssignment: undefined;
+  QcSweepingHome: undefined;
+  ActionOfficerSweepingDetail:  { inspection: any };
+
 };

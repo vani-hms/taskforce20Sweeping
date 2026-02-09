@@ -119,3 +119,296 @@ Invalid value for argument `type`. Expected ToiletType.
 [ERROR] 2026-02-04T06:09:45.416Z 401 Invalid or expired token
 [ERROR] 2026-02-04T06:09:45.423Z 401 Invalid or expired token
 [ERROR] 2026-02-04T06:09:45.429Z 401 Invalid or expired token
+[ERROR] 2026-02-05T05:08:39.115Z 500 Unexpected token '-', "------WebK"... is not valid JSON
+SyntaxError: Unexpected token '-', "------WebK"... is not valid JSON
+    at JSON.parse (<anonymous>)
+    at createStrictSyntaxError (D:\taskforce20\hms-backend\node_modules\body-parser\lib\types\json.js:109:10)
+    at parse (D:\taskforce20\hms-backend\node_modules\body-parser\lib\types\json.js:66:15)
+    at D:\taskforce20\hms-backend\node_modules\body-parser\lib\read.js:162:18
+    at AsyncResource.runInAsyncScope (node:async_hooks:214:14)
+    at invokeCallback (D:\taskforce20\hms-backend\node_modules\raw-body\index.js:238:16)
+    at done (D:\taskforce20\hms-backend\node_modules\raw-body\index.js:227:7)
+    at IncomingMessage.onEnd (D:\taskforce20\hms-backend\node_modules\raw-body\index.js:287:7)
+    at IncomingMessage.emit (node:events:518:28)
+    at IncomingMessage.emit (node:domain:489:12)
+[ERROR] 2026-02-05T05:17:55.633Z 500 Unexpected token '-', "------WebK"... is not valid JSON
+SyntaxError: Unexpected token '-', "------WebK"... is not valid JSON
+    at JSON.parse (<anonymous>)
+    at createStrictSyntaxError (D:\taskforce20\hms-backend\node_modules\body-parser\lib\types\json.js:109:10)
+    at parse (D:\taskforce20\hms-backend\node_modules\body-parser\lib\types\json.js:66:15)
+    at D:\taskforce20\hms-backend\node_modules\body-parser\lib\read.js:162:18
+    at AsyncResource.runInAsyncScope (node:async_hooks:214:14)
+    at invokeCallback (D:\taskforce20\hms-backend\node_modules\raw-body\index.js:238:16)
+    at done (D:\taskforce20\hms-backend\node_modules\raw-body\index.js:227:7)
+    at IncomingMessage.onEnd (D:\taskforce20\hms-backend\node_modules\raw-body\index.js:287:7)
+    at IncomingMessage.emit (node:events:518:28)
+    at IncomingMessage.emit (node:domain:489:12)
+[ERROR] 2026-02-05T05:24:56.756Z 500 Unexpected token '-', "------WebK"... is not valid JSON
+SyntaxError: Unexpected token '-', "------WebK"... is not valid JSON
+    at JSON.parse (<anonymous>)
+    at createStrictSyntaxError (D:\taskforce20\hms-backend\node_modules\body-parser\lib\types\json.js:109:10)
+    at parse (D:\taskforce20\hms-backend\node_modules\body-parser\lib\types\json.js:66:15)
+    at D:\taskforce20\hms-backend\node_modules\body-parser\lib\read.js:162:18
+    at AsyncResource.runInAsyncScope (node:async_hooks:214:14)
+    at invokeCallback (D:\taskforce20\hms-backend\node_modules\raw-body\index.js:238:16)
+    at done (D:\taskforce20\hms-backend\node_modules\raw-body\index.js:227:7)
+    at IncomingMessage.onEnd (D:\taskforce20\hms-backend\node_modules\raw-body\index.js:287:7)
+    at IncomingMessage.emit (node:events:518:28)
+    at IncomingMessage.emit (node:domain:489:12)
+[ERROR] 2026-02-05T05:25:00.032Z 500 Unexpected token '-', "------WebK"... is not valid JSON
+SyntaxError: Unexpected token '-', "------WebK"... is not valid JSON
+    at JSON.parse (<anonymous>)
+    at createStrictSyntaxError (D:\taskforce20\hms-backend\node_modules\body-parser\lib\types\json.js:109:10)
+    at parse (D:\taskforce20\hms-backend\node_modules\body-parser\lib\types\json.js:66:15)
+    at D:\taskforce20\hms-backend\node_modules\body-parser\lib\read.js:162:18
+    at AsyncResource.runInAsyncScope (node:async_hooks:214:14)
+    at invokeCallback (D:\taskforce20\hms-backend\node_modules\raw-body\index.js:238:16)
+    at done (D:\taskforce20\hms-backend\node_modules\raw-body\index.js:227:7)
+    at IncomingMessage.onEnd (D:\taskforce20\hms-backend\node_modules\raw-body\index.js:287:7)
+    at IncomingMessage.emit (node:events:518:28)
+    at IncomingMessage.emit (node:domain:489:12)
+[ERROR] 2026-02-05T05:25:28.883Z 500 Unexpected token '-', "------WebK"... is not valid JSON
+SyntaxError: Unexpected token '-', "------WebK"... is not valid JSON
+    at JSON.parse (<anonymous>)
+    at createStrictSyntaxError (D:\taskforce20\hms-backend\node_modules\body-parser\lib\types\json.js:109:10)
+    at parse (D:\taskforce20\hms-backend\node_modules\body-parser\lib\types\json.js:66:15)
+    at D:\taskforce20\hms-backend\node_modules\body-parser\lib\read.js:162:18
+    at AsyncResource.runInAsyncScope (node:async_hooks:214:14)
+    at invokeCallback (D:\taskforce20\hms-backend\node_modules\raw-body\index.js:238:16)
+    at done (D:\taskforce20\hms-backend\node_modules\raw-body\index.js:227:7)
+    at IncomingMessage.onEnd (D:\taskforce20\hms-backend\node_modules\raw-body\index.js:287:7)
+    at IncomingMessage.emit (node:events:518:28)
+    at IncomingMessage.emit (node:domain:489:12)
+[ERROR] 2026-02-05T05:30:53.346Z 500 Unexpected token '-', "------WebK"... is not valid JSON
+SyntaxError: Unexpected token '-', "------WebK"... is not valid JSON
+    at JSON.parse (<anonymous>)
+    at createStrictSyntaxError (D:\taskforce20\hms-backend\node_modules\body-parser\lib\types\json.js:109:10)
+    at parse (D:\taskforce20\hms-backend\node_modules\body-parser\lib\types\json.js:66:15)
+    at D:\taskforce20\hms-backend\node_modules\body-parser\lib\read.js:162:18
+    at AsyncResource.runInAsyncScope (node:async_hooks:214:14)
+    at invokeCallback (D:\taskforce20\hms-backend\node_modules\raw-body\index.js:238:16)
+    at done (D:\taskforce20\hms-backend\node_modules\raw-body\index.js:227:7)
+    at IncomingMessage.onEnd (D:\taskforce20\hms-backend\node_modules\raw-body\index.js:287:7)
+    at IncomingMessage.emit (node:events:518:28)
+    at IncomingMessage.emit (node:domain:489:12)
+[ERROR] 2026-02-05T05:41:07.079Z 401 Missing authorization header
+[ERROR] 2026-02-05T05:41:57.813Z 401 Missing authorization header
+[ERROR] 2026-02-05T05:51:36.500Z 401 Invalid or expired token
+[ERROR] 2026-02-05T05:52:33.572Z 401 Missing authorization header
+[ERROR] 2026-02-05T05:53:30.624Z 401 Invalid or expired token
+[ERROR] 2026-02-05T06:00:36.975Z 401 Missing authorization header
+[ERROR] 2026-02-05T06:02:43.717Z 401 Missing authorization header
+[ERROR] 2026-02-05T06:23:15.643Z 400 Beat already assigned
+[ERROR] 2026-02-05T06:23:17.305Z 400 Beat already assigned
+[ERROR] 2026-02-05T06:23:26.870Z 400 Beat already assigned
+[ERROR] 2026-02-05T06:26:06.980Z 400 Beat already assigned
+[ERROR] 2026-02-05T06:26:16.899Z 400 Beat already assigned
+[ERROR] 2026-02-05T06:32:07.593Z 400 Beat already assigned
+[ERROR] 2026-02-05T06:39:32.395Z 403 Forbidden
+[ERROR] 2026-02-05T06:39:32.397Z 403 Forbidden
+[ERROR] 2026-02-05T06:39:38.879Z 403 Forbidden
+[ERROR] 2026-02-05T06:39:38.880Z 403 Forbidden
+[ERROR] 2026-02-05T06:44:01.537Z 403 Forbidden
+[ERROR] 2026-02-05T06:44:01.542Z 403 Forbidden
+[ERROR] 2026-02-05T06:44:25.094Z 403 Forbidden
+[ERROR] 2026-02-05T06:44:25.096Z 403 Forbidden
+[ERROR] 2026-02-05T06:48:56.446Z 403 Forbidden
+[ERROR] 2026-02-05T06:48:56.447Z 403 Forbidden
+[ERROR] 2026-02-05T07:33:51.384Z 401 Invalid credentials
+[ERROR] 2026-02-05T07:33:53.962Z 401 Invalid credentials
+[ERROR] 2026-02-05T07:55:55.367Z 403 Forbidden for module
+[ERROR] 2026-02-05T07:55:55.385Z 403 Forbidden for module
+[ERROR] 2026-02-05T07:55:55.421Z 403 Forbidden for module
+[ERROR] 2026-02-05T07:55:55.449Z 403 Forbidden for module
+[ERROR] 2026-02-05T07:55:55.475Z 403 Forbidden for module
+[ERROR] 2026-02-05T07:55:55.502Z 403 Forbidden for module
+[ERROR] 2026-02-05T07:56:29.841Z 400 Beat already assigned
+[ERROR] 2026-02-05T09:30:38.119Z 400 Invalid module key
+[ERROR] 2026-02-05T09:30:59.555Z 403 Forbidden for module
+[ERROR] 2026-02-05T09:41:51.247Z 400 Invalid module key
+[ERROR] 2026-02-05T09:46:27.391Z 403 Forbidden for module
+[ERROR] 2026-02-05T09:54:20.392Z 403 Forbidden for module
+[ERROR] 2026-02-05T09:54:36.332Z 403 Forbidden for module
+[ERROR] 2026-02-05T10:03:23.470Z 403 Forbidden for module
+[ERROR] 2026-02-05T10:03:23.557Z 403 Forbidden for module
+[ERROR] 2026-02-05T10:03:23.613Z 403 Forbidden for module
+[ERROR] 2026-02-05T10:21:07.105Z 400 Invalid module key
+[ERROR] 2026-02-05T10:21:12.330Z 403 Forbidden for module
+[ERROR] 2026-02-05T10:21:14.927Z 403 Forbidden for module
+[ERROR] 2026-02-05T10:21:16.310Z 403 Forbidden for module
+[ERROR] 2026-02-05T10:21:42.808Z 400 Invalid module key
+[ERROR] 2026-02-05T10:23:50.632Z 401 Invalid or expired token
+[ERROR] 2026-02-05T10:23:50.635Z 401 Invalid or expired token
+[ERROR] 2026-02-05T10:23:51.527Z 401 Invalid or expired token
+[ERROR] 2026-02-05T10:23:51.529Z 401 Invalid or expired token
+[ERROR] 2026-02-05T10:23:52.322Z 401 Invalid or expired token
+[ERROR] 2026-02-05T10:23:52.325Z 401 Invalid or expired token
+[ERROR] 2026-02-05T10:24:22.939Z 403 Forbidden for module
+[ERROR] 2026-02-05T10:24:22.943Z 403 Forbidden for module
+[ERROR] 2026-02-05T10:24:22.950Z 403 Forbidden for module
+[ERROR] 2026-02-05T10:24:22.957Z 403 Forbidden for module
+[ERROR] 2026-02-05T10:24:51.913Z 403 Forbidden for module
+[ERROR] 2026-02-05T10:24:51.920Z 403 Forbidden for module
+[ERROR] 2026-02-05T10:24:51.927Z 403 Forbidden for module
+[ERROR] 2026-02-05T10:24:51.937Z 403 Forbidden for module
+[ERROR] 2026-02-05T10:27:21.086Z 403 Forbidden for module
+[ERROR] 2026-02-05T10:27:21.090Z 403 Forbidden for module
+[ERROR] 2026-02-05T10:27:21.106Z 403 Forbidden for module
+[ERROR] 2026-02-05T10:27:21.113Z 403 Forbidden for module
+[ERROR] 2026-02-05T10:27:21.118Z 403 Forbidden for module
+[ERROR] 2026-02-05T10:27:21.138Z 403 Forbidden for module
+[ERROR] 2026-02-05T10:27:58.777Z 400 Invalid module key
+[ERROR] 2026-02-05T10:28:09.975Z 403 Forbidden for module
+[ERROR] 2026-02-05T10:28:18.054Z 403 Forbidden for module
+[ERROR] 2026-02-05T10:28:26.816Z 403 Forbidden for module
+[ERROR] 2026-02-05T10:28:26.822Z 403 Forbidden for module
+[ERROR] 2026-02-05T10:28:26.838Z 403 Forbidden for module
+[ERROR] 2026-02-05T10:28:26.852Z 403 Forbidden for module
+[ERROR] 2026-02-05T10:28:26.874Z 403 Forbidden for module
+[ERROR] 2026-02-05T10:28:26.892Z 403 Forbidden for module
+[ERROR] 2026-02-05T10:28:32.448Z 400 Action officer required
+[ERROR] 2026-02-05T10:29:18.813Z 403 Forbidden for module
+[ERROR] 2026-02-05T10:29:25.025Z 403 Forbidden for module
+[ERROR] 2026-02-05T10:29:30.995Z 403 Forbidden for module
+[ERROR] 2026-02-05T10:29:32.799Z 403 Forbidden for module
+[ERROR] 2026-02-05T10:51:18.651Z 403 Forbidden for module
+[ERROR] 2026-02-05T10:51:18.655Z 403 Forbidden for module
+[ERROR] 2026-02-05T10:51:18.657Z 403 Forbidden for module
+[ERROR] 2026-02-05T10:51:18.661Z 403 Forbidden for module
+[ERROR] 2026-02-05T10:51:18.676Z 403 Forbidden for module
+[ERROR] 2026-02-05T10:51:18.698Z 403 Forbidden for module
+[ERROR] 2026-02-05T10:57:46.600Z 403 Forbidden for module
+[ERROR] 2026-02-05T11:10:59.731Z 403 Forbidden for module
+[ERROR] 2026-02-05T11:10:59.846Z 403 Forbidden for module
+[ERROR] 2026-02-05T11:10:59.856Z 403 Forbidden for module
+[ERROR] 2026-02-05T11:10:59.868Z 403 Forbidden for module
+[ERROR] 2026-02-05T11:10:59.913Z 403 Forbidden for module
+[ERROR] 2026-02-05T11:11:00.012Z 403 Forbidden for module
+[ERROR] 2026-02-05T11:23:57.714Z 400 Action officer required
+[ERROR] 2026-02-05T11:24:00.847Z 400 Action officer required
+[ERROR] 2026-02-05T11:24:57.852Z 400 Action officer required
+[ERROR] 2026-02-05T11:35:23.244Z 400 Invalid module key
+[ERROR] 2026-02-05T11:35:55.967Z 400 Invalid module key
+[ERROR] 2026-02-05T11:38:07.798Z 400 Invalid module key
+[ERROR] 2026-02-05T11:38:18.936Z 400 Invalid module key
+[ERROR] 2026-02-05T11:44:15.668Z 400 Invalid module key
+[ERROR] 2026-02-05T11:44:17.098Z 403 Forbidden for module
+[ERROR] 2026-02-05T11:44:24.291Z 403 Forbidden for module
+[ERROR] 2026-02-05T11:47:56.263Z 400 Invalid module key
+[ERROR] 2026-02-05T11:47:57.403Z 403 Forbidden for module
+[ERROR] 2026-02-05T11:48:06.547Z 403 Forbidden for module
+[ERROR] 2026-02-05T11:48:12.594Z 403 Forbidden for module
+[ERROR] 2026-02-05T12:04:13.674Z 400 Action officer required
+[ERROR] 2026-02-05T12:12:46.653Z 401 Invalid or expired token
+[ERROR] 2026-02-05T12:12:46.658Z 401 Invalid or expired token
+[ERROR] 2026-02-05T12:12:50.501Z 401 Invalid or expired token
+[ERROR] 2026-02-05T12:12:50.505Z 401 Invalid or expired token
+[ERROR] 2026-02-05T12:12:51.211Z 401 Invalid or expired token
+[ERROR] 2026-02-05T12:12:51.216Z 401 Invalid or expired token
+[ERROR] 2026-02-05T12:12:51.636Z 401 Invalid or expired token
+[ERROR] 2026-02-05T12:12:51.641Z 401 Invalid or expired token
+[ERROR] 2026-02-05T12:44:34.640Z 403 Forbidden for module
+[ERROR] 2026-02-05T12:44:34.655Z 403 Forbidden for module
+[ERROR] 2026-02-05T12:44:34.695Z 403 Forbidden for module
+[ERROR] 2026-02-05T12:44:34.708Z 403 Forbidden for module
+[ERROR] 2026-02-05T12:44:34.721Z 403 Forbidden for module
+[ERROR] 2026-02-05T12:44:34.757Z 403 Forbidden for module
+[ERROR] 2026-02-05T12:44:55.461Z 400 No Action Officer in this zone
+[ERROR] 2026-02-05T12:44:57.316Z 400 No Action Officer in this zone
+[ERROR] 2026-02-05T12:45:09.145Z 400 No Action Officer in this zone
+[ERROR] 2026-02-05T12:45:24.918Z 400 Beat already assigned
+[ERROR] 2026-02-05T12:48:07.186Z 400 No Action Officer in this zone
+[ERROR] 2026-02-05T12:48:22.276Z 400 No Action Officer in this zone
+[ERROR] 2026-02-05T12:53:36.314Z 403 Forbidden for module
+[ERROR] 2026-02-05T12:53:36.325Z 403 Forbidden for module
+[ERROR] 2026-02-05T12:53:36.336Z 403 Forbidden for module
+[ERROR] 2026-02-05T12:53:36.347Z 403 Forbidden for module
+[ERROR] 2026-02-05T12:55:48.747Z 400 No Action Officer in this zone
+[ERROR] 2026-02-05T12:55:50.658Z 400 No Action Officer in this zone
+[ERROR] 2026-02-05T12:56:11.266Z 400 No Action Officer in this zone
+[ERROR] 2026-02-06T05:04:21.176Z 400 Invalid module key
+[ERROR] 2026-02-06T05:10:18.097Z 400 Invalid module key
+[ERROR] 2026-02-06T05:12:53.381Z 400 Invalid module key
+[ERROR] 2026-02-06T07:13:31.135Z 401 Invalid credentials
+[ERROR] 2026-02-06T12:05:09.025Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:05:09.045Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:05:09.052Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:05:09.059Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:05:10.358Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:05:10.702Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:05:19.964Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:05:19.970Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:05:22.448Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:05:23.049Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:05:23.705Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:05:24.813Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:05:24.820Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:05:24.828Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:05:24.836Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:05:30.870Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:05:30.879Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:05:33.772Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:05:33.776Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:05:33.785Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:05:33.792Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:05:33.798Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:05:33.803Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:05:36.503Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:05:36.510Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:05:36.534Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:05:36.540Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:05:36.553Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:05:36.559Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:05:38.144Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:05:38.152Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:05:38.159Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:05:38.176Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:05:38.183Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:05:38.191Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:05:39.296Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:05:39.303Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:05:39.317Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:05:39.329Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:05:39.338Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:05:39.361Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:05:41.336Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:05:41.343Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:05:41.350Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:05:41.357Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:05:41.364Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:05:41.370Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:05:44.661Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:05:44.667Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:05:44.672Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:05:44.678Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:05:44.683Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:05:44.687Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:05:48.409Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:05:48.415Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:05:48.430Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:05:48.440Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:05:48.449Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:05:48.458Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:05:52.746Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:05:52.750Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:05:55.758Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:05:56.587Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:05:57.294Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:05:57.848Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:05:58.305Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:05:58.918Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:05:59.408Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:05:59.824Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:06:04.294Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:06:04.300Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:15:28.692Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:15:28.700Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:15:28.706Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:15:28.712Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:15:47.783Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:15:47.789Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:18:02.461Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:18:02.471Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:18:02.478Z 401 Invalid or expired token
+[ERROR] 2026-02-06T12:18:02.484Z 401 Invalid or expired token
+[ERROR] 2026-02-09T04:36:09.848Z 401 Invalid credentials

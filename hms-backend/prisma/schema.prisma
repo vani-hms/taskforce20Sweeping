@@ -45,8 +45,12 @@ model City {
   toilets               Toilet[]
   toiletInspections     ToiletInspection[]
   toiletAssignments     ToiletAssignment[]
+  sweepingBeats         SweepingBeat[]
+  sweepingInspections   SweepingInspection[]
+  sweepingActions       SweepingActionResponse[]
 
   @@index([hmsId])
+  @@map("city")
 }
 
 model Module {
@@ -77,34 +81,41 @@ model CityModule {
 }
 
 model User {
-  id                              String                  @id @default(uuid()) @db.Uuid
-  email                           String                  @unique
+  id                              String                   @id @default(uuid()) @db.Uuid
+  email                           String                   @unique
   name                            String
   phone                           String?
   password                        String
-  createdAt                       DateTime                @default(now())
-  updatedAt                       DateTime                @updatedAt
+  createdAt                       DateTime                 @default(now())
+  updatedAt                       DateTime                 @updatedAt
   sweepingRecords                 SweepingRecord[]
   taskforceRecords                TaskforceRecord[]
-  taskforceFeederPointsApproved   TaskforceFeederPoint[]  @relation("TaskforceFeederApprovedBy")
-  taskforceFeederPointsRequested  TaskforceFeederPoint[]  @relation("TaskforceFeederRequestedBy")
-  taskforceFeederReportsSubmitted TaskforceFeederReport[] @relation("TaskforceReportSubmittedBy")
-  taskforceFeederReportsReviewed  TaskforceFeederReport[] @relation("TaskforceReportReviewedBy")
-  twinbinLitterBinsApproved       LitterBin[]             @relation("TwinbinApprovedBy")
-  twinbinLitterBinsRequested      LitterBin[]             @relation("TwinbinRequestedBy")
+  taskforceFeederPointsApproved   TaskforceFeederPoint[]   @relation("TaskforceFeederApprovedBy")
+  taskforceFeederPointsRequested  TaskforceFeederPoint[]   @relation("TaskforceFeederRequestedBy")
+  taskforceFeederReportsSubmitted TaskforceFeederReport[]  @relation("TaskforceReportSubmittedBy")
+  taskforceFeederReportsReviewed  TaskforceFeederReport[]  @relation("TaskforceReportReviewedBy")
+  twinbinLitterBinsApproved       LitterBin[]              @relation("TwinbinApprovedBy")
+  twinbinLitterBinsRequested      LitterBin[]              @relation("TwinbinRequestedBy")
   twinbinRecords                  LitterBinRecord[]
-  twinbinVisitActions             LitterBinVisitReport[]  @relation("TwinbinVisitActionTakenBy")
-  twinbinVisitsReviewed           LitterBinVisitReport[]  @relation("TwinbinVisitReviewedBy")
-  twinbinVisitsSubmitted          LitterBinVisitReport[]  @relation("TwinbinVisitSubmittedBy")
-  twinbinReportsSubmitted         LitterBinReport[]       @relation("TwinbinReportSubmittedBy")
-  twinbinReportsReviewed          LitterBinReport[]       @relation("TwinbinReportReviewedBy")
-  toiletsRequested                Toilet[]                @relation("ToiletRequestedBy")
-  toiletInspections               ToiletInspection[]      @relation("ToiletInspectionBy")
-  toiletInspectionsReviewed       ToiletInspection[]      @relation("ToiletInspectionReviewedBy")
-  toiletInspectionsActionTaken    ToiletInspection[]      @relation("ToiletInspectionActionTakenBy")
-  toiletAssignments               ToiletAssignment[]      @relation("ToiletAssignmentTo")
-  cities                          UserCity[]
-  modules                         UserModuleRole[]
+  twinbinVisitActions             LitterBinVisitReport[]   @relation("TwinbinVisitActionTakenBy")
+  twinbinVisitsReviewed           LitterBinVisitReport[]   @relation("TwinbinVisitReviewedBy")
+  twinbinVisitsSubmitted          LitterBinVisitReport[]   @relation("TwinbinVisitSubmittedBy")
+  twinbinReportsSubmitted         LitterBinReport[]        @relation("TwinbinReportSubmittedBy")
+  twinbinReportsReviewed          LitterBinReport[]        @relation("TwinbinReportReviewedBy")
+  toiletsRequested                Toilet[]                 @relation("ToiletRequestedBy")
+  toiletInspections               ToiletInspection[]       @relation("ToiletInspectionBy")
+  toiletInspectionsReviewed       ToiletInspection[]       @relation("ToiletInspectionReviewedBy")
+  toiletInspectionsActionTaken    ToiletInspection[]       @relation("ToiletInspectionActionTakenBy")
+  toiletAssignments               ToiletAssignment[]       @relation("ToiletAssignmentTo")
+  sweepingBeatsAssigned           SweepingBeat[]           @relation("SweepingBeatAssignedEmployee")
+  sweepingInspections             SweepingInspection[]     @relation("SweepingInspectionEmployee")
+  sweepingQcReviews               SweepingInspection[]     @relation("SweepingInspectionQcReviewer")
+  sweepingActionResponses         SweepingActionResponse[] @relation("SweepingActionOfficer")
+  sweepingActionAssignments       SweepingInspection[]     @relation("SweepingInspectionActionOfficer")
+  qcAssignedBeats                 SweepingBeat[]           @relation("QcBeats")
+
+  cities  UserCity[]
+  modules UserModuleRole[]
 }
 
 model UserCity {
@@ -168,6 +179,7 @@ model GeoNode {
   parent         GeoNode?        @relation("GeoChildren", fields: [parentId], references: [id], onDelete: Cascade)
   children       GeoNode[]       @relation("GeoChildren")
   taskforceCases TaskforceCase[]
+  sweepingBeats  SweepingBeat[]
 
   @@index([cityId, level])
   @@index([cityId, path])
@@ -287,34 +299,34 @@ model LitterBin {
 }
 
 model LitterBinVisitReport {
-  id                String             @id @default(uuid()) @db.Uuid
-  cityId            String             @db.Uuid
-  binId             String             @db.Uuid
-  submittedById     String             @db.Uuid
-  visitedAt         DateTime
-  latitude          Float
-  longitude         Float
-  distanceMeters    Float
-  inspectionAnswers Json
-  status            TwinbinVisitStatus @default(PENDING_QC)
-  actionStatus      ReportActionStatus @default(APPROVED)
-  qcRemark          String?
-  actionTakenById   String?            @db.Uuid
-  actionRemark      String?
-  actionPhotoUrl    String?
-  actionTakenAt     DateTime?
-  reviewedByQcId    String?            @db.Uuid
-  currentOwnerRole  Role               @default(QC)
-  actionOfficerId   String?            @db.Uuid
-  actionOfficerRemark String?
+  id                       String             @id @default(uuid()) @db.Uuid
+  cityId                   String             @db.Uuid
+  binId                    String             @db.Uuid
+  submittedById            String             @db.Uuid
+  visitedAt                DateTime
+  latitude                 Float
+  longitude                Float
+  distanceMeters           Float
+  inspectionAnswers        Json
+  status                   TwinbinVisitStatus @default(PENDING_QC)
+  actionStatus             ReportActionStatus @default(APPROVED)
+  qcRemark                 String?
+  actionTakenById          String?            @db.Uuid
+  actionRemark             String?
+  actionPhotoUrl           String?
+  actionTakenAt            DateTime?
+  reviewedByQcId           String?            @db.Uuid
+  currentOwnerRole         Role               @default(QC)
+  actionOfficerId          String?            @db.Uuid
+  actionOfficerRemark      String?
   actionOfficerRespondedAt DateTime?
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
-  actionTakenBy     User?              @relation("TwinbinVisitActionTakenBy", fields: [actionTakenById], references: [id])
-  bin               LitterBin          @relation(fields: [binId], references: [id], onDelete: Cascade)
-  city              City               @relation(fields: [cityId], references: [id], onDelete: Cascade)
-  reviewedByQc      User?              @relation("TwinbinVisitReviewedBy", fields: [reviewedByQcId], references: [id])
-  submittedBy       User               @relation("TwinbinVisitSubmittedBy", fields: [submittedById], references: [id], onDelete: Cascade)
+  createdAt                DateTime           @default(now())
+  updatedAt                DateTime           @updatedAt
+  actionTakenBy            User?              @relation("TwinbinVisitActionTakenBy", fields: [actionTakenById], references: [id])
+  bin                      LitterBin          @relation(fields: [binId], references: [id], onDelete: Cascade)
+  city                     City               @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  reviewedByQc             User?              @relation("TwinbinVisitReviewedBy", fields: [reviewedByQcId], references: [id])
+  submittedBy              User               @relation("TwinbinVisitSubmittedBy", fields: [submittedById], references: [id], onDelete: Cascade)
 
   @@index([cityId])
   @@index([binId])
@@ -322,26 +334,26 @@ model LitterBinVisitReport {
 }
 
 model LitterBinReport {
-  id             String              @id @default(uuid()) @db.Uuid
-  cityId         String              @db.Uuid
-  binId          String              @db.Uuid
-  submittedById  String              @db.Uuid
-  reviewedByQcId String?             @db.Uuid
-  status         TwinbinReportStatus
-  currentOwnerRole Role              @default(QC)
-  actionOfficerId String?            @db.Uuid
-  actionOfficerRemark String?
+  id                       String              @id @default(uuid()) @db.Uuid
+  cityId                   String              @db.Uuid
+  binId                    String              @db.Uuid
+  submittedById            String              @db.Uuid
+  reviewedByQcId           String?             @db.Uuid
+  status                   TwinbinReportStatus
+  currentOwnerRole         Role                @default(QC)
+  actionOfficerId          String?             @db.Uuid
+  actionOfficerRemark      String?
   actionOfficerRespondedAt DateTime?
-  latitude       Float
-  longitude      Float
-  distanceMeters Float
-  questionnaire  Json
-  createdAt      DateTime            @default(now())
-  reviewedAt     DateTime?
-  bin            LitterBin           @relation(fields: [binId], references: [id], onDelete: Cascade)
-  city           City                @relation(fields: [cityId], references: [id], onDelete: Cascade)
-  submittedBy    User                @relation("TwinbinReportSubmittedBy", fields: [submittedById], references: [id], onDelete: Cascade)
-  reviewedByQc   User?               @relation("TwinbinReportReviewedBy", fields: [reviewedByQcId], references: [id])
+  latitude                 Float
+  longitude                Float
+  distanceMeters           Float
+  questionnaire            Json
+  createdAt                DateTime            @default(now())
+  reviewedAt               DateTime?
+  bin                      LitterBin           @relation(fields: [binId], references: [id], onDelete: Cascade)
+  city                     City                @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  submittedBy              User                @relation("TwinbinReportSubmittedBy", fields: [submittedById], references: [id], onDelete: Cascade)
+  reviewedByQc             User?               @relation("TwinbinReportReviewedBy", fields: [reviewedByQcId], references: [id])
 
   @@index([cityId])
   @@index([binId])
@@ -399,27 +411,27 @@ model TaskforceRecord {
 }
 
 model TaskforceFeederReport {
-  id             String                @id @default(uuid()) @db.Uuid
-  feederPointId  String                @db.Uuid
-  cityId         String                @db.Uuid
-  submittedById  String                @db.Uuid
-  latitude       Float
-  longitude      Float
-  distanceMeters Float
-  payload        Json
-  status         TaskforceReportStatus
-  currentOwnerRole Role                @default(QC)
-  actionOfficerId String?              @db.Uuid
-  actionOfficerRemark String?
+  id                       String                @id @default(uuid()) @db.Uuid
+  feederPointId            String                @db.Uuid
+  cityId                   String                @db.Uuid
+  submittedById            String                @db.Uuid
+  latitude                 Float
+  longitude                Float
+  distanceMeters           Float
+  payload                  Json
+  status                   TaskforceReportStatus
+  currentOwnerRole         Role                  @default(QC)
+  actionOfficerId          String?               @db.Uuid
+  actionOfficerRemark      String?
   actionOfficerRespondedAt DateTime?
-  reviewedByQcId String?               @db.Uuid
-  reviewedAt     DateTime?
-  createdAt      DateTime              @default(now())
-  updatedAt      DateTime              @updatedAt
-  feederPoint    TaskforceFeederPoint  @relation(fields: [feederPointId], references: [id], onDelete: Cascade)
-  city           City                  @relation(fields: [cityId], references: [id], onDelete: Cascade)
-  submittedBy    User                  @relation("TaskforceReportSubmittedBy", fields: [submittedById], references: [id], onDelete: Cascade)
-  reviewedByQc   User?                 @relation("TaskforceReportReviewedBy", fields: [reviewedByQcId], references: [id])
+  reviewedByQcId           String?               @db.Uuid
+  reviewedAt               DateTime?
+  createdAt                DateTime              @default(now())
+  updatedAt                DateTime              @updatedAt
+  feederPoint              TaskforceFeederPoint  @relation(fields: [feederPointId], references: [id], onDelete: Cascade)
+  city                     City                  @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  submittedBy              User                  @relation("TaskforceReportSubmittedBy", fields: [submittedById], references: [id], onDelete: Cascade)
+  reviewedByQc             User?                 @relation("TaskforceReportReviewedBy", fields: [reviewedByQcId], references: [id])
 
   @@index([cityId])
 }
@@ -479,21 +491,21 @@ model Toilet {
 }
 
 model ToiletInspection {
-  id             String           @id @default(uuid()) @db.Uuid
-  cityId         String           @db.Uuid
-  toiletId       String           @db.Uuid
-  employeeId     String           @db.Uuid
-  status         InspectionStatus @default(SUBMITTED)
-  latitude       Float
-  longitude      Float
-  distanceMeters Float?
-  answers        Json?
-  qcComment      String?
-  actionNote     String?
-  reviewedByQcId String?          @db.Uuid
-  actionTakenById String?         @db.Uuid
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
+  id              String           @id @default(uuid()) @db.Uuid
+  cityId          String           @db.Uuid
+  toiletId        String           @db.Uuid
+  employeeId      String           @db.Uuid
+  status          InspectionStatus @default(SUBMITTED)
+  latitude        Float
+  longitude       Float
+  distanceMeters  Float?
+  answers         Json?
+  qcComment       String?
+  actionNote      String?
+  reviewedByQcId  String?          @db.Uuid
+  actionTakenById String?          @db.Uuid
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
 
   toilet        Toilet @relation(fields: [toiletId], references: [id], onDelete: Cascade)
   employee      User   @relation("ToiletInspectionBy", fields: [employeeId], references: [id], onDelete: Cascade)
@@ -530,6 +542,140 @@ model ToiletInspectionQuestion {
   order        Int         @default(0)
   isActive     Boolean     @default(true)
   createdAt    DateTime    @default(now())
+}
+
+model SweepingBeat {
+  id                 String            @id @default(uuid()) @db.Uuid
+  cityId             String            @db.Uuid
+  geoNodeBeatId      String
+  areaType           AreaType
+  assignedEmployeeId String?           @db.Uuid
+  isActive           Boolean           @default(true)
+  assignedAt         DateTime?
+  createdAt          DateTime          @default(now())
+  latitude           Float
+  longitude          Float
+  radiusMeters       Float
+  assignmentStatus   AssignmentStatus?
+  city               City              @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  geoNodeBeat        GeoNode           @relation(fields: [geoNodeBeatId], references: [id], onDelete: Cascade)
+  assignedEmployee   User?             @relation("SweepingBeatAssignedEmployee", fields: [assignedEmployeeId], references: [id])
+  assignedQcId       String?           @db.Uuid
+  assignedQc         User?             @relation("QcBeats", fields: [assignedQcId], references: [id])
+
+  inspections SweepingInspection[]
+
+  @@unique([cityId, geoNodeBeatId])
+  @@index([cityId])
+  @@index([assignedEmployeeId])
+}
+
+model SweepingInspection {
+  id               String                   @id @default(uuid()) @db.Uuid
+  cityId           String                   @db.Uuid
+  sweepingBeatId   String                   @db.Uuid
+  employeeId       String                   @db.Uuid
+  inspectionDate   DateTime                 @db.Date
+  latitude         Float
+  longitude        Float
+  status           SweepingInspectionStatus @default(REVIEW_PENDING)
+  qcReviewedById   String?                  @db.Uuid
+  qcReviewedAt     DateTime?
+  currentOwnerRole Role                     @default(QC)
+  actionOfficerId  String?                  @db.Uuid
+  createdAt        DateTime                 @default(now())
+  updatedAt        DateTime                 @updatedAt
+
+  city         City         @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  sweepingBeat SweepingBeat @relation(fields: [sweepingBeatId], references: [id], onDelete: Cascade)
+
+  employee      User  @relation("SweepingInspectionEmployee", fields: [employeeId], references: [id])
+  qcReviewedBy  User? @relation("SweepingInspectionQcReviewer", fields: [qcReviewedById], references: [id])
+  actionOfficer User? @relation("SweepingInspectionActionOfficer", fields: [actionOfficerId], references: [id])
+
+  answers        SweepingInspectionAnswer[]
+  photos         SweepingInspectionPhoto[]
+  actionResponse SweepingActionResponse?
+  assignmentId   String?                    @db.Uuid
+
+  @@index([status, cityId])
+  @@index([qcReviewedById])
+  @@index([createdAt])
+  @@index([cityId])
+  @@index([sweepingBeatId])
+  @@index([employeeId])
+  @@index([status])
+}
+
+model InspectionAudit {
+  id           String                   @id @default(uuid())
+  inspectionId String
+  fromStatus   SweepingInspectionStatus
+  toStatus     SweepingInspectionStatus
+  actorId      String
+  createdAt    DateTime                 @default(now())
+}
+
+model SweepingInspectionAnswer {
+  id           String   @id @default(uuid()) @db.Uuid
+  inspectionId String   @db.Uuid
+  questionCode String
+  answer       Boolean
+  createdAt    DateTime @default(now())
+
+  inspection SweepingInspection        @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
+  photos     SweepingInspectionPhoto[]
+
+  @@index([inspectionId])
+}
+
+model SweepingInspectionPhoto {
+  id               String   @id @default(uuid()) @db.Uuid
+  inspectionId     String   @db.Uuid
+  answerId         String?  @db.Uuid
+  actionResponseId String?  @db.Uuid
+  photoUrl         String
+  createdAt        DateTime @default(now())
+
+  inspection     SweepingInspection        @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
+  answer         SweepingInspectionAnswer? @relation(fields: [answerId], references: [id], onDelete: Cascade)
+  actionResponse SweepingActionResponse?   @relation(fields: [actionResponseId], references: [id], onDelete: Cascade)
+
+  @@index([inspectionId])
+  @@index([answerId])
+}
+
+model SweepingActionResponse {
+  id              String   @id @default(uuid()) @db.Uuid
+  cityId          String   @db.Uuid
+  inspectionId    String   @unique @db.Uuid
+  actionOfficerId String   @db.Uuid
+  remarks         String
+  submittedAt     DateTime
+  createdAt       DateTime @default(now())
+
+  city          City               @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  inspection    SweepingInspection @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
+  actionOfficer User               @relation("SweepingActionOfficer", fields: [actionOfficerId], references: [id])
+
+  photos SweepingInspectionPhoto[]
+
+  @@index([cityId])
+  @@index([actionOfficerId])
+}
+
+enum SweepingInspectionStatus {
+  SUBMITTED
+  APPROVED
+  REJECTED
+  ACTION_REQUIRED
+  ACTION_SUBMITTED
+  REVIEW_PENDING
+}
+
+enum AssignmentStatus {
+  ACTIVE
+  COMPLETED
 }
 
 enum Role {

@@ -119,7 +119,7 @@ async function main() {
   });
 
   // Assign Employee Role to Taskforce & Toilet & Litterbins
-  const empModules = ["TASKFORCE", "TOILET", "LITTERBINS"];
+  const empModules = ["TASKFORCE", "TOILET", "LITTERBINS", "SWEEPING", "SWEEP_RES", "SWEEP_COM"];
 
   // Check if UserCity exists for Employee
   await prisma.userCity.upsert({

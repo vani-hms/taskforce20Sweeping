@@ -988,3 +988,15 @@ label {
     grid-column: span 2 / span 2;
   }
 }
+
+.qc-bar {
+  height: 10px;
+  background: #e5e7eb;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.qc-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #2563eb, #1e3a8a);
+}

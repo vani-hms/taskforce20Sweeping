@@ -1,9 +1,8 @@
 import React, { useEffect, useRef } from "react";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../../../navigation";
-import { SweepingResHome, SweepingComHome } from "../../sweeping";
 import { useAuthContext } from "../../../auth/AuthProvider";
-import { View, Text } from "react-native";
+import { View, Text, ActivityIndicator } from "react-native";
 import { normalizeModuleKey } from "../moduleUtils";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Module">;
@@ -12,54 +11,62 @@ export default function ModuleHomeWrapper({ route, navigation }: Props) {
   const { moduleKey } = route.params;
   const key = normalizeModuleKey(moduleKey);
   const { auth } = useAuthContext();
+
   const roles = auth.status === "authenticated" ? auth.roles || [] : [];
   const assignments = auth.status === "authenticated" ? auth.modules || [] : [];
-  const assigned = assignments.find((m) => normalizeModuleKey(m.key) === key);
+  const assigned = assignments.find(m => normalizeModuleKey(m.key) === key);
+
   const hasRouted = useRef(false);
 
   useEffect(() => {
-    if (hasRouted.current) return;
-    if (!assigned) return;
+    if (hasRouted.current || !assigned) return;
+
+    hasRouted.current = true;
 
     if (key === "LITTERBINS") {
-      hasRouted.current = true;
-      navigation.navigate((roles || []).includes("QC") ? "TwinbinQcHome" : "TwinbinHome");
+      navigation.replace(roles.includes("QC") ? "TwinbinQcHome" : "TwinbinHome");
       return;
     }
-    if (key === "TASKFORCE") {
-      hasRouted.current = true;
-      navigation.navigate((roles || []).includes("QC") ? "TaskforceQcReports" : "TaskforceHome");
+
+    if (key === "TASKFORCE" || key === "CTU_GVP_TRANSFORMATION") {
+      navigation.replace(roles.includes("QC") ? "TaskforceQcReports" : "TaskforceHome");
       return;
     }
-    if (key === "CTU_GVP_TRANSFORMATION") {
-      hasRouted.current = true;
-      navigation.navigate((roles || []).includes("QC") ? "TaskforceQcReports" : "TaskforceHome");
-      return;
-    }
+
     if (key === "TOILET") {
-      hasRouted.current = true;
-      navigation.navigate((roles || []).includes("QC") ? "ToiletQcTabs" : "ToiletEmployeeTabs");
+      navigation.replace(roles.includes("QC") ? "ToiletQcTabs" : "ToiletEmployeeTabs");
+      return;
+    }
+
+    if (key === "SWEEPING") {
+      navigation.replace(roles.includes("QC") ? "QcSweepingHome" : "SweepingBeats");
       return;
     }
   }, [assigned, key, navigation, roles]);
 
-  if (key === "SWEEP_RES") return <SweepingResHome navigation={navigation} />;
-  if (key === "SWEEP_COM") return <SweepingComHome navigation={navigation} />;
 
-  if (hasRouted.current) return null;
-  if (auth.status === "loading") {
+
+
+  /* ROUTING LOADER */
+
+  if (auth.status === "loading" || hasRouted.current) {
     return (
-      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: "#f5f7fb" }}>
-        <Text>Loading...</Text>
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color="#2563eb" />
+        <Text style={styles.loading}>Opening module…</Text>
       </View>
     );
   }
+
+  /* ACCESS DENIED */
+
   if (!assigned) {
     return (
-      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 24, backgroundColor: "#f5f7fb" }}>
-        <Text style={{ fontSize: 16, fontWeight: "600", marginBottom: 8 }}>Module access required</Text>
-        <Text style={{ color: "#4b5563", textAlign: "center" }}>
-          You are not assigned to this module. Please check with your administrator.
+      <View style={styles.center}>
+        <Text style={styles.title}>Access Required</Text>
+        <Text style={styles.sub}>
+          You are not assigned to this module.
+          Please contact City Admin.
         </Text>
       </View>
     );
@@ -67,3 +74,28 @@ export default function ModuleHomeWrapper({ route, navigation }: Props) {
 
   return null;
 }
+
+const styles = {
+  center: {
+    flex: 1,
+    backgroundColor: "#f5f7fb",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
+    padding: 24
+  },
+  loading: {
+    marginTop: 12,
+    fontWeight: "600" as const,
+    color: "#2563eb"
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: "700" as const,
+    marginBottom: 6
+  },
+  sub: {
+    color: "#4b5563",
+    textAlign: "center" as const,
+    lineHeight: 20
+  }
+};

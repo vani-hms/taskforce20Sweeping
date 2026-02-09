@@ -381,3 +381,108 @@ export async function getTaskforceRecords(filters?: { page?: number; limit?: num
     stats: { pending: number; approved: number; rejected: number; actionRequired: number; total: number };
   }>(`/modules/taskforce/records?${params.toString()}`);
 }
+export async function listSweepingBeats() {
+  return request<{ beats: any[] }>("/modules/sweeping/employee/beats");
+}
+export async function submitSweepingInspection(body: {
+  sweepingBeatId: string;
+  latitude: number;
+  longitude: number;
+  answers: {
+    questionCode: string;
+    answer: boolean;
+    photos: string[];
+  }[];
+}) {
+  return request<{ inspection: any }>("/modules/sweeping/inspections/submit", {
+    method: "POST",
+    body: JSON.stringify(body)
+  });
+}
+export async function listSweepingQcInspections() {
+  return request<{ inspections: any[] }>("/modules/sweeping/qc/inspections");
+}
+export async function sweepingQcDecision(
+  inspectionId: string,
+  decision: "APPROVED" | "REJECTED" | "ACTION_REQUIRED",
+  actionOfficerId?: string
+)
+ {
+  return request<{ inspection: any }>(`/modules/sweeping/qc/inspections/${inspectionId}/decision`, {
+    method: "POST",
+    body: JSON.stringify({ decision })
+  });
+}
+export async function listSweepingActionRequired() {
+  return request<{ inspections: any[] }>("/modules/sweeping/action/required");
+}
+export async function submitSweepingAction(
+  inspectionId: string,
+  body: { remarks: string; photos: string[] }
+) {
+  return request<{ actionResponse: any }>(`/modules/sweeping/action/${inspectionId}/respond`, {
+    method: "POST",
+    body: JSON.stringify(body)
+  });
+}
+export async function uploadSweepingKml(wardId: string, file: FormData) {
+  const token = await getToken();
+  const res = await fetch(
+    `${API_BASE_URL}/modules/sweeping/admin/upload-kml/${wardId}`,
+    {
+      method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: file
+    }
+  );
+
+  if (!res.ok) throw new ApiError(res.status, await res.text());
+  return res.json();
+}
+export async function assignSweepingBeat(body: {
+  sweepingBeatId: string;
+  employeeId: string;
+}) {
+  return request<{ beat: any }>("/modules/sweeping/admin/assign-beat", {
+    method: "POST",
+    body: JSON.stringify(body)
+  });
+}
+// ================= SWEEPING DASHBOARD =================
+
+export async function sweepingDashboardSummary() {
+  return request<{
+    totalBeats: number;
+    activeBeats: number;
+    pendingQc: number;
+    actionRequired: number;
+    approvedToday: number;
+  }>("/modules/sweeping/dashboard/summary");
+}
+
+export async function sweepingDashboardQcLoad() {
+  return request<{ qcLoad: { qcReviewedById: string | null; _count: number }[] }>(
+    "/modules/sweeping/dashboard/qc-load"
+  );
+}
+
+export async function sweepingDashboardWardRanking() {
+  return request<{ wardRanking: Record<string, number> }>(
+    "/modules/sweeping/dashboard/ward-ranking"
+  );
+}
+
+export async function sweepingDashboardBeatProgress() {
+  return request<{
+    total: number;
+    active: number;
+    completed: number;
+    notStarted: number;
+  }>("/modules/sweeping/dashboard/beat-progress");
+}
+
+export async function sweepingDashboardEvidenceToday() {
+  return request<{ photosToday: number }>(
+    "/modules/sweeping/dashboard/evidence-today"
+  );
+}

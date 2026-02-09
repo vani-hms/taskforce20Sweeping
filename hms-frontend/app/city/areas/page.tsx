@@ -1,7 +1,9 @@
 'use client';
 
 import { useEffect, useMemo, useState } from "react";
-import { ApiError, GeoApi } from "@lib/apiClient";
+import { ApiError, GeoApi, SweepingApi, apiFetch } from "@lib/apiClient";
+import { getTokenFromCookies } from "@lib/auth";
+
 
 type GeoNode = { id: string; name: string; parentId?: string | null; level: string; areaType?: string };
 
@@ -10,6 +12,7 @@ const AREA_TYPES = [
   { label: "Commercial", value: "COMMERCIAL" },
   { label: "Slum", value: "SLUM" }
 ];
+
 
 interface EditState {
   id: string;
@@ -33,13 +36,18 @@ export default function AreasPage() {
   const [areaStatus, setAreaStatus] = useState("");
   const [savingArea, setSavingArea] = useState(false);
 
+
   // Create Beat
+  const [kmlWardId, setKmlWardId] = useState("");
   const [zoneForBeat, setZoneForBeat] = useState("");
   const [wardForBeat, setWardForBeat] = useState("");
   const [areaForBeat, setAreaForBeat] = useState("");
   const [beatName, setBeatName] = useState("");
   const [beatStatus, setBeatStatus] = useState("");
   const [savingBeat, setSavingBeat] = useState(false);
+  const [beatFile, setBeatFile] = useState<File | null>(null);
+  const [uploadStatus, setUploadStatus] = useState("");
+
 
   // Edit / Delete
   const [editing, setEditing] = useState<EditState | null>(null);
@@ -142,6 +150,50 @@ export default function AreasPage() {
       setSavingBeat(false);
     }
   };
+
+  const handleUploadBeat = async (e: React.FormEvent) => {
+  e.preventDefault();
+  if (!beatFile) return;
+
+  const form = new FormData();
+  form.append("file", beatFile);
+
+  setUploadStatus("Uploading...");
+
+  try {
+    const token = getTokenFromCookies(); // ✅ SAME AS apiFetch
+
+    if (!token) throw new Error("Auth token missing");
+
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000"}/modules/sweeping/admin/upload-kml`
+, {
+      method: "POST",
+      body: form,
+      headers: {
+        Authorization: `Bearer ${token}` // ✅ REQUIRED
+      }
+      // ❌ no Content-Type
+    });
+
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(text);
+    }
+
+    const data = await res.json();
+
+    alert(`Upload successful. Created ${data.createdBeats} beats`);
+
+    setBeatFile(null);
+    setUploadStatus("");
+    await loadGeo();
+
+  } catch (err: any) {
+    console.error(err);
+    setUploadStatus(err.message || "Upload failed");
+  }
+};
+
 
   const startEdit = (node: GeoNode) => {
     setEditing({ id: node.id, name: node.name, areaType: node.areaType });
@@ -425,10 +477,53 @@ export default function AreasPage() {
 
         <div className="card">
           <h3>Beat</h3>
+
+          {/* ================= KML UPLOAD ================= */}
+
+          <form onSubmit={handleUploadBeat} className="form" style={{ marginBottom: 12 }}>
+            <label>Upload Beat KML</label>
+
+            <label>Select Ward (required for KML)</label>
+            <select
+              className="input"
+              value={kmlWardId}
+              onChange={(e) => setKmlWardId(e.target.value)}
+            >
+              <option value="">Select ward</option>
+              {wards.map((w) => (
+                <option key={w.id} value={w.id}>
+                  {w.name}
+                </option>
+              ))}
+            </select>
+
+            <input
+              type="file"
+              accept=".kml"
+              onChange={(e) => setBeatFile(e.target.files?.[0] || null)}
+            />
+
+            <button
+              className="btn btn-secondary"
+              type="submit"
+              disabled={!beatFile}
+            >
+              Upload Beat File
+            </button>
+
+            {uploadStatus && <div className="muted">{uploadStatus}</div>}
+          </form>
+
+          <hr style={{ margin: "12px 0" }} />
+
+          {/* ================= MANUAL BEAT CREATION ================= */}
+
           <p className="muted" style={{ marginTop: -6 }}>
             Create beats under area names.
           </p>
+
           <form onSubmit={handleCreateBeat} className="form">
+
             <label>Select Zone</label>
             <select
               className="input"
@@ -500,9 +595,11 @@ export default function AreasPage() {
             >
               {savingBeat ? "Saving..." : "Create Beat"}
             </button>
+
             {beatStatus && <div className="muted">{beatStatus}</div>}
           </form>
         </div>
+
       </div>
 
       <div className="card">
@@ -512,3 +609,4 @@ export default function AreasPage() {
     </div>
   );
 }
+

@@ -11,15 +11,31 @@ export class ApiError extends Error {
   }
 }
 
+// async function buildHeaders(initHeaders?: HeadersInit) {
+//   const token = getTokenFromCookies();
+//   const headers: HeadersInit = {
+//     "Content-Type": "application/json",
+//     ...(token ? { Authorization: `Bearer ${token}` } : {}),
+//     ...initHeaders
+//   };
+//   return headers;
+// }
 async function buildHeaders(initHeaders?: HeadersInit) {
   const token = getTokenFromCookies();
+
   const headers: HeadersInit = {
-    "Content-Type": "application/json",
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...initHeaders
   };
+
+  // Only add JSON content-type if not FormData
+  if (!(initHeaders instanceof FormData)) {
+    (headers as any)["Content-Type"] = "application/json";
+  }
+
   return headers;
 }
+
 
 export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
   const headers = await buildHeaders(init.headers);
@@ -426,4 +442,144 @@ export const TwinbinApi = {
       method: "POST",
       body: JSON.stringify(body || {})
     })
+};
+
+export const SweepingApi = {
+  /* =====================================================
+     EMPLOYEE
+  ===================================================== */
+
+  listMyBeats: () =>
+    apiFetch<{ beats: any[] }>("/modules/sweeping/employee/beats"),
+
+  submitInspection: (body: {
+    sweepingBeatId: string;
+    latitude: number;
+    longitude: number;
+    answers: {
+      questionCode: string;
+      answer: boolean;
+      photos: string[];
+    }[];
+  }) =>
+    apiFetch<{ inspection: any }>("/modules/sweeping/inspections/submit", {
+      method: "POST",
+      body: JSON.stringify(body)
+    }),
+
+  /* =====================================================
+     QC
+  ===================================================== */
+
+  qcInspections: () =>
+    apiFetch<{ inspections: any[] }>("/modules/sweeping/qc/inspections"),
+
+  qcDecision: (
+    inspectionId: string,
+    decision: "APPROVED" | "REJECTED" | "ACTION_REQUIRED",
+    actionOfficerId?: string
+  ) =>
+    apiFetch<{ inspection: any }>(
+      `/modules/sweeping/qc/inspections/${inspectionId}/decision`,
+      {
+        method: "POST",
+        body: JSON.stringify({ decision, actionOfficerId })
+      }
+    ),
+
+  qcActionReview: (
+    inspectionId: string,
+    decision: "APPROVED" | "REJECTED"
+  ) =>
+    apiFetch<{ inspection: any }>(
+      `/modules/sweeping/qc/action-review/${inspectionId}`,
+      {
+        method: "POST",
+        body: JSON.stringify({ decision })
+      }
+    ),
+
+  qcBeats: () =>
+    apiFetch<{ beats: any[] }>("/modules/sweeping/qc/beats"),
+
+  assignBeat: (body: { sweepingBeatId: string; employeeId: string }) =>
+    apiFetch<{ beat: any }>("/modules/sweeping/qc/assign-beat", {
+      method: "POST",
+      body: JSON.stringify(body)
+    }),
+
+  /* =====================================================
+     ACTION OFFICER
+  ===================================================== */
+
+  actionRequired: () =>
+    apiFetch<{ inspections: any[] }>("/modules/sweeping/action/required"),
+
+  submitAction: (
+    inspectionId: string,
+    body: { remarks: string; photos: string[] }
+  ) =>
+    apiFetch<{ actionResponse: any }>(
+      `/modules/sweeping/action/${inspectionId}/respond`,
+      {
+        method: "POST",
+        body: JSON.stringify(body)
+      }
+    ),
+
+  /* =====================================================
+     ADMIN
+  ===================================================== */
+
+  uploadKml: (file: FormData) =>
+    apiFetch<{ createdBeats: number }>("/modules/sweeping/admin/upload-kml", {
+      method: "POST",
+      body: file,
+      headers: {} // IMPORTANT: let browser set multipart boundary
+    }),
+
+  /* =====================================================
+     DASHBOARD
+  ===================================================== */
+
+  dashboardSummary: () =>
+    apiFetch("/modules/sweeping/dashboard/summary"),
+
+  qcLoad: () =>
+    apiFetch("/modules/sweeping/dashboard/qc-load"),
+
+  wardRanking: () =>
+    apiFetch("/modules/sweeping/dashboard/ward-ranking"),
+
+  beatProgress: () =>
+    apiFetch("/modules/sweeping/dashboard/beat-progress"),
+
+  evidenceToday: () =>
+    apiFetch("/modules/sweeping/dashboard/evidence-today"),
+
+  dashboardMapBeats: () =>
+    apiFetch<{ beats: any[] }>("/modules/sweeping/dashboard/map-beats"),
+
+  dashboardZoneHeatmap: () =>
+    apiFetch("/modules/sweeping/dashboard/zone-heatmap"),
+
+  dashboardEmployeeTracking: () =>
+    apiFetch("/modules/sweeping/dashboard/employee-tracking"),
+
+  dashboardQcSla: () =>
+    apiFetch("/modules/sweeping/dashboard/qc-sla"),
+
+  dashboardWardLeaderboard: () =>
+    apiFetch("/modules/sweeping/dashboard/ward-leaderboard"),
+
+  dashboardZonePolygons: () =>
+    apiFetch("/modules/sweeping/dashboard/zone-polygons"),
+
+  dashboardQcLoad: () =>
+    apiFetch("/modules/sweeping/dashboard/qc-load"),
+
+  dashboardWardRanking: () =>
+    apiFetch("/modules/sweeping/dashboard/ward-ranking"),
+
+
 };

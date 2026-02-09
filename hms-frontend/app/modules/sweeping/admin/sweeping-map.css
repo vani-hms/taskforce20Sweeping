@@ -1,0 +1,34 @@
+/* sweeping map only */
+
+.sweeping-map {
+  height: 420px;
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.map-legend {
+  display: flex;
+  gap: 12px;
+  margin-top: 10px;
+  font-size: 13px;
+}
+
+.map-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.dot-pending {
+  background: #f59e0b;
+}
+
+.dot-approved {
+  background: #16a34a;
+}
+
+.dot-rejected {
+  background: #dc2626;
+}

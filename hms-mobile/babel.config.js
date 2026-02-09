@@ -8,10 +8,11 @@ module.exports = function (api) {
         {
           root: ["./src"],
           alias: {
-            "@": "./src/modules/taskforce"
-          }
-        }
-      ]
-    ]
+            "@": "./src/modules/taskforce",
+          },
+        },
+      ],
+      "react-native-reanimated/plugin"  // ⚠ MUST be last
+    ],
   };
 };

@@ -9,6 +9,7 @@ export function normalizeModuleKey(key: string) {
   return LEGACY_MAP[upper] || upper;
 }
 
+
 export function canonicalizeModules<T extends { key: string }>(modules: T[] = []) {
   const map = new Map<string, T & { key: string }>();
   modules.forEach((mod) => {

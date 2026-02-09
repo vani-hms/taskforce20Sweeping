@@ -556,6 +556,7 @@ model SweepingBeat {
   latitude           Float
   longitude          Float
   radiusMeters       Float
+  geometry           Json?
   assignmentStatus   AssignmentStatus?
   city               City              @relation(fields: [cityId], references: [id], onDelete: Cascade)
   geoNodeBeat        GeoNode           @relation(fields: [geoNodeBeatId], references: [id], onDelete: Cascade)
@@ -585,6 +586,7 @@ model SweepingInspection {
   actionOfficerId  String?                  @db.Uuid
   createdAt        DateTime                 @default(now())
   updatedAt        DateTime                 @updatedAt
+  audits           InspectionAudit[]
 
   city         City         @relation(fields: [cityId], references: [id], onDelete: Cascade)
   sweepingBeat SweepingBeat @relation(fields: [sweepingBeatId], references: [id], onDelete: Cascade)
@@ -608,12 +610,16 @@ model SweepingInspection {
 }
 
 model InspectionAudit {
-  id           String                   @id @default(uuid())
-  inspectionId String
+  id           String                   @id @default(uuid()) @db.Uuid
+  inspectionId String                   @db.Uuid
   fromStatus   SweepingInspectionStatus
   toStatus     SweepingInspectionStatus
-  actorId      String
+  actorId      String                   @db.Uuid
   createdAt    DateTime                 @default(now())
+
+  inspection SweepingInspection @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
+
+  @@index([inspectionId])
 }
 
 model SweepingInspectionAnswer {
@@ -662,6 +668,18 @@ model SweepingActionResponse {
 
   @@index([cityId])
   @@index([actionOfficerId])
+}
+
+model SweepingInspectionQuestion {
+  id           String   @id @default(uuid()) @db.Uuid
+  questionCode String   @unique
+  text         String
+  type         String   @default("YES_NO") // YES_NO, TEXT, OPTIONS
+  options      String[] @default([])
+  requirePhoto Boolean  @default(false)
+  order        Int      @default(0)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
 }
 
 enum SweepingInspectionStatus {

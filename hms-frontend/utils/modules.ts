@@ -78,6 +78,7 @@ export function moduleAdminPath(key: CanonicalModuleKey) {
   const base = routeForModule(key);
 
   if (key === "TOILET") return `/modules/${base}`;
+  if (key === "SWEEPING") return `/modules/${base}`;
 
   // Sweeping now behaves like all other modules
   return `/modules/${base}/admin`;

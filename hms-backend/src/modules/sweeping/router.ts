@@ -63,8 +63,17 @@ router.post(
       const geo = toGeoJSON.kml(dom);
 
       console.log("GeoJSON features count:", geo.features.length);
+      console.log("Provided Ward ID:", req.body.wardId);
 
       let created = 0;
+
+      // 🔍 Find parent ward
+      let parentWardNode: any = null;
+      if (req.body.wardId) {
+        parentWardNode = await prisma.geoNode.findUnique({
+          where: { id: req.body.wardId }
+        });
+      }
 
       for (const f of geo.features) {
         if (!f.geometry) continue;
@@ -73,25 +82,25 @@ router.post(
 
         console.log("\nProcessing:", beatName);
 
-        const wardMatch = beatName.match(/(\d+)/);
+        let wardNode = parentWardNode;
 
-        if (!wardMatch) {
-          console.log("❌ Cannot detect ward from:", beatName);
-          continue;
+        // If no explicit ward provided, try regex match
+        if (!wardNode) {
+          const wardMatch = beatName.match(/(\d+)/);
+          if (wardMatch) {
+            const wardNumber = wardMatch[1];
+            wardNode = await prisma.geoNode.findFirst({
+              where: {
+                cityId,
+                level: "WARD",
+                name: { contains: wardNumber }
+              }
+            });
+          }
         }
 
-        const wardNumber = wardMatch[1];
-
-        const wardNode = await prisma.geoNode.findFirst({
-          where: {
-            cityId,
-            level: "WARD",
-            name: { contains: wardNumber }
-          }
-        });
-
         if (!wardNode) {
-          console.log("❌ Ward not found:", wardNumber);
+          console.log("❌ Ward not found for beat:", beatName);
           continue;
         }
 
@@ -122,7 +131,7 @@ router.post(
             parentId: wardNode.id,
             level: "BEAT",
             name: beatName,
-            path: `BEAT_${Date.now()}`,
+            path: `BEAT_${Date.now()}_${Math.random().toString(36).substring(7)}`,
             areaType: "RESIDENTIAL"
           }
         });
@@ -844,20 +853,34 @@ router.post(
 router.get("/qc/beats", async (req, res, next) => {
   try {
     const cityId = req.auth!.cityId!;
-    const qcId = req.auth!.sub!;
+    const userId = req.auth!.sub!;
     const moduleId = await getModuleIdByName(MODULE_KEY);
 
     await assertModuleAccess(req, res, moduleId, [Role.QC]);
 
+    const scope = await getQcScope({ userId, cityId, moduleId });
+
+    if (!scope.zoneIds.length && !scope.wardIds.length) {
+      return res.json({ beats: [] });
+    }
+
     const beats = await prisma.sweepingBeat.findMany({
       where: {
         cityId,
-        assignedQcId: qcId
+        geoNodeBeat: {
+          parent: {
+            OR: [
+              ...(scope.wardIds.length ? [{ id: { in: scope.wardIds } }] : []),
+              ...(scope.zoneIds.length ? [{ parentId: { in: scope.zoneIds } }] : [])
+            ]
+          }
+        }
       },
       include: {
         geoNodeBeat: true,
         assignedEmployee: true
-      }
+      },
+      orderBy: { createdAt: "desc" }
     });
 
     res.json({ beats });

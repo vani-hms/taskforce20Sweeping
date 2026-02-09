@@ -152,47 +152,48 @@ export default function AreasPage() {
   };
 
   const handleUploadBeat = async (e: React.FormEvent) => {
-  e.preventDefault();
-  if (!beatFile) return;
+    e.preventDefault();
+    if (!beatFile) return;
 
-  const form = new FormData();
-  form.append("file", beatFile);
+    const form = new FormData();
+    form.append("file", beatFile);
+    if (kmlWardId) form.append("wardId", kmlWardId);
 
-  setUploadStatus("Uploading...");
+    setUploadStatus("Uploading...");
 
-  try {
-    const token = getTokenFromCookies(); // ✅ SAME AS apiFetch
+    try {
+      const token = getTokenFromCookies(); // ✅ SAME AS apiFetch
 
-    if (!token) throw new Error("Auth token missing");
+      if (!token) throw new Error("Auth token missing");
 
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000"}/modules/sweeping/admin/upload-kml`
-, {
-      method: "POST",
-      body: form,
-      headers: {
-        Authorization: `Bearer ${token}` // ✅ REQUIRED
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000"}/modules/sweeping/admin/upload-kml`
+        , {
+          method: "POST",
+          body: form,
+          headers: {
+            Authorization: `Bearer ${token}` // ✅ REQUIRED
+          }
+          // ❌ no Content-Type
+        });
+
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text);
       }
-      // ❌ no Content-Type
-    });
 
-    if (!res.ok) {
-      const text = await res.text();
-      throw new Error(text);
+      const data = await res.json();
+
+      alert(`Upload successful. Created ${data.createdBeats} beats`);
+
+      setBeatFile(null);
+      setUploadStatus("");
+      await loadGeo();
+
+    } catch (err: any) {
+      console.error(err);
+      setUploadStatus(err.message || "Upload failed");
     }
-
-    const data = await res.json();
-
-    alert(`Upload successful. Created ${data.createdBeats} beats`);
-
-    setBeatFile(null);
-    setUploadStatus("");
-    await loadGeo();
-
-  } catch (err: any) {
-    console.error(err);
-    setUploadStatus(err.message || "Upload failed");
-  }
-};
+  };
 
 
   const startEdit = (node: GeoNode) => {

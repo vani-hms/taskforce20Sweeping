@@ -143,7 +143,8 @@ router.post(
             areaType: "RESIDENTIAL",
             latitude: lat,
             longitude: lng,
-            radiusMeters: 10
+            radiusMeters: 10,
+            geometry: f.geometry as any // 🗺️ Store full geometry for visualization
           }
         });
 

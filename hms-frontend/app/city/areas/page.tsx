@@ -394,8 +394,25 @@ export default function AreasPage() {
           <span>/</span>
           <span>Area & Beat Management</span>
         </div>
-        <h2 style={{ marginBottom: 4 }}>Area & Beat Management</h2>
-        <p className="muted">Manage area types and beats under wards for the active city.</p>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+          <div>
+            <h2 style={{ marginBottom: 4 }}>Area & Beat Management</h2>
+            <p className="muted">Manage area types and beats under wards for the active city.</p>
+          </div>
+          <a href="/city/areas/beats" style={{ textDecoration: 'none' }}>
+            <button className="btn btn-primary" style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+              fontWeight: 600,
+              padding: '12px 24px',
+              boxShadow: '0 4px 6px -1px rgb(59 130 246 / 0.3)'
+            }}>
+              🗺️ Upload Beat KML
+            </button>
+          </a>
+        </div>
       </div>
 
       <div className="grid grid-2">

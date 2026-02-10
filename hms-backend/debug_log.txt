@@ -415,3 +415,97 @@ SyntaxError: Unexpected token '-', "------WebK"... is not valid JSON
 [ERROR] 2026-02-09T09:56:38.963Z 401 Invalid credentials
 [ERROR] 2026-02-09T09:56:51.857Z 401 Invalid credentials
 [ERROR] 2026-02-09T09:57:16.656Z 401 Invalid credentials
+[ERROR] 2026-02-09T15:15:48.571Z 500 
+Invalid `prisma.sweepingBeat.findMany()` invocation in
+/Users/Developer/insstanto/beat_module/taskforce20Sweeping/hms-backend/src/modules/sweeping/router.ts:1361:45
+
+  1358   Role.COMMISSIONER
+  1359 ]);
+  1360 
+→ 1361 const beats = await prisma.sweepingBeat.findMany(
+The column `SweepingBeat.geometry` does not exist in the current database.
+PrismaClientKnownRequestError: 
+Invalid `prisma.sweepingBeat.findMany()` invocation in
+/Users/Developer/insstanto/beat_module/taskforce20Sweeping/hms-backend/src/modules/sweeping/router.ts:1361:45
+
+  1358   Role.COMMISSIONER
+  1359 ]);
+  1360 
+→ 1361 const beats = await prisma.sweepingBeat.findMany(
+The column `SweepingBeat.geometry` does not exist in the current database.
+    at _n.handleRequestError (/Users/Developer/insstanto/beat_module/taskforce20Sweeping/hms-backend/generated/prisma/runtime/library.js:121:7749)
+    at _n.handleAndLogRequestError (/Users/Developer/insstanto/beat_module/taskforce20Sweeping/hms-backend/generated/prisma/runtime/library.js:121:7057)
+    at _n.request (/Users/Developer/insstanto/beat_module/taskforce20Sweeping/hms-backend/generated/prisma/runtime/library.js:121:6741)
+    at async l (/Users/Developer/insstanto/beat_module/taskforce20Sweeping/hms-backend/generated/prisma/runtime/library.js:130:9355)
+    at async /Users/Developer/insstanto/beat_module/taskforce20Sweeping/hms-backend/src/modules/sweeping/router.ts:1361:19
+[ERROR] 2026-02-09T15:15:48.575Z 500 
+Invalid `prisma.sweepingBeat.findMany()` invocation in
+/Users/Developer/insstanto/beat_module/taskforce20Sweeping/hms-backend/src/modules/sweeping/router.ts:1361:45
+
+  1358   Role.COMMISSIONER
+  1359 ]);
+  1360 
+→ 1361 const beats = await prisma.sweepingBeat.findMany(
+The column `SweepingBeat.geometry` does not exist in the current database.
+PrismaClientKnownRequestError: 
+Invalid `prisma.sweepingBeat.findMany()` invocation in
+/Users/Developer/insstanto/beat_module/taskforce20Sweeping/hms-backend/src/modules/sweeping/router.ts:1361:45
+
+  1358   Role.COMMISSIONER
+  1359 ]);
+  1360 
+→ 1361 const beats = await prisma.sweepingBeat.findMany(
+The column `SweepingBeat.geometry` does not exist in the current database.
+    at _n.handleRequestError (/Users/Developer/insstanto/beat_module/taskforce20Sweeping/hms-backend/generated/prisma/runtime/library.js:121:7749)
+    at _n.handleAndLogRequestError (/Users/Developer/insstanto/beat_module/taskforce20Sweeping/hms-backend/generated/prisma/runtime/library.js:121:7057)
+    at _n.request (/Users/Developer/insstanto/beat_module/taskforce20Sweeping/hms-backend/generated/prisma/runtime/library.js:121:6741)
+    at async l (/Users/Developer/insstanto/beat_module/taskforce20Sweeping/hms-backend/generated/prisma/runtime/library.js:130:9355)
+    at async /Users/Developer/insstanto/beat_module/taskforce20Sweeping/hms-backend/src/modules/sweeping/router.ts:1361:19
+[ERROR] 2026-02-09T15:16:18.579Z 500 
+Invalid `prisma.sweepingBeat.findMany()` invocation in
+/Users/Developer/insstanto/beat_module/taskforce20Sweeping/hms-backend/src/modules/sweeping/router.ts:1361:45
+
+  1358   Role.COMMISSIONER
+  1359 ]);
+  1360 
+→ 1361 const beats = await prisma.sweepingBeat.findMany(
+The column `SweepingBeat.geometry` does not exist in the current database.
+PrismaClientKnownRequestError: 
+Invalid `prisma.sweepingBeat.findMany()` invocation in
+/Users/Developer/insstanto/beat_module/taskforce20Sweeping/hms-backend/src/modules/sweeping/router.ts:1361:45
+
+  1358   Role.COMMISSIONER
+  1359 ]);
+  1360 
+→ 1361 const beats = await prisma.sweepingBeat.findMany(
+The column `SweepingBeat.geometry` does not exist in the current database.
+    at _n.handleRequestError (/Users/Developer/insstanto/beat_module/taskforce20Sweeping/hms-backend/generated/prisma/runtime/library.js:121:7749)
+    at _n.handleAndLogRequestError (/Users/Developer/insstanto/beat_module/taskforce20Sweeping/hms-backend/generated/prisma/runtime/library.js:121:7057)
+    at _n.request (/Users/Developer/insstanto/beat_module/taskforce20Sweeping/hms-backend/generated/prisma/runtime/library.js:121:6741)
+    at async l (/Users/Developer/insstanto/beat_module/taskforce20Sweeping/hms-backend/generated/prisma/runtime/library.js:130:9355)
+    at async /Users/Developer/insstanto/beat_module/taskforce20Sweeping/hms-backend/src/modules/sweeping/router.ts:1361:19
+[ERROR] 2026-02-09T15:16:18.583Z 500 
+Invalid `prisma.sweepingBeat.findMany()` invocation in
+/Users/Developer/insstanto/beat_module/taskforce20Sweeping/hms-backend/src/modules/sweeping/router.ts:1361:45
+
+  1358   Role.COMMISSIONER
+  1359 ]);
+  1360 
+→ 1361 const beats = await prisma.sweepingBeat.findMany(
+The column `SweepingBeat.geometry` does not exist in the current database.
+PrismaClientKnownRequestError: 
+Invalid `prisma.sweepingBeat.findMany()` invocation in
+/Users/Developer/insstanto/beat_module/taskforce20Sweeping/hms-backend/src/modules/sweeping/router.ts:1361:45
+
+  1358   Role.COMMISSIONER
+  1359 ]);
+  1360 
+→ 1361 const beats = await prisma.sweepingBeat.findMany(
+The column `SweepingBeat.geometry` does not exist in the current database.
+    at _n.handleRequestError (/Users/Developer/insstanto/beat_module/taskforce20Sweeping/hms-backend/generated/prisma/runtime/library.js:121:7749)
+    at _n.handleAndLogRequestError (/Users/Developer/insstanto/beat_module/taskforce20Sweeping/hms-backend/generated/prisma/runtime/library.js:121:7057)
+    at _n.request (/Users/Developer/insstanto/beat_module/taskforce20Sweeping/hms-backend/generated/prisma/runtime/library.js:121:6741)
+    at async l (/Users/Developer/insstanto/beat_module/taskforce20Sweeping/hms-backend/generated/prisma/runtime/library.js:130:9355)
+    at async /Users/Developer/insstanto/beat_module/taskforce20Sweeping/hms-backend/src/modules/sweeping/router.ts:1361:19
+[ERROR] 2026-02-10T04:25:08.038Z 401 Invalid credentials
+[ERROR] 2026-02-10T04:26:42.911Z 401 Invalid credentials

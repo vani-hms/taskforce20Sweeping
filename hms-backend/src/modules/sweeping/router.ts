@@ -164,6 +164,246 @@ router.post(
   }
 );
 
+// GET endpoint for City Admin to list all beats
+router.get("/admin/beats", async (req, res, next) => {
+  try {
+    const cityId = req.auth!.cityId!;
+    const moduleId = await getModuleIdByName(MODULE_KEY);
+
+    await assertModuleAccess(req, res, moduleId, [Role.CITY_ADMIN]);
+
+    const beats = await prisma.sweepingBeat.findMany({
+      where: { cityId },
+      include: {
+        geoNodeBeat: {
+          include: {
+            parent: true // Include ward info
+          }
+        },
+        assignedEmployee: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        },
+        assignedQc: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        }
+      },
+      orderBy: { createdAt: "desc" }
+    });
+
+    res.json({ beats });
+  } catch (e) {
+    next(e);
+  }
+});
+
+// PUT endpoint to update a beat
+router.put(
+  "/admin/beats/:id",
+  validateBody(
+    z.object({
+      name: z.string().optional(),
+      areaType: z.enum(["RESIDENTIAL", "COMMERCIAL", "SLUM"]).optional(),
+      latitude: z.number().optional(),
+      longitude: z.number().optional(),
+      radiusMeters: z.number().optional()
+    })
+  ),
+  async (req, res, next) => {
+    try {
+      const cityId = req.auth!.cityId!;
+      const moduleId = await getModuleIdByName(MODULE_KEY);
+
+      await assertModuleAccess(req, res, moduleId, [Role.CITY_ADMIN]);
+
+      const beat = await prisma.sweepingBeat.findUnique({
+        where: { id: req.params.id },
+        include: { geoNodeBeat: true }
+      });
+
+      if (!beat || beat.cityId !== cityId) {
+        throw new HttpError(404, "Beat not found");
+      }
+
+      // Update GeoNode if name or areaType changed
+      if (req.body.name || req.body.areaType) {
+        await prisma.geoNode.update({
+          where: { id: beat.geoNodeBeatId },
+          data: {
+            ...(req.body.name && { name: req.body.name }),
+            ...(req.body.areaType && { areaType: req.body.areaType })
+          }
+        });
+      }
+
+      // Update SweepingBeat
+      const updated = await prisma.sweepingBeat.update({
+        where: { id: req.params.id },
+        data: {
+          ...(req.body.areaType && { areaType: req.body.areaType }),
+          ...(req.body.latitude && { latitude: req.body.latitude }),
+          ...(req.body.longitude && { longitude: req.body.longitude }),
+          ...(req.body.radiusMeters && { radiusMeters: req.body.radiusMeters })
+        },
+        include: {
+          geoNodeBeat: {
+            include: { parent: true }
+          },
+          assignedEmployee: true
+        }
+      });
+
+      res.json({ beat: updated });
+    } catch (e) {
+      next(e);
+    }
+  }
+);
+
+// DELETE endpoint to remove a beat
+router.delete("/admin/beats/:id", async (req, res, next) => {
+  try {
+    const cityId = req.auth!.cityId!;
+    const moduleId = await getModuleIdByName(MODULE_KEY);
+
+    await assertModuleAccess(req, res, moduleId, [Role.CITY_ADMIN]);
+
+    const beat = await prisma.sweepingBeat.findUnique({
+      where: { id: req.params.id },
+      include: { geoNodeBeat: true }
+    });
+
+    if (!beat || beat.cityId !== cityId) {
+      throw new HttpError(404, "Beat not found");
+    }
+
+    // Check if beat is currently assigned
+    if (beat.assignmentStatus === "ACTIVE") {
+      throw new HttpError(400, "Cannot delete an active beat. Please unassign it first.");
+    }
+
+    // Delete the beat (GeoNode will be cascade deleted)
+    await prisma.sweepingBeat.delete({
+      where: { id: req.params.id }
+    });
+
+    // Also delete the GeoNode
+    await prisma.geoNode.delete({
+      where: { id: beat.geoNodeBeatId }
+    });
+
+    res.json({ message: "Beat deleted successfully" });
+  } catch (e) {
+    next(e);
+  }
+});
+
+// GET endpoint to fetch QC users for assignment
+router.get("/admin/qc-users", async (req, res, next) => {
+  try {
+    const cityId = req.auth!.cityId!;
+    const moduleId = await getModuleIdByName(MODULE_KEY);
+
+    await assertModuleAccess(req, res, moduleId, [Role.CITY_ADMIN]);
+
+    // Get all users with QC role for this module and city
+    const qcUsers = await prisma.userModuleRole.findMany({
+      where: {
+        cityId,
+        moduleId,
+        role: Role.QC
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        }
+      }
+    });
+
+    const users = qcUsers.map(qc => qc.user);
+
+    res.json({ qcUsers: users });
+  } catch (e) {
+    next(e);
+  }
+});
+
+// POST endpoint to assign QC to a beat
+router.post(
+  "/admin/beats/:id/assign-qc",
+  validateBody(
+    z.object({
+      qcId: z.string()
+    })
+  ),
+  async (req, res, next) => {
+    try {
+      const cityId = req.auth!.cityId!;
+      const moduleId = await getModuleIdByName(MODULE_KEY);
+
+      await assertModuleAccess(req, res, moduleId, [Role.CITY_ADMIN]);
+
+      const beat = await prisma.sweepingBeat.findUnique({
+        where: { id: req.params.id }
+      });
+
+      if (!beat || beat.cityId !== cityId) {
+        throw new HttpError(404, "Beat not found");
+      }
+
+      // Verify the QC user exists and has QC role for this module
+      const qcRole = await prisma.userModuleRole.findFirst({
+        where: {
+          userId: req.body.qcId,
+          cityId,
+          moduleId,
+          role: Role.QC
+        }
+      });
+
+      if (!qcRole) {
+        throw new HttpError(400, "User is not a QC for this module");
+      }
+
+      // Assign QC to beat
+      const updated = await prisma.sweepingBeat.update({
+        where: { id: req.params.id },
+        data: {
+          assignedQcId: req.body.qcId
+        },
+        include: {
+          geoNodeBeat: {
+            include: { parent: true }
+          },
+          assignedEmployee: true,
+          assignedQc: {
+            select: {
+              id: true,
+              name: true,
+              email: true
+            }
+          }
+        }
+      });
+
+      res.json({ beat: updated });
+    } catch (e) {
+      next(e);
+    }
+  }
+);
+
 // router.post(
 //   "/admin/assign-beat",
 //   validateBody(

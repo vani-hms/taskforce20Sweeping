@@ -1,0 +1,1887 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2" xmlns:kml="http://www.opengis.net/kml/2.2" xmlns:atom="http://www.w3.org/2005/Atom">
+<Document>
+	<name>ward 108 (25-beat).kml</name>
+	<atom:link rel="app" href="https://www.google.com/earth/about/versions/#earth-pro" title="Google Earth Pro 7.3.6.10441"></atom:link>
+	<StyleMap id="m_ylw-pushpin10">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#s_ylw-pushpin7</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#s_ylw-pushpin_hl7</styleUrl>
+		</Pair>
+	</StyleMap>
+	<StyleMap id="m_ylw-pushpin11">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#s_ylw-pushpin8</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#s_ylw-pushpin_hl8</styleUrl>
+		</Pair>
+	</StyleMap>
+	<StyleMap id="msn_ylw-pushpin154">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#sn_ylw-pushpin172</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#sh_ylw-pushpin154</styleUrl>
+		</Pair>
+	</StyleMap>
+	<StyleMap id="msn_ylw-pushpin1540">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#sn_ylw-pushpin1600</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#sh_ylw-pushpin1560</styleUrl>
+		</Pair>
+	</StyleMap>
+	<StyleMap id="msn_ylw-pushpin155">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#sn_ylw-pushpin169</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#sh_ylw-pushpin166</styleUrl>
+		</Pair>
+	</StyleMap>
+	<StyleMap id="msn_ylw-pushpin1550">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#sn_ylw-pushpin1570</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#sh_ylw-pushpin153</styleUrl>
+		</Pair>
+	</StyleMap>
+	<StyleMap id="msn_ylw-pushpin156">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#sn_ylw-pushpin165</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#sh_ylw-pushpin165</styleUrl>
+		</Pair>
+	</StyleMap>
+	<StyleMap id="msn_ylw-pushpin1560">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#sn_ylw-pushpin1610</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#sh_ylw-pushpin1590</styleUrl>
+		</Pair>
+	</StyleMap>
+	<StyleMap id="msn_ylw-pushpin157">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#sn_ylw-pushpin164</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#sh_ylw-pushpin47</styleUrl>
+		</Pair>
+	</StyleMap>
+	<StyleMap id="msn_ylw-pushpin1570">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#sn_ylw-pushpin1590</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#sh_ylw-pushpin155</styleUrl>
+		</Pair>
+	</StyleMap>
+	<StyleMap id="msn_ylw-pushpin158">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#sn_ylw-pushpin163</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#sh_ylw-pushpin168</styleUrl>
+		</Pair>
+	</StyleMap>
+	<StyleMap id="msn_ylw-pushpin1580">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#sn_ylw-pushpin158</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#sh_ylw-pushpin1600</styleUrl>
+		</Pair>
+	</StyleMap>
+	<StyleMap id="msn_ylw-pushpin159">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#sn_ylw-pushpin161</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#sh_ylw-pushpin159</styleUrl>
+		</Pair>
+	</StyleMap>
+	<StyleMap id="msn_ylw-pushpin1590">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#sn_ylw-pushpin1540</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#sh_ylw-pushpin158</styleUrl>
+		</Pair>
+	</StyleMap>
+	<StyleMap id="msn_ylw-pushpin1600">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#sn_ylw-pushpin156</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#sh_ylw-pushpin1610</styleUrl>
+		</Pair>
+	</StyleMap>
+	<StyleMap id="msn_ylw-pushpin161">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#sn_ylw-pushpin159</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#sh_ylw-pushpin156</styleUrl>
+		</Pair>
+	</StyleMap>
+	<StyleMap id="msn_ylw-pushpin1610">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#sn_ylw-pushpin162</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#sh_ylw-pushpin157</styleUrl>
+		</Pair>
+	</StyleMap>
+	<StyleMap id="msn_ylw-pushpin162">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#sn_ylw-pushpin1550</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#sh_ylw-pushpin1540</styleUrl>
+		</Pair>
+	</StyleMap>
+	<StyleMap id="msn_ylw-pushpin163">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#sn_ylw-pushpin157</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#sh_ylw-pushpin169</styleUrl>
+		</Pair>
+	</StyleMap>
+	<StyleMap id="msn_ylw-pushpin164">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#sn_ylw-pushpin168</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#sh_ylw-pushpin167</styleUrl>
+		</Pair>
+	</StyleMap>
+	<StyleMap id="msn_ylw-pushpin165">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#sn_ylw-pushpin167</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#sh_ylw-pushpin171</styleUrl>
+		</Pair>
+	</StyleMap>
+	<StyleMap id="msn_ylw-pushpin166">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#sn_ylw-pushpin166</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#sh_ylw-pushpin161</styleUrl>
+		</Pair>
+	</StyleMap>
+	<StyleMap id="msn_ylw-pushpin167">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#sn_ylw-pushpin154</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#sh_ylw-pushpin162</styleUrl>
+		</Pair>
+	</StyleMap>
+	<StyleMap id="msn_ylw-pushpin168">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#sn_ylw-pushpin171</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#sh_ylw-pushpin100</styleUrl>
+		</Pair>
+	</StyleMap>
+	<StyleMap id="msn_ylw-pushpin169">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#sn_ylw-pushpin41</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#sh_ylw-pushpin163</styleUrl>
+		</Pair>
+	</StyleMap>
+	<StyleMap id="msn_ylw-pushpin1690">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#sn_ylw-pushpin184</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#sh_ylw-pushpin173</styleUrl>
+		</Pair>
+	</StyleMap>
+	<StyleMap id="msn_ylw-pushpin171">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#sn_ylw-pushpin155</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#sh_ylw-pushpin164</styleUrl>
+		</Pair>
+	</StyleMap>
+	<Style id="s_ylw-pushpin7">
+		<IconStyle>
+			<scale>1.1</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ff0000ff</color>
+			<width>4</width>
+		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<Style id="s_ylw-pushpin8">
+		<IconStyle>
+			<scale>1.1</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ff0000ff</color>
+			<width>5</width>
+		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<Style id="s_ylw-pushpin_hl7">
+		<IconStyle>
+			<scale>1.3</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ff0000ff</color>
+			<width>4</width>
+		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<Style id="s_ylw-pushpin_hl8">
+		<IconStyle>
+			<scale>1.3</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ff0000ff</color>
+			<width>5</width>
+		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<Style id="sh_ylw-pushpin100">
+		<IconStyle>
+			<scale>1.3</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ffffff00</color>
+			<width>5</width>
+		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<Style id="sh_ylw-pushpin153">
+		<IconStyle>
+			<scale>1.3</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ff00ffaa</color>
+			<width>5</width>
+		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<Style id="sh_ylw-pushpin154">
+		<IconStyle>
+			<scale>1.3</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ffffffaa</color>
+			<width>5</width>
+		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<Style id="sh_ylw-pushpin1540">
+		<IconStyle>
+			<scale>1.3</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ff005500</color>
+			<width>5</width>
+		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<Style id="sh_ylw-pushpin155">
+		<IconStyle>
+			<scale>1.3</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ff0055aa</color>
+			<width>5</width>
+		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<Style id="sh_ylw-pushpin156">
+		<IconStyle>
+			<scale>1.3</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ff7fffff</color>
+			<width>5</width>
+		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<Style id="sh_ylw-pushpin1560">
+		<IconStyle>
+			<scale>1.3</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ff00aaaa</color>
+			<width>5</width>
+		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<Style id="sh_ylw-pushpin157">
+		<IconStyle>
+			<scale>1.3</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ff7f00aa</color>
+			<width>5</width>
+		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<Style id="sh_ylw-pushpin158">
+		<IconStyle>
+			<scale>1.3</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ff00aa00</color>
+			<width>5</width>
+		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<Style id="sh_ylw-pushpin159">
+		<IconStyle>
+			<scale>1.3</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ff00ffff</color>
+			<width>5</width>
+		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<Style id="sh_ylw-pushpin1590">
+		<IconStyle>
+			<scale>1.3</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ff7faa00</color>
+			<width>5</width>
+		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<Style id="sh_ylw-pushpin1600">
+		<IconStyle>
+			<scale>1.3</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ff7f5500</color>
+			<width>5</width>
+		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<Style id="sh_ylw-pushpin161">
+		<IconStyle>
+			<scale>1.3</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ffffaa55</color>
+			<width>5</width>
+		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<Style id="sh_ylw-pushpin1610">
+		<IconStyle>
+			<scale>1.3</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ff7f0000</color>
+			<width>5</width>
+		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<Style id="sh_ylw-pushpin162">
+		<IconStyle>
+			<scale>1.3</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ffffffaa</color>
+			<width>5</width>
+		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<Style id="sh_ylw-pushpin163">
+		<IconStyle>
+			<scale>1.3</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ffff0055</color>
+			<width>5</width>
+		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<Style id="sh_ylw-pushpin164">
+		<IconStyle>
+			<scale>1.3</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ff7f55aa</color>
+			<width>5</width>
+		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<Style id="sh_ylw-pushpin165">
+		<IconStyle>
+			<scale>1.3</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ffffaaaa</color>
+			<width>5</width>
+		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<Style id="sh_ylw-pushpin166">
+		<IconStyle>
+			<scale>1.3</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ff00aaff</color>
+			<width>5</width>
+		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<Style id="sh_ylw-pushpin167">
+		<IconStyle>
+			<scale>1.3</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ffff00ff</color>
+			<width>5</width>
+		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<Style id="sh_ylw-pushpin168">
+		<IconStyle>
+			<scale>1.3</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ff7fff00</color>
+			<width>5</width>
+		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<Style id="sh_ylw-pushpin169">
+		<IconStyle>
+			<scale>1.3</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ff7f00aa</color>
+			<width>5</width>
+		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<Style id="sh_ylw-pushpin171">
+		<IconStyle>
+			<scale>1.3</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ffff0000</color>
+			<width>5</width>
+		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<Style id="sh_ylw-pushpin173">
+		<IconStyle>
+			<scale>1.3</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ff7fffaa</color>
+			<width>5</width>
+		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<Style id="sh_ylw-pushpin47">
+		<IconStyle>
+			<scale>1.3</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ff7fff55</color>
+			<width>5</width>
+		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<Style id="sn_ylw-pushpin154">
+		<IconStyle>
+			<scale>1.1</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ffffffaa</color>
+			<width>5</width>
+		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<Style id="sn_ylw-pushpin1540">
+		<IconStyle>
+			<scale>1.1</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ff00aa00</color>
+			<width>5</width>
+		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<Style id="sn_ylw-pushpin155">
+		<IconStyle>
+			<scale>1.1</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ff7f55aa</color>
+			<width>5</width>
+		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<Style id="sn_ylw-pushpin1550">
+		<IconStyle>
+			<scale>1.1</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ff005500</color>
+			<width>5</width>
+		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<Style id="sn_ylw-pushpin156">
+		<IconStyle>
+			<scale>1.1</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ff7f0000</color>
+			<width>5</width>
+		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<Style id="sn_ylw-pushpin157">
+		<IconStyle>
+			<scale>1.1</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ff7f00aa</color>
+			<width>5</width>
+		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<Style id="sn_ylw-pushpin1570">
+		<IconStyle>
+			<scale>1.1</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ff00ffaa</color>
+			<width>5</width>
+		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<Style id="sn_ylw-pushpin158">
+		<IconStyle>
+			<scale>1.1</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ff7f5500</color>
+			<width>5</width>
+		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<Style id="sn_ylw-pushpin159">
+		<IconStyle>
+			<scale>1.1</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ff7fffff</color>
+			<width>5</width>
+		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<Style id="sn_ylw-pushpin1590">
+		<IconStyle>
+			<scale>1.1</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ff0055aa</color>
+			<width>5</width>
+		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<Style id="sn_ylw-pushpin1600">
+		<IconStyle>
+			<scale>1.1</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ff00aaaa</color>
+			<width>5</width>
+		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<Style id="sn_ylw-pushpin161">
+		<IconStyle>
+			<scale>1.1</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ff00ffff</color>
+			<width>5</width>
+		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<Style id="sn_ylw-pushpin1610">
+		<IconStyle>
+			<scale>1.1</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ff7faa00</color>
+			<width>5</width>
+		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<Style id="sn_ylw-pushpin162">
+		<IconStyle>
+			<scale>1.1</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ff7f00aa</color>
+			<width>5</width>
+		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<Style id="sn_ylw-pushpin163">
+		<IconStyle>
+			<scale>1.1</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ff7fff00</color>
+			<width>5</width>
+		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<Style id="sn_ylw-pushpin164">
+		<IconStyle>
+			<scale>1.1</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ff7fff55</color>
+			<width>5</width>
+		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<Style id="sn_ylw-pushpin165">
+		<IconStyle>
+			<scale>1.1</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ffffaaaa</color>
+			<width>5</width>
+		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<Style id="sn_ylw-pushpin166">
+		<IconStyle>
+			<scale>1.1</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ffffaa55</color>
+			<width>5</width>
+		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<Style id="sn_ylw-pushpin167">
+		<IconStyle>
+			<scale>1.1</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ffff0000</color>
+			<width>5</width>
+		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<Style id="sn_ylw-pushpin168">
+		<IconStyle>
+			<scale>1.1</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ffff00ff</color>
+			<width>5</width>
+		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<Style id="sn_ylw-pushpin169">
+		<IconStyle>
+			<scale>1.1</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ff00aaff</color>
+			<width>5</width>
+		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<Style id="sn_ylw-pushpin171">
+		<IconStyle>
+			<scale>1.1</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ffffff00</color>
+			<width>5</width>
+		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<Style id="sn_ylw-pushpin172">
+		<IconStyle>
+			<scale>1.1</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ffffffaa</color>
+			<width>5</width>
+		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<Style id="sn_ylw-pushpin184">
+		<IconStyle>
+			<scale>1.1</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ff7fffaa</color>
+			<width>5</width>
+		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<Style id="sn_ylw-pushpin41">
+		<IconStyle>
+			<scale>1.1</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ffff0055</color>
+			<width>5</width>
+		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<Placemark>
+		<name>108</name>
+		<description><![CDATA[<html xmlns:fo="http://www.w3.org/1999/XSL/Format" xmlns:msxsl="urn:schemas-microsoft-com:xslt">
+
+<head>
+
+<META http-equiv="Content-Type" content="text/html">
+
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+
+</head>
+
+<body style="margin:0px 0px 0px 0px;overflow:auto;background:#FFFFFF;">
+
+<table style="font-family:Arial,Verdana,Times;font-size:12px;text-align:left;width:100%;border-collapse:collapse;padding:3px 3px 3px 3px">
+
+<tr style="text-align:center;font-weight:bold;background:#9CBCE2">
+
+<td>KishanPol_VB</td>
+
+</tr>
+
+<tr>
+
+<td>
+
+<table style="font-family:Arial,Verdana,Times;font-size:12px;text-align:left;width:100%;border-spacing:0px; padding:3px 3px 3px 3px">
+
+<tr>
+
+<td>FID</td>
+
+<td>124</td>
+
+</tr>
+
+<tr bgcolor="#D4E4F3">
+
+<td>NNJ_GREATE</td>
+
+<td>NNJ_GREATER AS REVENUE VILLAGE</td>
+
+</tr>
+
+<tr>
+
+<td>NNJ_GREA_1</td>
+
+<td>408.48855</td>
+
+</tr>
+
+<tr bgcolor="#D4E4F3">
+
+<td>SHAPE_Leng</td>
+
+<td>1.950121</td>
+
+</tr>
+
+<tr>
+
+<td>SHAPE_Area</td>
+
+<td>0.03654</td>
+
+</tr>
+
+<tr bgcolor="#D4E4F3">
+
+<td>Name_Vidha</td>
+
+<td>KishanPol_VB</td>
+
+</tr>
+
+<tr>
+
+<td>Ward_No</td>
+
+<td>108</td>
+
+</tr>
+
+<tr bgcolor="#D4E4F3">
+
+<td>ZonewardNo</td>
+
+<td>0</td>
+
+</tr>
+
+<tr>
+
+<td>ZoneWard_1</td>
+
+<td>K06</td>
+
+</tr>
+
+<tr bgcolor="#D4E4F3">
+
+<td>Area</td>
+
+<td>0.465723</td>
+
+</tr>
+
+</table>
+
+</td>
+
+</tr>
+
+</table>
+
+</body>
+
+</html>]]></description>
+		<styleUrl>#m_ylw-pushpin10</styleUrl>
+		<Polygon>
+			<outerBoundaryIs>
+				<LinearRing>
+					<coordinates>
+						75.80912113200003,26.92034149700004,0 75.80873977662864,26.92041696417824,0 75.80855391797871,26.92045374371072,0 75.80843607800007,26.9204755430001,0 75.80778133167965,26.92060288327562,0 75.80777274971285,26.92056471996125,0 75.80776220200006,26.92051652900007,0 75.80755366322671,26.92056467975392,0 75.80719852200009,26.92064515000005,0 75.80719862033405,26.92064665691359,0 75.80719604300006,26.92064725200012,0 75.80720182000005,26.92069569000007,0 75.80712281796042,26.92070932991856,0 75.80710371800006,26.92071197100005,0 75.8070000320001,26.92073400600004,0 75.80691288500007,26.92075360100004,0 75.80690700600007,26.92074644600007,0 75.80688905709137,26.92070602903067,0 75.80685166064227,26.9206051144753,0 75.80654182300003,26.91976900800006,0 75.80620624500006,26.91882097900002,0 75.80926312100007,26.91826213600009,0 75.80927009466683,26.91826107679027,0 75.80931819700004,26.91825224400006,0 75.80995388462254,26.91815717433828,0 75.8099618158719,26.91815598393153,0 75.8103700535126,26.91806501340819,0 75.81055761076561,26.9186161177841,0 75.81195451693837,26.91832861169569,0 75.81201799400003,26.91866032800005,0 75.81204833261292,26.91875670301788,0 75.8120647056263,26.91880871420253,0 75.81206518500009,26.91881023700008,0 75.81308191700008,26.91860239500006,0 75.81333724335434,26.91959820394868,0 75.81371692500007,26.92109451700003,0 75.81379273165643,26.92136999109648,0 75.81394833800005,26.92193544500004,0 75.81415858245146,26.92274653454603,0 75.81425551100006,26.92311123000006,0 75.8146488715866,26.92463794258524,0 75.81486815220185,26.92548384790581,0 75.8148689129914,26.92548678273281,0 75.81486941700008,26.92548872700007,0 75.81486425154324,26.92548978738814,0 75.81426920388279,26.92561194004186,0 75.81324584809593,26.92582201024933,0 75.8107034113702,26.92634387573573,0 75.81016777672649,26.92645381471666,0 75.8096796940001,26.92655252200009,0 75.80957496945915,26.92601052146973,0 75.80954914512269,26.92575268954701,0 75.80940523759455,26.92507990025132,0 75.80921754985422,26.92432136834804,0 75.80959918972137,26.92425181840863,0 75.81013561069035,26.924120049173,0 75.81117509469465,26.92392489385082,0 75.81084865117084,26.92259248691966,0 75.81046292159938,26.92119372660417,0 75.81029349193611,26.92041717561473,0 75.81007021150836,26.91937578695583,0 75.8095613949249,26.91976925927053,0 75.80912108489412,26.92024116444549,0 75.80912113200003,26.92034149700004,0 75.80912113200003,26.92034149700004,0 
+					</coordinates>
+				</LinearRing>
+			</outerBoundaryIs>
+		</Polygon>
+	</Placemark>
+	<Placemark>
+		<name>108</name>
+		<styleUrl>#m_ylw-pushpin11</styleUrl>
+		<Point>
+			<coordinates>75.81053783094636,26.92230876468987,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>ward no 108 beat 1</name>
+		<description>MORNING
+police chowki se topkhane ka rasta regro ke chorahe se regro ka naka tak dono taraf 
+
+
+
+KARMCHARI KA NAME:- Kusum/Sanjay 
+BELT NO:- 113574
+MOB.:- 7023687606
+KARMCHARI KA NAME:- om devi/Kalu
+BELT NO:- 109222
+MOB:- 8696466680
+KARMCHARI KA NAME:- Karmveer/ girraj singh 
+BELT NO:- 112871
+MOB:- 8739829269
+DURI:- 1000
+TIME 07.00 AM TO 03.00 PM (DAILY)
+SI KA NAME:-  Jeetu / Munna 
+MOB:- 7976324916</description>
+		<styleUrl>#msn_ylw-pushpin162</styleUrl>
+		<LineString>
+			<coordinates>
+				75.80970112234354,26.92640237052287,0 75.80951705574989,26.92550259218064,0 75.80944664776325,26.92509156148014,0 75.80934673547745,26.92468860047424,0 75.80926291644573,26.92434901204008,0 75.80971822142601,26.92424916806304,0 75.81013765186071,26.92416307498196,0 75.81013228744268,26.92412809964904,0 75.80976851284504,26.92421777996817,0 75.80962065607309,26.92425454887843,0 75.80940172076225,26.92430118260103,0 75.80926191061735,26.92432001544507,0 75.80921899527311,26.92432778772901,0 75.80938965082169,26.92502460070054,0 75.80949425697327,26.92554922538732,0 75.80959919840097,26.926070260482,0 75.80964278429747,26.92631747479987,0 75.80966491252184,26.92608969088936,0 75.81003908067942,26.92601764890064,0 75.8101349696517,26.92600389814239,0 75.81014167517424,26.92585503113048,0 75.81008233129978,26.92558808637818,0 75.8099777251482,26.92516479978734,0 75.8103696629405,26.92506824478462,0 75.8099777251482,26.92515164678874,0 75.81006523221731,26.92555938903237,0 75.810323394835,26.92550438576585,0 75.81038273870945,26.92564249174288,0 75.81043034791946,26.9258460632319,0 75.81048399209976,26.92603229644565,0 75.81051148474216,26.92609686519276,0 75.81063721328974,26.9260711572701,0 
+			</coordinates>
+		</LineString>
+	</Placemark>
+	<Placemark>
+		<name>ward no 108 beat 2</name>
+		<description>MORNING
+nindad rao ji ka rasta dusare chorahe tak dono taraf
+
+KARMCHARI KA NAME:- Gaytri/Kalu
+BELT NO:- 107179
+MOB:- 9672801767
+KARMCHARI KA NAME:- Sanjay/Ramesh 
+BELT NO:- 120259
+MOB:- 9828033471
+DURI:- 600
+TIME 07.00 AM TO 03.00 PM (DAILY)
+SI KA NAME:-  Jeetu / Munna 
+MOB:- 7976324916</description>
+		<styleUrl>#msn_ylw-pushpin1570</styleUrl>
+		<LineString>
+			<coordinates>
+				75.81070393323898,26.9262005936119,0 75.81064157187939,26.92591989890882,0 75.81081088632345,26.92588671769967,0 75.81098590046167,26.92584337286221,0 75.81105194985867,26.92582394241242,0 75.81094298511744,26.92584935146148,0 75.81089235842228,26.92585891721961,0 75.81074517220259,26.92589179950712,0 75.81070326268673,26.92573097513714,0 75.81067979335785,26.92573217085823,0 75.81072337925434,26.92588641876981,0 75.81063620746136,26.925893892016,0 75.8105681464076,26.92561050617452,0 75.81046655774117,26.92527062158395,0 75.81033110618591,26.9248063800269,0 75.81018190830946,26.92415978670327,0 75.81014771014452,26.92416875473588,0 75.81021283781793,26.92443212587923,0 75.81037007725175,26.92505173505123,0 75.81054629853384,26.92566440245181,0 75.81065056278551,26.92605428155731,0 75.81068021812804,26.92619880689355,0 
+			</coordinates>
+		</LineString>
+	</Placemark>
+	<Placemark>
+		<name>ward no 108 beat 3</name>
+		<description>MORNING
+Topkhane ka rasta, Jhalaniyon ka naka se kalyan ji ka rasta hote huye murti walo ka sampurn chowk se tikkar mal ka rasta Tak dono taraf 
+
+KARMCHARI KA NAME:- khushabu/bherulal 
+BELT NO:- 113368
+MOB:- 9587695043
+KARMCHARI KA NAME:- Ratan/Ramprasad 
+BELT NO:- 106395
+MOB:-  9057248846
+DURI:- 750
+TIME 07.00 AM TO 03.00 PM (DAILY)
+SI KA NAME:-  Jeetu / Munna 
+MOB:- 7976324916</description>
+		<styleUrl>#msn_ylw-pushpin1590</styleUrl>
+		<LineString>
+			<coordinates>
+				75.8103820681572,26.92478455793633,0 75.8107391372323,26.92470145459382,0 75.811089836061,26.92462462878749,0 75.81131681799889,26.92456842933183,0 75.8112333342433,26.92425544568098,0 75.81110157072544,26.9243014815351,0 75.81099931150675,26.9243230047851,0 75.81091850996017,26.92434034295576,0 75.81086955964565,26.92435200137935,0 75.81083435565233,26.9243502077758,0 75.81072136759758,26.92433107600282,0 75.81068281084299,26.92431313996268,0 75.81063285470009,26.92430955275432,0 75.81053227186203,26.92433615788032,0 75.81048399209976,26.9243436312292,0 75.81045616418123,26.92435558858637,0 75.81057988107204,26.92431523250086,0 75.81066604703665,26.92429490498565,0 75.81064190715551,26.92419535989508,0 75.81061273813248,26.92407249781533,0 75.81018190830946,26.92415350908003,0 75.81017553806305,26.92412212095855,0 75.81042766571045,26.92407728076984,0 75.8106268197298,26.92403393523719,0 75.81090576946735,26.92398132270618,0 75.81117063760757,26.92392960695578,0 75.81116460263729,26.92394963560182,0 75.81088431179523,26.92400643323541,0 75.81062413752079,26.92406651912192,0 
+			</coordinates>
+		</LineString>
+	</Placemark>
+	<Placemark>
+		<name>ward no 108 beat 4</name>
+		<description>MORNING
+Mannu public school ki gali se akhade walo ki gali, Murli Manohar ji ki gali hote huye taswire wali ki gali, aas pas ki chhoti galiyan, chandpole bazar ke Nukkad se Kalyan ji ka rasta 2nd chorahe tak dono taraf 
+
+KARMCHARI KA NAME:- vidhya Devi/Munna Lal 
+BELT NO:- 112237
+MOB:- 7976324916
+KARMCHARI KA NAME:- kaushlya/Babulal 
+BELT NO:- 107090
+MOB:- 7665516460
+KARMCHARI KA NAME:- Ravi/Gopal 
+BELT NO:- 109105
+MOB:- 7728827811
+DURI:- 900
+TIME 07.00 AM TO 03.00 PM (DAILY)
+SI KA NAME:-  Manoj Kumar/Gouri lal 
+MOB:- 9309220827</description>
+		<styleUrl>#msn_ylw-pushpin1540</styleUrl>
+		<LineString>
+			<coordinates>
+				75.81048801541328,26.92526643654303,0 75.81066235899925,26.92523714125225,0 75.81069521605968,26.925335190767,0 75.81066906452179,26.92522249360401,0 75.81085078418255,26.92518064316999,0 75.81085782498121,26.92515015212971,0 75.81099662929773,26.92511996001307,0 75.8110274747014,26.92519170364335,0 75.81105060875416,26.92527480662472,0 75.8110586553812,26.92528616602029,0 75.8110724017024,26.92531964633743,0 75.81110592931509,26.92543114767913,0 75.81114482134581,26.9254266637131,0 75.81117063760757,26.92565863398891,0 75.81120181828737,26.92578089648097,0 75.81121288239956,26.92579733763731,0 75.8112608268857,26.92579046224495,0 75.81127423793077,26.92577850503987,0 75.81139393150806,26.92575937350909,0 75.81155017018318,26.92572708904358,0 75.81162393093109,26.92570915322542,0 75.81170205026865,26.92597400518389,0 75.8117701113224,26.92597251053575,0 75.81167623400688,26.92558748851688,0 75.81162493675947,26.92533100572847,0 75.81158403307199,26.9251836324872,0 75.81145461648703,26.92468292074651,0 75.81142041832209,26.92458815893115,0 75.81136777997017,26.92434422909709,0 75.81126384437084,26.92393199843609,0 75.81117197871208,26.9239568100413,0 75.81124171614647,26.9242620222327,0 75.81137180328369,26.9246981663308,0 75.81147540360689,26.92504941206548,0 75.81153877079487,26.92534027259929,0 75.81115588545799,26.92542367440229,0 75.81116493791342,26.9254362295071,0 75.8113694563508,26.92538929732251,0 75.81154011189938,26.92535551809478,0 75.81157397478819,26.92543951774859,0 75.81161588430405,26.9256427906734,0 75.81162124872208,26.92570018531527,0 
+			</coordinates>
+		</LineString>
+	</Placemark>
+	<Placemark>
+		<name>ward no 108 beat 5</name>
+		<description>MORNING
+kalyan ji ka rasta dusare chorahe se 4th chorahe tak, sonkhiyon ka rasta, Sitaram ji ka chowk 
+
+KARMCHARI KA NAME:- Chhoti/Kalu
+BELT NO:- 100266
+MOB:- 7339993727
+KARMCHARI KA NAME:- Prakash/Puranmal 
+BELT NO:- 112898
+MOB:- 8000355871
+KARMCHARI KA NAME:- Amar Chand /Kishan (Nali safai par)
+BELT NO.:- 115592
+MOB.:- 8107179134
+DURI:- 600
+TIME 07.00 AM TO 03.00 PM (DAILY)
+SI KA NAME:-  Manoj Kumar/Gouri lal 
+MOB:- 9309220827</description>
+		<styleUrl>#msn_ylw-pushpin1550</styleUrl>
+		<LineString>
+			<coordinates>
+				75.81099964678288,26.92301516095647,0 75.81123098731041,26.92388476669056,0 75.81116762012243,26.92389821877198,0 75.81093493849039,26.92304744619808,0 75.81084072589874,26.92262713945978,0 75.81090744584799,26.92262743839825,0 75.81095907837152,26.9227559818767,0 75.81099864095449,26.92296195007518,0 75.81121120601892,26.92292667543216,0 75.81127423793077,26.92292069667801,0 75.81132486462593,26.92295537344764,0 75.81136710941792,26.92303399401518,0 75.81140968948603,26.92303429295259,0 75.8114680275321,26.9230130683942,0 75.81148412078619,26.92304116851291,0 75.81150289624929,26.92311261452794,0 75.81150323152542,26.92313324119332,0 75.81150759011507,26.92314460080453,0 75.81108581274748,26.92324534256964,0 75.81149887293577,26.9231703093941,0 75.81203296780586,26.92305491963229,0 75.81152502447367,26.92315476466622,0 
+			</coordinates>
+		</LineString>
+	</Placemark>
+	<Placemark>
+		<name>ward no 108 beat 6</name>
+		<description>MORNING
+tikkadmal ka rasta se Ghandhi Mori Nukkad tak, kanha chamar ki gali
+
+KARMCHARI KA NAME:- Saroj Mukesh 
+BELT NO:- 113757
+MOB:- 7568024995
+KARMCHARI KA NAME:- Santosh/Subhash 
+BELT NO:- 112472
+MOB:- 9660618300
+KARMCHARI KA NAME:- Surendra/soraam
+BELT NO.:- 115578
+MOB.:- 9166105236
+DURI:- 900
+TIME 07.00 AM TO 03.00 PM (DAILY)
+SI KA NAME:-  Manoj Kumar/Gouri lal 
+MOB:- 9309220827</description>
+		<styleUrl>#msn_ylw-pushpin1600</styleUrl>
+		<LineString>
+			<coordinates>
+				75.81032540649176,26.92029449828641,0 75.81015609204769,26.91942426698692,0 75.81009909510612,26.91944190485728,0 75.81030126661062,26.92042125075668,0 75.81048164516687,26.9212669611179,0 75.81073008477688,26.92215003261616,0 75.81083033233881,26.92259874029937,0 75.81088297069073,26.92259007108056,0 75.81074517220259,26.92209951178589,0 75.81064190715551,26.92176380178888,0 75.81055775284767,26.92136860138502,0 75.81045985221863,26.92100897379342,0 75.81036999821663,26.92063469681171,0 75.81032775342464,26.92035578192777,0 75.810571834445,26.92027536582569,0 75.81080082803965,26.92020302117931,0 75.81094600260258,26.9201202134073,0 75.81115387380123,26.92003441612096,0 75.81121657043695,26.92001169627112,0 
+			</coordinates>
+		</LineString>
+	</Placemark>
+	<Placemark>
+		<name>ward no 108 beat 7</name>
+		<description>MORNING
+Radhakrishnan kayasth ki gali, mataji pitaji ki gali, khawa ji ka chowk, jhalaniyon ka rasta narsingh ji ki gali, tikkadmal ka rasta, rajaram dharmshala ke pichhe wali gali 
+
+KARMCHARI KA NAME:- meena/ madhusudhan 
+BELT NO:-110504
+MOB:- 7062149947
+KARMCHARI KA NAME:- Sohan/Lallu (Nali safai par)
+BELT NO:- 100096
+MOB:- 8290179348
+KARMCHARI KA NAME:- Santosh/Lalchand 
+BELT NO:-109879
+MOB:- 9079129104
+KARMCHARI KA NAME:- Sushila/Raju lal 
+BELT NO:- 113811
+MOB:- 8209924349
+DURI:- 1000
+TIME 07.00 AM TO 03.00 PM (DAILY)
+SI KA NAME:-  Manoj Kumar/Gouri lal 
+MOB:- 9309220827</description>
+		<styleUrl>#msn_ylw-pushpin1610</styleUrl>
+		<LineString>
+			<coordinates>
+				75.81265926361084,26.92540723319154,0 75.81245340406895,26.92545685574763,0 75.81241685897112,26.92550797293623,0 75.81223245710135,26.92555669865585,0 75.81197898834944,26.9255994457422,0 75.81175804138184,26.92564757356133,0 75.81169165670872,26.92566640618061,0 75.81165511161089,26.92546492688422,0 75.81180196255445,26.9254266637131,0 75.81200145184994,26.92539258556539,0 75.81215735524893,26.92534415870619,0 75.81229113042355,26.92530051472885,0 75.81224218010902,26.92516928376378,0 75.81219825893641,26.92505957575557,0 75.81219289451838,26.9250153338038,0 75.8123591914773,26.92498125553185,0 75.81254292279482,26.92494388899372,0 75.8121969178319,26.92502220924339,0 75.81216372549534,26.9249770704802,0 75.8120534196496,26.92501174661778,0 75.81202793866396,26.92501383914297,0 75.81199541687965,26.92501832312542,0 75.81193406134844,26.92494119860251,0 75.8118861168623,26.92493641568461,0 75.81182207912207,26.92495674308424,0 75.81173188984394,26.92498544058333,0 75.81155553460121,26.92501951885404,0 75.81187807023525,26.92495674308424,0 75.81187639385462,26.92489187475208,0 75.81183113157749,26.92479800991047,0 75.81174798309803,26.92467514848704,0 75.81170205026865,26.92450684904507,0 75.81142947077751,26.92454929759585,0 75.81186063587666,26.92446440047832,0 75.81239774823189,26.92434632163468,0 75.81180263310671,26.92446798768175,0 75.81175435334444,26.92430357407347,0 75.81175435334444,26.92426351690351,0 75.81173859536648,26.92423960216839,0 75.81183951348066,26.92421299701964,0 75.81190723925829,26.92415380801446,0 75.81200078129768,26.92415291121112,0 75.81207755953074,26.92413886129108,0 75.81202156841755,26.92395890258608,0 75.81198871135712,26.92377954146489,0 75.81223044544458,26.92371945542554,0 75.81127256155014,26.92392273144961,0 75.81195417791605,26.9237571213047,0 75.81192433834076,26.92357297688704,0 75.81188812851906,26.92356610135912,0 75.81187304109335,26.92353919711547,0 75.8118512481451,26.92347552371322,0 75.81179391592741,26.92348299711909,0 75.8117563650012,26.92339720238981,0 75.81172216683626,26.92334787786432,0 75.81167858093977,26.92327374156731,0 75.81162862479687,26.92317838069425,0 75.81162426620722,26.92315745510004,0 
+			</coordinates>
+		</LineString>
+	</Placemark>
+	<Placemark>
+		<name>ward no 108 beat 8</name>
+		<description>MORNING
+khutato ka rasta, Kalyan ji ka rasta se patwon ka chowk, chirag wali gali, purohit ji ka chowk dono, tikki walon ki gali sampurn chhoti galiyan 
+
+KARMCHARI KA NAME:- Varsha/Harimohan 
+BELT NO:- 120074
+MOB:- 6367736754
+KARMCHARI KA NAME:- Meena/Mohan 
+BELT NO:- 113754
+MOB:- 9521457202
+KARMCHARI KA NAME:- Suraj/Radheshyam 
+BELT NO:- 110515
+MOB:-7795943386
+KARMCHARI KA NAME:- sunny /prahlad (Nali safai par)
+BELT NO.:-115581
+MOB.:-8432908525
+DURI:-900
+TIME 07.00 AM TO 03.00 PM (DAILY)
+SI KA NAME:-  Manoj Kumar/Gouri lal 
+MOB:- 9309220827</description>
+		<styleUrl>#msn_ylw-pushpin1580</styleUrl>
+		<LineString>
+			<coordinates>
+				75.81091448664665,26.92260232756214,0 75.81112168729305,26.9225470239152,0 75.81144858151674,26.92246033165737,0 75.81133291125298,26.92220414069923,0 75.81128999590874,26.9221195407568,0 75.81137783825397,26.92223433359618,0 75.81148847937584,26.92246063059631,0 75.81188846379519,26.92239037992488,0 75.81170842051506,26.92174885474888,0 75.81157062202692,26.92176768801896,0 75.81138420850039,26.92179578844786,0 75.8112333342433,26.92183375390983,0 75.81111967563629,26.92186245220331,0 75.81100903451443,26.92188397591862,0 75.81091750413179,26.92190729327227,0 75.8107166737318,26.92193599154702,0 75.81091113388538,26.92189234625124,0 75.81088799983263,26.92177575941946,0 75.81083334982395,26.9217285267713,0 75.81067845225334,26.92174795792642,0 75.81089168787003,26.92170401361697,0 75.81089336425066,26.92167471740114,0 75.81094700843096,26.92164063812013,0 75.81093527376652,26.92155394516585,0 75.81098522990942,26.92154736845626,0 75.81101037561893,26.92163017518089,0 75.81104926764965,26.92162419635805,0 75.81116024404764,26.92158742659057,0 75.81110559403896,26.9214182257175,0 75.81106066703796,26.92120059595289,0 75.8110485970974,26.92117877316489,0 75.81085246056318,26.92122391344775,0 75.8105631172657,26.92127802197493,0 75.81088230013847,26.92120418326011,0 75.81150557845831,26.92107713272675,0 75.81096779555082,26.921171000664,0 75.81092923879623,26.92107384435811,0 75.81077568233013,26.9207109274478,0 75.81073813140392,26.92061317285807,0 75.81069387495518,26.9205802890321,0 75.81059094518423,26.9205985246095,0 75.81039078533649,26.92064994294304,0 
+			</coordinates>
+		</LineString>
+	</Placemark>
+	<Placemark>
+		<name>ward no 108 beat 9</name>
+		<description>MORNING
+singh dwar se new colony, jayanti bazar, indra bazar dono side, 
+
+KARMCHARI KA NAME:- Arun/Laxminarayan 
+BELT NO:- 120028
+MOB:- 7014366167
+KARMCHARI KA NAME:- vikaram/Lalaram meena 
+BELT NO:- 112468
+MOB:- 8955336854
+KARMCHARI KA NAME:- kamlesh/vinod 
+BELT NO:- 113856
+MOB:- 9875898430
+KARMCHARI KA NAME:- Sushila/Suresh 
+BELT NO.:- 115913
+MOB.:- 8058153176
+DURI:- 1400
+TIME 07.00 AM TO 03.00 PM (DAILY)
+SI KA NAME:-  
+MOB:-</description>
+		<styleUrl>#msn_ylw-pushpin1560</styleUrl>
+		<LineString>
+			<coordinates>
+				75.81199172884226,26.9186242820361,0 75.81189751625061,26.91837854560991,0 75.81119477748871,26.91849633174957,0 75.81059161573648,26.91862129254508,0 75.81040151417255,26.9181017178027,0 75.80999080091715,26.91820096931922,0 75.81023186445236,26.9189913909314,0 75.81023421138525,26.91904101630935,0 75.8102298527956,26.9191782333552,0 75.81015676259995,26.919278380767,0 75.81014066934586,26.91929990497524,0 75.8101212233305,26.91931604812874,0 75.81005349755287,26.91912352592555,0 75.81008568406105,26.91931515128692,0 75.81008668988943,26.91936836388805,0 75.81015072762966,26.91938241440213,0 75.81021308898926,26.9192834628721,0 75.81029791384935,26.91924250707747,0 75.81048030406237,26.91920693232408,0 75.8107978105545,26.91913608173142,0 75.81121992319822,26.91904460368522,0 75.81181235611439,26.9189283128593,0 75.81203129142523,26.91887510005067,0 75.81196993589401,26.91871127619011,0 75.81182006746531,26.91873967632895,0 75.81161856651306,26.91878960076625,0 75.81133257597685,26.91885088522494,0 75.81090644001961,26.91891874651354,0 75.81062480807304,26.91897584562781,0 75.81040620803833,26.91900215306343,0 75.81026036292315,26.91920304600582,0 75.81010848283768,26.91935610705518,0 75.80996230244637,26.91943652381239,0 75.80993413925171,26.91951843524594,0 75.80986976623535,26.91955371095447,0 75.80981276929379,26.91953427942147,0 75.80962602049112,26.91955251516795,0 75.80954186618328,26.91955998883366,0 75.80943021923304,26.91922008601571,0 75.80953784286976,26.91957164775122,0 75.80944463610649,26.91960572765711,0 75.80950431525707,26.91979675430766,0 75.80943692475557,26.91959586242224,0 75.80934103578329,26.91961678867702,0 75.80925051122904,26.9192792776091,0 75.80933902412653,26.91962725180291,0 75.80927062779665,26.91963891071351,0 75.80935478210449,26.9199584839734,0 75.80923609435558,26.92008972099943,0 75.80910466611385,26.91970766836689,0 75.8092337474227,26.91964787910548,0 75.80911103636026,26.91968225793466,0 75.80900877714157,26.91934474706256,0 
+			</coordinates>
+		</LineString>
+	</Placemark>
+	<Placemark>
+		<name>ward no 108 beat 10</name>
+		<description>MORNING
+chandpole Nukkad se bhindo ka rasta police chowki tak dono taraf, Mankasto ka chowk, devdas ji ki bagichi, jhalaniyon ka rasta, rasoi daaro ka chowk 
+
+KARMCHARI KA NAME:- Radha/Vinay 
+BELT NO:- 112308
+MOB:-  9636844262
+KARMACHARI KA NAME:- Khushabu/Rakesh 
+BELT NO.:- 115388
+MON:- 9351724454
+KARMCHARI KA NAME:- Vijay/Ramesh 
+BELT NO:-  100361
+MOB:- 8302770177
+DURI:- 750
+TIME 07.00 AM TO 03.00 PM (DAILY)
+SI KA NAME:-  Manoj Kumar/Gouri lal 
+MOB:- 9309220827</description>
+		<styleUrl>#msn_ylw-pushpin1690</styleUrl>
+		<LineString>
+			<coordinates>
+				75.81244837492704,26.92437143208264,0 75.81254761666059,26.92477439422146,0 75.81274107098579,26.92550707614365,0 75.81278700381517,26.92573635588187,0 75.81276085227728,26.92574442699844,0 75.81267066299915,26.92538810159779,0 75.81255968660116,26.92494239433194,0 75.81241082400084,26.92435080564364,0 75.81223648041487,26.92371497139146,0 75.81205677241087,26.92305103344657,0 75.81209030002356,26.92304744619808,0 75.81223413348198,26.9235493609416,0 75.81234510987997,26.92397355039839,0 75.81244770437479,26.92434572376681,0 75.81260059028864,26.92431493356683,0 75.81269111484289,26.92429221457895,0 75.81308539956808,26.92421718209962,0 75.81337004899979,26.92415978670327,0 75.8132329210639,26.92417054834231,0 75.81321951001883,26.92408056905096,0 75.81320978701115,26.92399298116685,0 75.81318933516741,26.92389821877198,0 75.81315144896507,26.92380465203903,0 75.81311490386724,26.9237565234337,0 75.81291239708662,26.92378372656098,0 75.81309981644154,26.92374815323937,0 75.81313535571098,26.92375323514315,0 75.81328354775906,26.92373858730225,0 75.81313937902451,26.92376549149837,0 75.81321448087692,26.92396099513082,0 75.81322252750397,26.9240632308404,0 75.81322487443686,26.92416666219501,0 75.81320609897375,26.92418848440509,0 75.81304349005222,26.92421837783673,0 75.81294156610966,26.92424169470793,0 75.8129844814539,26.92438338943687,0 75.81300962716341,26.92443450711187,0 75.8130669593811,26.92458785999784,0 75.81310015171766,26.92468292074651,0 75.81313032656908,26.92478904192789,0 75.81320744007826,26.92493252956369,0 75.81324499100447,26.92498065766734,0 75.81326443701982,26.92505628750298,0 75.81361882388592,26.92497886407378,0 75.81328757107258,26.9250679458526,0 75.81334389746189,26.92533608756096,0 75.81330332905054,26.92507870740501,0 75.81323493272066,26.92506107041579,0 75.81302102655172,26.92511786748983,0 75.81303041428328,26.92520605236392,0 75.81271290779114,26.92526583868002,0 75.81304080784321,26.92521442245009,0 75.81307735294104,26.92529842220895,0 75.81316351890564,26.92539019411602,0 75.81320308148861,26.92548674884319,0 75.81327248364687,26.92555251362554,0 75.81328723579645,26.9256242569807,0 
+			</coordinates>
+		</LineString>
+	</Placemark>
+	<Placemark>
+		<name>ward no 108 beat 11</name>
+		<description>MORNING
+Tolaram ki gali se ,bundi ka chowk, aas pas ki galiyan, sonkhiyon ka rasta hote huye bihari ji ka mandir wali gali, godbrahman school wali gali, lala ji ka chowk khutato ka rasta Tak sampurn aas pas ki chhoti galiyan 
+KARMCHARI KA NAME:- Sapna/Ajit
+BELT NO:- 110703
+MOB:- 7835654098
+KARMCHARI KA NAME:- Munni/Prabhat 
+BELT NO:- 100289
+MOB:- 6377167131
+KARMCHARI KA NAME:- Suwalal/shivdan
+BELT NO:- 110987
+MOB:- 9680631041
+DURI:- 1.17 km 
+TIME 07.00 AM TO 03.00 PM (DAILY)
+SI KA NAME:-  Manoj Kumar/Gouri lal 
+MOB:- 9309220827</description>
+		<styleUrl>#msn_ylw-pushpin165</styleUrl>
+		<LineString>
+			<coordinates>
+				75.812823548913,26.92424528191846,0 75.81264283508062,26.92363963959242,0 75.81229716539383,26.92369613844643,0 75.8132141456008,26.92350631414227,0 75.81275079399347,26.9235962938916,0 75.81272196024656,26.92350481946143,0 75.81269446760416,26.92342679709472,0 75.81250637769699,26.92346864817936,0 75.8125026896596,26.92353889817938,0 75.81245541572571,26.92348658435374,0 75.8124265819788,26.92345130987476,0 75.81239305436611,26.92336521618482,0 75.81220529973507,26.92340288218226,0 75.81263814121485,26.92330692354499,0 75.81265222281218,26.92330303736791,0 75.81269145011902,26.92341483963913,0 75.81263076514006,26.92318286474966,0 75.81234041601419,26.92324205426421,0 75.81239406019449,26.92318525624579,0 75.81241082400084,26.92314041568473,0 75.81234745681286,26.92311829433473,0 75.8122968301177,26.92301187264431,0 75.81210304051638,26.92304206532511,0 75.81207185983658,26.92302472695493,0 75.81189382821321,26.92240263642816,0 75.81211980432272,26.92235241465023,0 75.81285875290632,26.9221727520354,0 75.81214025616646,26.92238051493349,0 75.81230252981186,26.92299871939471,0 75.81255432218313,26.9229395297525,0 75.81241451203823,26.92232401542066,0 75.81256739795208,26.9229484978821,0 75.81263244152069,26.92316253703041,0 75.81257410347462,26.92295238407137,0 75.81277593970299,26.92290186360037,0 75.81307232379913,26.92282533550657,0 75.81309746950865,26.92296344476318,0 75.81312596797943,26.92311171771633,0 75.81285439431667,26.92316791789763,0 75.81297643482685,26.92327433944086,0 75.81301297992468,26.92334339381548,0 
+			</coordinates>
+		</LineString>
+	</Placemark>
+	<Placemark>
+		<name>ward no 108 beat 12</name>
+		<description>MORNING
+Bhindo ka rasta, police chowki se indira bazar nukkad tak dono taraf 
+
+KARMCHARI KA NAME:- Mamata/Anil
+BELT NO:- 111630
+MOB:-7726030850
+KARMCHARI KA NAME:- Ramswaroop/Phoolchand 
+BELT NO:- 106368
+MOB:- 7304305436
+DURI:- 750
+TIME 07.00 AM TO 03.00 M (DAILY)
+SI KA NAME:-  Manoj Kumar/Gouri lal 
+MOB:- 9309220827</description>
+		<styleUrl>#msn_ylw-pushpin163</styleUrl>
+		<LineString>
+			<coordinates>
+				75.81189751625061,26.92235809449529,0 75.81169031560421,26.92157277846848,0 75.81139694899321,26.92057311437789,0 75.81132084131241,26.92022663782519,0 75.81116124987602,26.91970647258197,0 75.81125479191542,26.9195336815281,0 75.81111297011375,26.91914176173839,0 
+			</coordinates>
+		</LineString>
+	</Placemark>
+	<Placemark>
+		<name>ward no 108 beat 13</name>
+		<description>MORNING
+khajaane wala rasta imali ke Ped se andar ki taraf, purviyon ka chauk sampurn galiyan 
+
+KARMCHARI KA NAME:- Laxmi/Jonny topiya 
+BELT NO.:- 110562
+MOB.:- 7615916547
+KARMCHARI KA NAME:- Indra/Khemchand 
+BELT NO:- 100319
+MOB:- 8890552638
+KARMCHARI KA NAME:- Vijay/Puranmal 
+BELT NO:- 114261
+MOB:- 9116749011
+DURI:- 1600
+TIME 07.00 AM TO 03.00 PM (DAILY)
+SI KA NAME:-  Manoj Kumar/Gouri lal 
+MOB:- 9309220827</description>
+		<styleUrl>#msn_ylw-pushpin171</styleUrl>
+		<LineString>
+			<coordinates>
+				75.81217411905527,26.9194571511498,0 75.8119773119688,26.91947209849339,0 75.81190958619118,26.91946492376872,0 75.81178318709135,26.91949362266468,0 75.8116564527154,26.91953457836816,0 75.81151228398085,26.91959167717085,0 75.81146232783794,26.91964459069518,0 75.81152636557817,26.91973098617027,0 75.8116128668189,26.91985564665269,0 75.81175770610571,26.91980422795722,0 75.81163231283426,26.91987448023879,0 75.81165980547667,26.91995818502782,0 75.81173624843359,26.92015369525747,0 75.81179190427065,26.92031662019006,0 75.81195451319218,26.92026669642837,0 75.81204604357481,26.92021049480197,0 75.81210639327765,26.9201659520037,0 75.81212818622589,26.92011034821741,0 75.81215534359217,26.92011692501077,0 75.81231627613306,26.92007895897114,0 75.81215735524893,26.92010586403993,0 75.81213656812906,26.92007028955872,0 75.81205610185862,26.92003052983117,0 75.81200815737247,26.91999316165342,0 75.81198267638683,26.91989869484485,0 75.81200279295444,26.91983920463053,0 75.81200111657381,26.91979137327969,0 75.81202626228333,26.91974563453146,0 75.81201419234276,26.91969690630219,0 75.81207353621721,26.91966701167257,0 75.81212617456913,26.91965714644306,0 75.81216808408499,26.91964578648074,0 75.81220395863056,26.91963771492787,0 75.81223882734776,26.91968405161241,0 75.81230487674475,26.91990557059625,0 75.81207655370235,26.91998688379834,0 75.81231392920017,26.91992111577175,0 75.81239137798548,26.92021228847133,0 75.81245139241219,26.92036146187334,0 75.81221535801888,26.92045174307496,0 75.81234041601419,26.92077310769321,0 75.81256974488497,26.92073454398734,0 75.81259187310934,26.92084664774695,0 75.81233471632004,26.92089866385356,0 75.81188578158617,26.92099552136751,0 75.81159275025129,26.9210517226029,0 75.81204704940319,26.92097070911105,0 75.81209566444159,26.9211246645901,0 75.81211812794209,26.92120448220235,0 75.81197496503592,26.92124334468977,0 75.81199608743191,26.92129147436718,0 75.81203229725361,26.92134199555925,0 75.81204973161221,26.92138803260213,0 75.81202659755945,26.92140118603952,0 75.81204436719418,26.9214741278008,0 75.81204269081354,26.92150641348336,0 75.81198804080486,26.92154019386355,0 75.81200681626797,26.9215946011803,0 75.81204269081354,26.92160386835801,0 75.81215869635344,26.92157516999874,0 75.8121882006526,26.92161164082903,0 75.81219121813774,26.92162868047522,0 75.81242993474007,26.92158951917929,0 75.81270284950733,26.92152405102826,0 75.81275179982185,26.92158234458926,0 75.81280142068863,26.92185079352246,0 75.81266462802887,26.92186514266796,0 75.8125489577651,26.92181850793844,0 75.81216707825661,26.9218818833354,0 75.81211008131504,26.9217168680766,0 75.81212919205427,26.92186095750071,0 75.81207823008299,26.92188008969257,0 75.81183515489101,26.92193479578574,0 
+			</coordinates>
+		</LineString>
+	</Placemark>
+	<Placemark>
+		<name>ward no 108 beat 14</name>
+		<description>MORNING
+chandpole bazar nukkad se khajaane walo ka rasta sonkhiyon ka rasta chorahe se, mishri bhavan wali gali tak, dono taraf 
+
+KARMCHARI KA NAME:- Uma/Anush
+BELT NO:- 113422
+MOB:- 7023009960
+KARMCHARI KA NAME:- Ramsingh/Kalu
+BELT NO:- 112111
+MOB:- 9982032007
+DURI:- 671
+TIME 07.00 AM TO 03.00 PM (DAILY)
+SI KA NAME:-  Manoj Kumar/Gouri lal 
+MOB:- 9309220827</description>
+		<styleUrl>#msn_ylw-pushpin168</styleUrl>
+		<LineString>
+			<coordinates>
+				75.81385485827923,26.92550647828191,0 75.81377238035202,26.92553009381767,0 75.81340961158276,26.92414573678407,0 75.81325370818377,26.92349884073792,0 75.81309378147125,26.9228181609951,0 75.81316653639078,26.92281397586321,0 75.8132329210639,26.92315117742103,0 75.81344179809093,26.9231299528846,0 75.81346727907658,26.92316492852698,0 75.8135474100709,26.92342201411263,0 75.81333383917809,26.92346476200786,0 75.81343375146389,26.92386264548651,0 75.81350717693567,26.92425006486565,0 75.8136647567153,26.92486885694783,0 75.81385854631662,26.92548764563593,0 
+			</coordinates>
+		</LineString>
+	</Placemark>
+	<Placemark>
+		<name>ward no 108 beat 15</name>
+		<description>MORNING
+sonkhiyon ke chorahe se khajaane walo ka rasta indira bazar tak dono taraf vishnu tailor wali gali 
+
+KARMCHARI KA NAME:- Santosh/Manoj 
+BELT NO:-100349
+MOB:-8118896752
+KARMCHARI KA NAME:- Nisha/Mahendra 
+BELT NO:-114608
+MOB:- 8209921626
+KARMCHARI KA NAME:- Nathu/Kesra
+BELT NO.:- 100072
+MOB.:- 9571617881
+DURI:- 1400 
+TIME 07.00 AM TO 03.00 PM (DAILY)
+SI KA NAME:-  Manoj Kumar/Gouri lal 
+MOB:- 9309220827</description>
+		<styleUrl>#msn_ylw-pushpin156</styleUrl>
+		<LineString>
+			<coordinates>
+				75.81308875232935,26.92280142046659,0 75.81280376762152,26.92187500770441,0 75.81270486116409,26.92149236323375,0 75.81262573599815,26.92108072003789,0 75.81258583813906,26.92085232766778,0 75.81258147954941,26.92077878761778,0 75.81256002187729,26.9207109274478,0 75.81245675683022,26.92038149115279,0 75.81235818564892,26.92005623913028,0 75.81228978931904,26.91981349528195,0 75.81218518316746,26.91938749650255,0 75.8120447024703,26.91888885167777,0 75.81213522702456,26.91887330636004,0 75.81226397305727,26.91941350489519,0 75.81230621784925,26.91952112576648,0 75.81235751509666,26.91973098617027,0 75.81259254366159,26.91967030008223,0 75.81263210624456,26.91972022410778,0 75.81268809735775,26.91978957960363,0 75.81271223723888,26.91977224073366,0 75.81278499215841,26.91974174823175,0 75.81283427774906,26.91976984916518,0 75.81280577927828,26.9197928680097,0 75.81273168325424,26.91984338987277,0 75.81271559000015,26.9198676044855,0 75.81276219338179,26.91994263985741,0 75.81276822835207,26.91999824372633,0 75.81276822835207,26.91999824372633,0 75.81272128969431,26.92004248764546,0 75.81270854920149,26.92006909377766,0 75.81271961331367,26.92014233534513,0 75.8125851675868,26.92016625094871,0 75.81248391419649,26.92018986760225,0 75.81236723810434,26.91976536497414,0 75.8124990016222,26.92027686054933,0 75.8125851675868,26.92063469681171,0 75.81273168325424,26.92119850335696,0 75.8128735050559,26.92180774607505,0 75.81314373761415,26.92279783321016,0 
+			</coordinates>
+		</LineString>
+	</Placemark>
+	<Placemark>
+		<name>ward no 108 beat 16</name>
+		<description>MORNING
+khejaro ka rasta chandpole bazar Nukkad se dusra Chauraha hote huye tikkadmal ka rasta, donon taraf
+
+KARMCHARI KA NAME:- Komal/Vicky 
+BELT NO:- 110568
+MOB:- 7232017573
+KARMCHARI KA NAME:-Sonu/Rajkumar 
+BELT NO.:- 113052
+MOB:- 8824398373
+DURI:- 660 
+TIME 07.00 AM TO 03.00 PM (DAILY)
+SI KA NAME:-  Manoj Kumar/Gouri lal 
+MOB:- 9309220827</description>
+		<styleUrl>#msn_ylw-pushpin167</styleUrl>
+		<LineString>
+			<coordinates>
+				75.81486638635397,26.92533220145378,0 75.81429708749056,26.92329795544386,0 75.81339184194803,26.92346117477252,0 75.81430111080408,26.92324414682222,0 75.81489287316799,26.92532442923907,0 
+			</coordinates>
+		</LineString>
+	</Placemark>
+	<Placemark>
+		<name>ward no 108 beat 17</name>
+		<description>MORNING
+chandpole bazar se vridhi Chand ji ka chauk hote huye khajaane walo ke raste se badrinath ji ka chauk se jhalaniyon ka rasta hote huye pahalwan ji ka chauk 
+
+KARMCHARI KA NAME:- Laxmi/Kalu 
+BELT NO:- 106231
+MOB:- 9511589790
+KARMCHARI KA NAME:- rahul nirvan 
+BELT NO:- 110726
+MOB:- 9672675808
+DURI:- 700
+TIME 07.00 AM TO 03.00 PM (DAILY)
+SI KA NAME:-  Manoj Kumar/Gouri lal 
+MOB:- 9309220827</description>
+		<styleUrl>#msn_ylw-pushpin161</styleUrl>
+		<LineString>
+			<coordinates>
+				75.81453714519739,26.92536986679452,0 75.81446908414364,26.92514088524327,0 75.81435173749924,26.92513281408352,0 75.81426590681076,26.92512833010563,0 75.8142015337944,26.92512743331001,0 75.81414956599474,26.92511218778373,0 75.81407312303782,26.92508169672492,0 75.81402618438005,26.92508139779296,0 75.81375863403082,26.92514058631144,0 75.81366039812565,26.92475765398322,0 75.813904479146,26.92470563965568,0 75.81391252577305,26.92483059357453,0 75.81405065953732,26.92481385334463,0 75.81433698534966,26.92476183904301,0 75.81438593566418,26.92494687831724,0 75.81424009054899,26.92479113445721,0 75.81406440585852,26.92482431598859,0 75.81402853131294,26.92469278553659,0 75.81404596567154,26.92465541890293,0 75.81432189792395,26.92457141866528,0 75.81441812217236,26.9245678314651,0 75.81440705806017,26.92447934715857,0 75.81437151879072,26.92436156726447,0 75.8143500611186,26.92427577320329,0 75.81430781632662,26.92413079005963,0 75.81429809331894,26.9241295943216,0 75.81427965313196,26.92407010633802,0 75.81425081938505,26.92397893122691,0 75.81352226436138,26.92411434866046,0 75.81352930516005,26.92407399248863,0 75.81374254077673,26.92406173616694,0 75.81370163708925,26.92387759224647,0 75.81367380917072,26.92376937765949,0 75.81370331346989,26.92373201072,0 75.81385184079409,26.92369793206037,0 75.8138370886445,26.92360585984081,0 75.81363625824451,26.92365518425348,0 75.81361748278141,26.92366026616146,0 75.81359032541513,26.92354965987764,0 75.81356585025787,26.92344592902105,0 
+			</coordinates>
+		</LineString>
+	</Placemark>
+	<Placemark>
+		<name>ward no 108 beat 18</name>
+		<description>MORNING
+khejaro ka rasta dusare chorahe se chothe chorahe tak m, sonkhiyon ka rasta, murti walo ka chauk, gutya hanuman ji ki gali 
+
+KARMCHARI KA NAME:- Seema /Tarachand 
+BELT NO:-  111627
+MOB:- 9351475971
+KARMCHARI KA NAME:- krishnkumar/Ramesh
+BELT NO:- 105902
+MOB:- 9509107660
+DURI:- 645
+TIME 07.00 AM TO 03.00 PM (DAILY)
+SI KA NAME:-  Manoj Kumar/Gouri lal 
+MOB:- 9309220827</description>
+		<styleUrl>#msn_ylw-pushpin169</styleUrl>
+		<LineString>
+			<coordinates>
+				75.81433229148388,26.92323846702177,0 75.81417169421911,26.92261009996437,0 75.81401880830526,26.92198501774955,0 75.81401411443949,26.92195900994966,0 75.81397321075201,26.92198202834757,0 75.81403490155935,26.92223552935431,0 75.81413548439741,26.92260770845605,0 75.81390347331762,26.92266779508749,0 75.81354137510061,26.92274223072088,0 75.8131792768836,26.92281427480121,0 75.81350985914469,26.92275269355697,0 75.81353534013033,26.92286778469001,0 75.81355981528759,26.92290844023103,0 75.81356383860111,26.92293564356278,0 75.81358596682549,26.92299722470715,0 75.81360038369894,26.92305551750701,0 75.81362184137106,26.92313682843909,0 75.81363189965487,26.9231553625404,0 75.81373818218708,26.92313264331901,0 75.8138458058238,26.92310783153254,0 75.81381428986788,26.92294939469502,0 75.81381060183048,26.92284088027982,0 75.81382367759943,26.92281636736717,0 75.81379014998674,26.92270605919432,0 75.81381395459175,26.92282892276211,0 75.81383608281612,26.92294491063035,0 75.81386759877205,26.9230884006116,0 75.81389609724283,26.9231553625404,0 75.81405200064182,26.9231212837066,0 75.81405434757471,26.92310902728141,0 75.81419248133898,26.92308092717957,0 75.81425048410892,26.92307016543661,0 75.81430848687887,26.92323727127427,0 75.81414520740509,26.92262833521374,0 
+			</coordinates>
+		</LineString>
+	</Placemark>
+	<Placemark>
+		<name>ward no 108 beat 19</name>
+		<description>MORNING
+khejaro ka rasta chothe chorahe se indira bazar ke Nukkad tak dono taraf 
+
+KARMCHARI KA NAME:- Ratni /Puran
+BELT NO:- 106365
+MOB:- 9929594431
+KARMCHARI KA NAME:- Banwari /deendayal 
+BELT NO:- 110738
+MOB:- 8560023578
+DURI:- 700
+TIME 07.00 AM TO 03.00 PM (DAILY)
+SI KA NAME:-  Manoj Kumar/Gouri lal 
+MOB:- 9309220827</description>
+		<styleUrl>#msn_ylw-pushpin164</styleUrl>
+		<LineString>
+			<coordinates>
+				75.81396918743849,26.92194735127877,0 75.81309210509062,26.9186745054734,0 
+			</coordinates>
+		</LineString>
+	</Placemark>
+	<Placemark>
+		<name>ward no 108 beat 20</name>
+		<description>MORNING
+Chothe chorahe se badmunjo ka chauk, khutato ka rasta, kumharo ka chauk, mahesh bhardwaj ji ka chauk or naka 
+
+KARMCHARI KA NAME:- Mithlesh/Chandraprakash 
+BELT NO:- 100199
+MOB:- 9828158205
+KARMCHARI KA NAME:- Deepak Hatwal/Ramesh Hatwal 
+BELT NO:- 120038
+MOB:- 6375778868
+DURI:- 700
+TIME 07.00 AM TO 03.00 PM (DAILY)
+SI KA NAME:-  Manoj Kumar/Gouri lal 
+MOB:- 9309220827</description>
+		<styleUrl>#msn_ylw-pushpin166</styleUrl>
+		<LineString>
+			<coordinates>
+				75.81361345946789,26.92269081334081,0 75.81356719136238,26.9226038222549,0 75.81355579197407,26.92250158522285,0 75.8136647567153,26.92247527860312,0 75.81363994628191,26.92242146958911,0 75.81361077725887,26.92238171069006,0 75.81359971314669,26.92229711088081,0 75.81353567540646,26.92220742903492,0 75.81349108368158,26.92221340782688,0 75.81336870789528,26.92226960845565,0 75.81331573426723,26.92209353298793,0 75.81300057470798,26.92216258808525,0 75.81299521028996,26.92214435276062,0 75.81337206065655,26.92206244323331,0 75.81394203007221,26.92196020571069,0 75.81347431987524,26.9220588559534,0 75.81351153552532,26.92218351386399,0 75.81344749778509,26.92203075559002,0 75.81337440758944,26.92180655031239,0 75.81330299377441,26.92175752403232,0 75.81326644867659,26.9216630587009,0 75.81322889775038,26.9216543894102,0 75.81315077841282,26.92144094528411,0 75.81283360719681,26.92150910395647,0 75.81303007900715,26.92144722305828,0 75.81299789249897,26.92133422306962,0 75.81305019557476,26.921441842109,0 75.81317257136106,26.92141314370855,0 75.81321783363819,26.92140596910729,0 75.813182964921,26.92125859073887,0 75.81323727965355,26.92140417545689,0 75.81340223550797,26.92135305640893,0 75.81362385302782,26.92131479184324,0 75.81376601010561,26.92127772303287,0 75.81376902759075,26.92129536061351,0 75.81317659467459,26.92142898761804,0 
+			</coordinates>
+		</LineString>
+	</Placemark>
+	<Placemark>
+		<name>ward no 108 beat 21</name>
+		<description>MORNING
+bheruji ke nake se 2 chauk or jiledaron ka chauk 
+
+KARMCHARI KA NAME:- Payal/Suresh Kumar 
+BELT NO:- 113899
+MOB:- 8209216799
+KARMCHARI KA NAME:- Pappu/Mohan 
+BELT NO:- 100083
+MOB:- 7688854079
+DURI:- 700
+TIME 07.00 AM TO 03.00 PM (DAILY)
+SI KA NAME:-  Manoj Kumar/Gouri lal 
+MOB:- 9309220827</description>
+		<styleUrl>#msn_ylw-pushpin157</styleUrl>
+		<LineString>
+			<coordinates>
+				75.81314742565155,26.92140746381591,0 75.81310920417309,26.92128190822175,0 75.81307500600815,26.92116741335574,0 75.81294424831867,26.92118295835743,0 75.812913402915,26.92110523332763,0 75.81283628940582,26.92098416153992,0 75.81296872347593,26.92095665879472,0 75.81297542899847,26.92093543384548,0 75.81292580813169,26.92078536437216,0 75.81266295164824,26.9208194439115,0 75.81358395516872,26.920641871462,0 75.81338346004486,26.92065891125463,0 75.81329595297575,26.92036923442998,0 75.81306025385857,26.920421549701,0 75.81295564770699,26.92020511379371,0 75.81276085227728,26.92024397662532,0 75.8127323538065,26.92015130369706,0 75.81277761608362,26.92022992621851,0 75.81294592469931,26.92018239397825,0 75.81305555999279,26.92013426382778,0 75.81307232379913,26.92012350180375,0 75.81299588084221,26.91999943950816,0 75.81290669739246,26.91998658485286,0 75.81300258636475,26.91998538907089,0 75.81302370876074,26.91997163757742,0 75.8130981400609,26.91993456832578,0 75.81318330019712,26.92010795665611,0 75.81321850419044,26.92012111024271,0 75.81326544284821,26.92025085235568,0 75.81329260021448,26.92024577029414,0 75.81326242536306,26.92014921108167,0 75.81329025328159,26.92013187226696,0 75.81345017999411,26.92010048302669,0 
+			</coordinates>
+		</LineString>
+	</Placemark>
+	<Placemark>
+		<name>ward no 108 beat 22</name>
+		<description>MORNING/EVENING
+chandpole bazar, hanuman mandir se jai lal munshi ka rasta nukkad tak 
+
+KARMCHARI KA NAME:- Meera/Rajkumar
+BELT NO:- 100175
+MOB:- 6377890348
+KARMCHARI KA NAME:- Narendra/Sitaram
+BELT NO:- 100341
+MOB:- 9521468638
+KARMCHARI KA NAME:- Satish kumar Gurar/ Bahadur singh (Litter picking)
+BELT NO:- 112474
+MOB:- 9680760897
+DURI:- 434
+TIME 07.00 TO 11.00 AM TO 02.00 TO 05.00 PM (DAILY)
+SI KA NAME:- Rajkumar/Narayan 
+MOB:- 9024932628</description>
+		<styleUrl>#msn_ylw-pushpin154</styleUrl>
+		<LineString>
+			<tessellate>1</tessellate>
+			<coordinates>
+				75.80965361627086,26.92659672306759,0 75.81280270714731,26.92597041826587,0 75.81391355774844,26.92572417290069,0 
+			</coordinates>
+		</LineString>
+	</Placemark>
+	<Placemark>
+		<name>ward no 108 beat 23</name>
+		<description>MORNING/EVENING
+chandpole bazar, jailal munshi ka rasta nukkad se chhoti chaupar tak
+
+KARMCHARI KA NAME:- seema/ravi
+BELT NO:- 114717
+MOB:- 8949666492
+KARMCHARI KA NAME:-Ganpat/Moolchand 
+BELT NO:-100077
+MOB:- 8233867034
+KARMCHARI KA NAME:- Mukesh/Tarachand 
+BELT NO:- 109822
+MOB:- 8290389387
+DURI:- 448
+TIME 07.00 TO 11.00 AM TO 02.00 TO 05.00 PM (DAILY)
+SI KA NAME:- Rajkumar/Narayan 
+MOB:- 9024932628</description>
+		<styleUrl>#msn_ylw-pushpin159</styleUrl>
+		<LineString>
+			<tessellate>1</tessellate>
+			<coordinates>
+				75.81395453225402,26.9257205589725,0 75.8180504040815,26.92488015338029,0 75.81833862012772,26.9247835736606,0 
+			</coordinates>
+		</LineString>
+	</Placemark>
+	<Placemark>
+		<name>ward no 108 beat 24</name>
+		<description>MORNING/EVENING
+chandpole bazar, Chhoti chaupar se khajaane wale ke rasta nukkad tak
+
+KARMCHARI KA NAME:- Mamta/vicky
+BELT NO:- 113988
+MOB:- 7726030850
+KARMCHARI KA NAME:- Sanjay/Ramnarayan 
+BELT NO:-100088
+MOB:- 9660760656
+KARMCHARI KA NAME:-  Kusum rani/ Mahendra
+BELT NO:-111811
+MOB:-7691083894
+DURI:- 452 
+TIME 07.00 TO 11.00 AM TO 02.00 TO 05.00 PM (DAILY)
+SI KA NAME:- Rajkumar/Narayan 
+MOB:- 9024932628</description>
+		<styleUrl>#msn_ylw-pushpin158</styleUrl>
+		<LineString>
+			<tessellate>1</tessellate>
+			<coordinates>
+				75.81830884369593,26.92463046062438,0 75.81799834753195,26.92469968506922,0 75.8149201815601,26.92535136038749,0 75.8138748359837,26.92553854330007,0 
+			</coordinates>
+		</LineString>
+	</Placemark>
+	<Placemark>
+		<name>ward no 108 beat 25</name>
+		<description>MORNING/EVENING
+Chandpole bazar, khajaane wale ke nukkad se chandpole gate tak 
+
+KARMCHARI KA NAME:- Chitra Goyar/Ranjeet singh
+BELT NO:- 113247
+MOB:- 7014977750
+KARMCHARI KA NAME:- Vicky/devanand
+BELT NO:- 112832
+MOB:- 7232017573
+KARMCHARI KA NAME:- Puran/Sitaram 
+BELT NO:- 100202
+MOB:-8302487455
+DURI:- 427
+TIME 07.00 TO 11.00 AM TO 02.00 TO 05.00 PM (DAILY)
+SI KA NAME:- Rajkumar/Narayan 
+MOB:- 9024932628</description>
+		<styleUrl>#msn_ylw-pushpin155</styleUrl>
+		<LineString>
+			<tessellate>1</tessellate>
+			<coordinates>
+				75.81378444634812,26.92556083733355,0 75.80960474311192,26.92645611229956,0 
+			</coordinates>
+		</LineString>
+	</Placemark>
+</Document>
+</kml>

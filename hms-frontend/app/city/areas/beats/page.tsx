@@ -32,7 +32,18 @@ export default function BeatUploadPage() {
     const [uploadStatus, setUploadStatus] = useState("");
     const [uploading, setUploading] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [existingBeats, setExistingBeats] = useState<any[]>([]);
+    const [loadingBeats, setLoadingBeats] = useState(false);
 
+    // CRUD modal states
+    const [editingBeat, setEditingBeat] = useState<any | null>(null);
+    const [showEditModal, setShowEditModal] = useState(false);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [beatToDelete, setBeatToDelete] = useState<any | null>(null);
+    const [viewingBeat, setViewingBeat] = useState<any | null>(null);
+    const [showViewModal, setShowViewModal] = useState(false);
+
+    // Load zones and wards
     useEffect(() => {
         const loadGeo = async () => {
             try {
@@ -51,6 +62,109 @@ export default function BeatUploadPage() {
         };
         loadGeo();
     }, []);
+
+    // Load existing beats
+    const loadBeats = async () => {
+        try {
+            setLoadingBeats(true);
+            const token = getTokenFromCookies();
+            if (!token) throw new Error("Auth token missing");
+
+            const res = await fetch(
+                `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000"}/modules/sweeping/admin/beats`,
+                {
+                    method: "GET",
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                }
+            );
+
+            if (!res.ok) throw new Error("Failed to load beats");
+
+            const data = await res.json();
+            setExistingBeats(data.beats || []);
+        } catch (err) {
+            console.error("Failed to load beats:", err);
+        } finally {
+            setLoadingBeats(false);
+        }
+    };
+
+    useEffect(() => {
+        loadBeats();
+    }, []);
+
+    // Handle edit beat
+    const handleEditBeat = async (beatData: any) => {
+        try {
+            const token = getTokenFromCookies();
+            if (!token) throw new Error("Auth token missing");
+
+            const res = await fetch(
+                `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000"}/modules/sweeping/admin/beats/${editingBeat.id}`,
+                {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`
+                    },
+                    body: JSON.stringify(beatData)
+                }
+            );
+
+            if (!res.ok) {
+                const error = await res.json();
+                throw new Error(error.error || "Failed to update beat");
+            }
+
+            setUploadStatus("✅ Beat updated successfully!");
+            setShowEditModal(false);
+            setEditingBeat(null);
+            await loadBeats();
+
+            setTimeout(() => setUploadStatus(""), 3000);
+        } catch (err: any) {
+            console.error(err);
+            setUploadStatus(`❌ ${err.message || "Update failed"}`);
+        }
+    };
+
+    // Handle delete beat
+    const handleDeleteBeat = async () => {
+        if (!beatToDelete) return;
+
+        try {
+            const token = getTokenFromCookies();
+            if (!token) throw new Error("Auth token missing");
+
+            const res = await fetch(
+                `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000"}/modules/sweeping/admin/beats/${beatToDelete.id}`,
+                {
+                    method: "DELETE",
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                }
+            );
+
+            if (!res.ok) {
+                const error = await res.json();
+                throw new Error(error.error || "Failed to delete beat");
+            }
+
+            setUploadStatus("✅ Beat deleted successfully!");
+            setShowDeleteModal(false);
+            setBeatToDelete(null);
+            await loadBeats();
+
+            setTimeout(() => setUploadStatus(""), 3000);
+        } catch (err: any) {
+            console.error(err);
+            setUploadStatus(`❌ ${err.message || "Delete failed"}`);
+            setShowDeleteModal(false);
+        }
+    };
 
     const wardsByZone = wards.filter(w => w.parentId === selectedZone);
 
@@ -161,7 +275,10 @@ export default function BeatUploadPage() {
             const data = await res.json();
             setUploadStatus(`✅ Successfully created ${data.createdBeats} beats!`);
 
-            // Reset after successful upload
+            // Reload beats list to show newly created beats
+            await loadBeats();
+
+            // Reset form after successful upload
             setTimeout(() => {
                 setKmlFile(null);
                 setParsedFeatures([]);
@@ -352,6 +469,434 @@ export default function BeatUploadPage() {
                         </div>
                     </div>
                 </>
+            )}
+
+            {/* Existing Beats List */}
+            <div className="card" style={{ background: '#fff', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)', padding: 0, overflow: 'hidden', marginTop: 24 }}>
+                <div style={{ padding: '20px 32px', borderBottom: '1px solid #e2e8f0', background: '#f8fafc', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                        <h3 style={{ fontSize: 18, fontWeight: 700, color: '#0f172a', margin: 0 }}>
+                            📍 Created Beats
+                        </h3>
+                        <p className="muted" style={{ margin: '4px 0 0 0', fontSize: 13, color: '#64748b' }}>
+                            {existingBeats.length} total beats in the system
+                        </p>
+                    </div>
+                    <button
+                        className="btn"
+                        onClick={loadBeats}
+                        disabled={loadingBeats}
+                        style={{ fontSize: 13, padding: '8px 16px' }}
+                    >
+                        {loadingBeats ? "⏳ Loading..." : "🔄 Refresh"}
+                    </button>
+                </div>
+
+                {loadingBeats ? (
+                    <div style={{ padding: 32, textAlign: 'center', color: '#64748b' }}>
+                        <div className="skeleton" style={{ height: 200, borderRadius: 8 }} />
+                    </div>
+                ) : existingBeats.length === 0 ? (
+                    <div style={{ padding: 64, textAlign: 'center', color: '#64748b' }}>
+                        <div style={{ fontSize: 48, marginBottom: 16 }}>🗺️</div>
+                        <h4 style={{ fontSize: 16, fontWeight: 600, color: '#334155', marginBottom: 8 }}>No beats created yet</h4>
+                        <p style={{ fontSize: 14, color: '#94a3b8' }}>Upload a KML file to create your first beat</p>
+                    </div>
+                ) : (
+                    <div style={{ overflowX: 'auto' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
+                            <thead style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+                                <tr>
+                                    <th style={{ textAlign: 'left', padding: '12px 32px', fontSize: 12, fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>#</th>
+                                    <th style={{ textAlign: 'left', padding: '12px 32px', fontSize: 12, fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Beat Name</th>
+                                    <th style={{ textAlign: 'left', padding: '12px 32px', fontSize: 12, fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Ward</th>
+                                    <th style={{ textAlign: 'left', padding: '12px 32px', fontSize: 12, fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Area Type</th>
+                                    <th style={{ textAlign: 'left', padding: '12px 32px', fontSize: 12, fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Location</th>
+                                    <th style={{ textAlign: 'left', padding: '12px 32px', fontSize: 12, fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Status</th>
+                                    <th style={{ textAlign: 'left', padding: '12px 32px', fontSize: 12, fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Assigned To</th>
+                                    <th style={{ textAlign: 'left', padding: '12px 32px', fontSize: 12, fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Created</th>
+                                    <th style={{ textAlign: 'right', padding: '12px 32px', fontSize: 12, fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {existingBeats.map((beat, idx) => (
+                                    <tr key={beat.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                                        <td style={{ padding: '16px 32px', color: '#64748b', fontWeight: 600 }}>{idx + 1}</td>
+                                        <td style={{ padding: '16px 32px', fontWeight: 600, color: '#0f172a' }}>
+                                            {beat.geoNodeBeat?.name || 'Unnamed Beat'}
+                                        </td>
+                                        <td style={{ padding: '16px 32px', color: '#64748b' }}>
+                                            {beat.geoNodeBeat?.parent?.name || 'N/A'}
+                                        </td>
+                                        <td style={{ padding: '16px 32px' }}>
+                                            <span style={{
+                                                background: beat.areaType === 'RESIDENTIAL' ? '#dbeafe' : beat.areaType === 'COMMERCIAL' ? '#fef3c7' : '#fce7f3',
+                                                color: beat.areaType === 'RESIDENTIAL' ? '#1e40af' : beat.areaType === 'COMMERCIAL' ? '#92400e' : '#9f1239',
+                                                padding: '4px 12px',
+                                                borderRadius: 99,
+                                                fontSize: 12,
+                                                fontWeight: 700
+                                            }}>
+                                                {beat.areaType}
+                                            </span>
+                                        </td>
+                                        <td style={{ padding: '16px 32px', fontSize: 12, color: '#64748b', fontFamily: 'monospace' }}>
+                                            {beat.latitude?.toFixed(6)}, {beat.longitude?.toFixed(6)}
+                                        </td>
+                                        <td style={{ padding: '16px 32px' }}>
+                                            {beat.assignmentStatus ? (
+                                                <span style={{
+                                                    background: beat.assignmentStatus === 'ACTIVE' ? '#dcfce7' : '#f3f4f6',
+                                                    color: beat.assignmentStatus === 'ACTIVE' ? '#166534' : '#6b7280',
+                                                    padding: '4px 12px',
+                                                    borderRadius: 99,
+                                                    fontSize: 12,
+                                                    fontWeight: 700
+                                                }}>
+                                                    {beat.assignmentStatus}
+                                                </span>
+                                            ) : (
+                                                <span style={{ color: '#94a3b8', fontSize: 12 }}>Unassigned</span>
+                                            )}
+                                        </td>
+                                        <td style={{ padding: '16px 32px', color: '#64748b' }}>
+                                            {beat.assignedEmployee?.name || '—'}
+                                        </td>
+                                        <td style={{ padding: '16px 32px', color: '#64748b', fontSize: 12 }}>
+                                            {new Date(beat.createdAt).toLocaleDateString('en-IN', {
+                                                day: '2-digit',
+                                                month: 'short',
+                                                year: 'numeric'
+                                            })}
+                                        </td>
+                                        <td style={{ padding: '16px 32px', textAlign: 'right' }}>
+                                            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                                                <button
+                                                    onClick={() => {
+                                                        setViewingBeat(beat);
+                                                        setShowViewModal(true);
+                                                    }}
+                                                    style={{
+                                                        padding: '6px 12px',
+                                                        fontSize: 12,
+                                                        fontWeight: 600,
+                                                        background: '#eff6ff',
+                                                        color: '#1e40af',
+                                                        border: '1px solid #bfdbfe',
+                                                        borderRadius: 6,
+                                                        cursor: 'pointer',
+                                                        transition: 'all 0.2s'
+                                                    }}
+                                                    title="View on map"
+                                                >
+                                                    👁️ View
+                                                </button>
+                                                <button
+                                                    onClick={() => {
+                                                        setEditingBeat(beat);
+                                                        setShowEditModal(true);
+                                                    }}
+                                                    style={{
+                                                        padding: '6px 12px',
+                                                        fontSize: 12,
+                                                        fontWeight: 600,
+                                                        background: '#fef3c7',
+                                                        color: '#92400e',
+                                                        border: '1px solid #fde68a',
+                                                        borderRadius: 6,
+                                                        cursor: 'pointer',
+                                                        transition: 'all 0.2s'
+                                                    }}
+                                                    title="Edit beat"
+                                                >
+                                                    ✏️ Edit
+                                                </button>
+                                                <button
+                                                    onClick={() => {
+                                                        setBeatToDelete(beat);
+                                                        setShowDeleteModal(true);
+                                                    }}
+                                                    disabled={beat.assignmentStatus === 'ACTIVE'}
+                                                    style={{
+                                                        padding: '6px 12px',
+                                                        fontSize: 12,
+                                                        fontWeight: 600,
+                                                        background: beat.assignmentStatus === 'ACTIVE' ? '#f3f4f6' : '#fee2e2',
+                                                        color: beat.assignmentStatus === 'ACTIVE' ? '#9ca3af' : '#991b1b',
+                                                        border: `1px solid ${beat.assignmentStatus === 'ACTIVE' ? '#e5e7eb' : '#fecaca'}`,
+                                                        borderRadius: 6,
+                                                        cursor: beat.assignmentStatus === 'ACTIVE' ? 'not-allowed' : 'pointer',
+                                                        transition: 'all 0.2s'
+                                                    }}
+                                                    title={beat.assignmentStatus === 'ACTIVE' ? 'Cannot delete active beat' : 'Delete beat'}
+                                                >
+                                                    🗑️ Delete
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+            </div>
+
+            {/* Edit Modal */}
+            {showEditModal && editingBeat && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: 'rgba(0, 0, 0, 0.5)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 1000
+                }}>
+                    <div style={{
+                        background: '#fff',
+                        borderRadius: 12,
+                        padding: 32,
+                        maxWidth: 500,
+                        width: '90%',
+                        maxHeight: '80vh',
+                        overflow: 'auto'
+                    }}>
+                        <h3 style={{ fontSize: 20, fontWeight: 700, color: '#0f172a', marginBottom: 16 }}>
+                            ✏️ Edit Beat
+                        </h3>
+                        <form onSubmit={(e) => {
+                            e.preventDefault();
+                            const formData = new FormData(e.currentTarget);
+                            handleEditBeat({
+                                name: formData.get('name') as string,
+                                areaType: formData.get('areaType') as string,
+                                latitude: parseFloat(formData.get('latitude') as string),
+                                longitude: parseFloat(formData.get('longitude') as string),
+                                radiusMeters: parseFloat(formData.get('radiusMeters') as string)
+                            });
+                        }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: 8, fontSize: 14, fontWeight: 600, color: '#334155' }}>
+                                        Beat Name
+                                    </label>
+                                    <input
+                                        type="text"
+                                        name="name"
+                                        defaultValue={editingBeat.geoNodeBeat?.name}
+                                        className="input"
+                                        style={{ width: '100%' }}
+                                        required
+                                    />
+                                </div>
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: 8, fontSize: 14, fontWeight: 600, color: '#334155' }}>
+                                        Area Type
+                                    </label>
+                                    <select name="areaType" defaultValue={editingBeat.areaType} className="input" style={{ width: '100%' }} required>
+                                        <option value="RESIDENTIAL">Residential</option>
+                                        <option value="COMMERCIAL">Commercial</option>
+                                        <option value="SLUM">Slum</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: 8, fontSize: 14, fontWeight: 600, color: '#334155' }}>
+                                        Latitude
+                                    </label>
+                                    <input
+                                        type="number"
+                                        step="any"
+                                        name="latitude"
+                                        defaultValue={editingBeat.latitude}
+                                        className="input"
+                                        style={{ width: '100%' }}
+                                        required
+                                    />
+                                </div>
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: 8, fontSize: 14, fontWeight: 600, color: '#334155' }}>
+                                        Longitude
+                                    </label>
+                                    <input
+                                        type="number"
+                                        step="any"
+                                        name="longitude"
+                                        defaultValue={editingBeat.longitude}
+                                        className="input"
+                                        style={{ width: '100%' }}
+                                        required
+                                    />
+                                </div>
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: 8, fontSize: 14, fontWeight: 600, color: '#334155' }}>
+                                        Radius (meters)
+                                    </label>
+                                    <input
+                                        type="number"
+                                        step="any"
+                                        name="radiusMeters"
+                                        defaultValue={editingBeat.radiusMeters}
+                                        className="input"
+                                        style={{ width: '100%' }}
+                                        required
+                                    />
+                                </div>
+                                <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
+                                    <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>
+                                        💾 Save Changes
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="btn"
+                                        onClick={() => {
+                                            setShowEditModal(false);
+                                            setEditingBeat(null);
+                                        }}
+                                        style={{ flex: 1 }}
+                                    >
+                                        ❌ Cancel
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Delete Confirmation Modal */}
+            {showDeleteModal && beatToDelete && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: 'rgba(0, 0, 0, 0.5)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 1000
+                }}>
+                    <div style={{
+                        background: '#fff',
+                        borderRadius: 12,
+                        padding: 32,
+                        maxWidth: 400,
+                        width: '90%'
+                    }}>
+                        <h3 style={{ fontSize: 20, fontWeight: 700, color: '#991b1b', marginBottom: 16 }}>
+                            🗑️ Delete Beat
+                        </h3>
+                        <p style={{ fontSize: 14, color: '#64748b', marginBottom: 24 }}>
+                            Are you sure you want to delete beat <strong>{beatToDelete.geoNodeBeat?.name}</strong>? This action cannot be undone.
+                        </p>
+                        <div style={{ display: 'flex', gap: 12 }}>
+                            <button
+                                onClick={handleDeleteBeat}
+                                style={{
+                                    flex: 1,
+                                    padding: '10px 16px',
+                                    fontSize: 14,
+                                    fontWeight: 600,
+                                    background: '#dc2626',
+                                    color: '#fff',
+                                    border: 'none',
+                                    borderRadius: 8,
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                Yes, Delete
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setShowDeleteModal(false);
+                                    setBeatToDelete(null);
+                                }}
+                                className="btn"
+                                style={{ flex: 1 }}
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* View Modal with Map */}
+            {showViewModal && viewingBeat && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: 'rgba(0, 0, 0, 0.5)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 1000
+                }}>
+                    <div style={{
+                        background: '#fff',
+                        borderRadius: 12,
+                        padding: 32,
+                        maxWidth: 800,
+                        width: '90%',
+                        maxHeight: '80vh',
+                        overflow: 'auto'
+                    }}>
+                        <h3 style={{ fontSize: 20, fontWeight: 700, color: '#0f172a', marginBottom: 16 }}>
+                            👁️ View Beat: {viewingBeat.geoNodeBeat?.name}
+                        </h3>
+                        <div style={{ marginBottom: 16 }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+                                <div>
+                                    <label style={{ fontSize: 12, fontWeight: 600, color: '#64748b' }}>Ward</label>
+                                    <p style={{ fontSize: 14, color: '#0f172a', margin: '4px 0 0 0' }}>{viewingBeat.geoNodeBeat?.parent?.name}</p>
+                                </div>
+                                <div>
+                                    <label style={{ fontSize: 12, fontWeight: 600, color: '#64748b' }}>Area Type</label>
+                                    <p style={{ fontSize: 14, color: '#0f172a', margin: '4px 0 0 0' }}>{viewingBeat.areaType}</p>
+                                </div>
+                                <div>
+                                    <label style={{ fontSize: 12, fontWeight: 600, color: '#64748b' }}>Location</label>
+                                    <p style={{ fontSize: 12, fontFamily: 'monospace', color: '#0f172a', margin: '4px 0 0 0' }}>
+                                        {viewingBeat.latitude?.toFixed(6)}, {viewingBeat.longitude?.toFixed(6)}
+                                    </p>
+                                </div>
+                                <div>
+                                    <label style={{ fontSize: 12, fontWeight: 600, color: '#64748b' }}>Status</label>
+                                    <p style={{ fontSize: 14, color: '#0f172a', margin: '4px 0 0 0' }}>
+                                        {viewingBeat.assignmentStatus || 'Unassigned'}
+                                    </p>
+                                </div>
+                            </div>
+                            {viewingBeat.geometry && (
+                                <div style={{ height: 400, border: '1px solid #e2e8f0', borderRadius: 8, overflow: 'hidden' }}>
+                                    <MapViewer features={[{
+                                        name: viewingBeat.geoNodeBeat?.name || 'Beat',
+                                        properties: {},
+                                        geometry: viewingBeat.geometry
+                                    }]} />
+                                </div>
+                            )}
+                        </div>
+                        <button
+                            onClick={() => {
+                                setShowViewModal(false);
+                                setViewingBeat(null);
+                            }}
+                            className="btn btn-primary"
+                            style={{ width: '100%' }}
+                        >
+                            Close
+                        </button>
+                    </div>
+                </div>
             )}
         </div>
     );
